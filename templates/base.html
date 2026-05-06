@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="es" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}GrowLog{% endblock %} — 62xroots</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --c-bg:       #0b0b0b;
+      --c-s1:       #131313;
+      --c-s2:       #1a1a1a;
+      --c-s3:       #222222;
+      --c-border:   #262626;
+      --c-border2:  #303030;
+      --c-green:    #39e058;
+      --c-green-d:  #1c6b2a;
+      --c-text:     #e0e0e0;
+      --c-muted:    #5c5c5c;
+      --c-info:     #38bdf8;
+      --c-warn:     #fb923c;
+      --c-danger:   #f87171;
+      --c-purple:   #c084fc;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: .9rem;
+    }
+
+    /* Números siempre tabulares */
+    .num {
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      font-family: ui-monospace, "SFMono-Regular", "Consolas", monospace;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: var(--c-s1) !important;
+      border-bottom: 1px solid var(--c-border) !important;
+      padding: .4rem 1rem;
+    }
+    .brand-62 {
+      font-weight: 900;
+      font-size: 1.4rem;
+      letter-spacing: -.03em;
+      color: var(--c-green) !important;
+      text-decoration: none;
+      line-height: 1;
+      font-family: ui-monospace, monospace;
+    }
+    .brand-62 .brand-x {
+      color: #555;
+      font-weight: 400;
+      font-size: 1.1rem;
+      letter-spacing: 0;
+      font-family: system-ui, sans-serif;
+    }
+    .nav-link {
+      color: #666 !important;
+      font-size: .82rem;
+      padding: .3rem .65rem !important;
+      border-radius: 5px;
+      transition: color .12s, background .12s;
+    }
+    .nav-link:hover { color: var(--c-text) !important; background: var(--c-s2); }
+    .nav-link.active { color: var(--c-text) !important; background: var(--c-s2); }
+    .cultivo-pill {
+      font-size: .72rem;
+      color: var(--c-green);
+      background: rgba(57, 224, 88, .08);
+      border: 1px solid rgba(57, 224, 88, .2);
+      border-radius: 20px;
+      padding: .2rem .7rem;
+      white-space: nowrap;
+    }
+    .cultivo-pill .dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--c-green);
+      margin-right: 5px;
+      vertical-align: middle;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .3; }
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--c-s1);
+      border: 1px solid var(--c-border);
+      border-radius: 8px;
+    }
+    .card-header {
+      background: transparent;
+      border-bottom: 1px solid var(--c-border);
+      padding: .55rem 1rem;
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--c-muted);
+    }
+
+    /* ── KPI cards ── */
+    .kpi {
+      background: var(--c-s1);
+      border: 1px solid var(--c-border);
+      border-radius: 8px;
+      padding: .85rem 1rem .75rem;
+      text-align: center;
+      border-top-width: 3px;
+    }
+    .kpi.kpi-neutral  { border-top-color: var(--c-border2); }
+    .kpi.kpi-ideal    { border-top-color: var(--c-green); }
+    .kpi.kpi-alto     { border-top-color: var(--c-danger); }
+    .kpi.kpi-bajo     { border-top-color: var(--c-warn); }
+    .kpi.kpi-green    { border-top-color: var(--c-green); }
+
+    .kpi-label {
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: var(--c-muted);
+      margin-bottom: .3rem;
+    }
+    .kpi-value {
+      font-size: 2.1rem;
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      font-family: ui-monospace, monospace;
+    }
+    .kpi-value small { font-size: 1rem; font-weight: 400; }
+    .kpi-status {
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-top: .3rem;
+      font-weight: 700;
+    }
+
+    /* Semáforo */
+    .c-ideal  { color: var(--c-green) !important; }
+    .c-alto   { color: var(--c-danger) !important; }
+    .c-bajo   { color: var(--c-warn) !important; }
+    .c-info   { color: var(--c-info) !important; }
+    .c-warn   { color: var(--c-warn) !important; }
+    .c-muted  { color: var(--c-muted) !important; }
+    .c-green  { color: var(--c-green) !important; }
+    .c-purple { color: var(--c-purple) !important; }
+
+    /* ── Tables ── */
+    .table {
+      --bs-table-bg: transparent;
+      --bs-table-border-color: var(--c-border);
+      color: var(--c-text);
+      font-size: .855rem;
+      margin: 0;
+    }
+    .table thead th {
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--c-muted);
+      font-weight: 700;
+      border-bottom: 1px solid var(--c-border2);
+      padding: .45rem .85rem;
+      white-space: nowrap;
+    }
+    .table tbody td {
+      padding: .55rem .85rem;
+      border-color: var(--c-border);
+      vertical-align: middle;
+    }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .table-hover tbody tr:hover td { background: rgba(255,255,255,.02); }
+
+    /* Acento lateral por tipo */
+    .row-medicion td:first-child { border-left: 3px solid var(--c-info);   padding-left: .7rem; }
+    .row-riego    td:first-child { border-left: 3px solid var(--c-green);  padding-left: .7rem; }
+    .row-evento   td:first-child { border-left: 3px solid var(--c-warn);   padding-left: .7rem; }
+
+    /* Badges de tipo */
+    .badge-tipo {
+      display: inline-block;
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+      padding: .22em .55em;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .bt-med    { background: rgba(56,189,248,.12); color: var(--c-info);   border: 1px solid rgba(56,189,248,.25); }
+    .bt-riego  { background: rgba(57,224,88,.1);   color: var(--c-green);  border: 1px solid rgba(57,224,88,.25); }
+    .bt-evento { background: rgba(251,146,60,.1);  color: var(--c-warn);   border: 1px solid rgba(251,146,60,.25); }
+    .bt-urge   { background: rgba(248,113,113,.12);color: var(--c-danger); border: 1px solid rgba(248,113,113,.25); }
+    .bt-normal { background: rgba(57,224,88,.08);  color: var(--c-green);  border: 1px solid rgba(57,224,88,.2); }
+    .bt-baja   { background: var(--c-s2);          color: var(--c-muted);  border: 1px solid var(--c-border); }
+    .bt-vpd-ideal  { background: rgba(57,224,88,.1);  color: var(--c-green);  border: 1px solid rgba(57,224,88,.25); }
+    .bt-vpd-alto   { background: rgba(248,113,113,.12);color:var(--c-danger); border: 1px solid rgba(248,113,113,.25); }
+    .bt-vpd-bajo   { background: rgba(251,146,60,.1);  color: var(--c-warn);  border: 1px solid rgba(251,146,60,.25); }
+
+    /* ── Botón principal ── */
+    .btn-brand {
+      background: var(--c-green);
+      color: #050505;
+      font-weight: 700;
+      border: none;
+      border-radius: 6px;
+      padding: .45rem 1.15rem;
+      font-size: .85rem;
+      letter-spacing: .02em;
+      transition: opacity .15s;
+    }
+    .btn-brand:hover { opacity: .85; color: #000; }
+
+    /* ── Misc ── */
+    .text-muted { color: var(--c-muted) !important; }
+    a { color: var(--c-green); }
+    a:hover { color: var(--c-green); opacity: .8; }
+
+    @media (max-width: 576px) {
+      .kpi-value { font-size: 1.65rem; }
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid gap-3">
+    <a class="brand-62" href="{% url 'growlog:dashboard' %}">
+      62<span class="brand-x">xroots</span>
+    </a>
+
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain"
+            style="color:#555">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navMain">
+      <ul class="navbar-nav me-auto gap-1">
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'growlog:dashboard' %}">
+            <i class="bi bi-grid-1x2 me-1"></i>Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'growlog:quick' %}">
+            <i class="bi bi-lightning-charge-fill me-1"></i>Anotar
+          </a>
+        </li>
+        {% if cultivo_activo %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'growlog:timeline' cultivo_activo.pk %}">
+            <i class="bi bi-table me-1"></i>Timeline
+          </a>
+        </li>
+        {% endif %}
+        <li class="nav-item">
+          <a class="nav-link" href="/admin/">
+            <i class="bi bi-sliders2 me-1"></i>Admin
+          </a>
+        </li>
+      </ul>
+
+      {% if cultivo_activo %}
+      <span class="cultivo-pill">
+        <span class="dot"></span>
+        {{ cultivo_activo.nombre }} &nbsp;·&nbsp; Día {{ cultivo_activo.dias_desde_inicio }}
+      </span>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<main class="container-fluid py-3 px-3 px-md-4">
+  {% if messages %}
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show border-0 rounded-2 py-2 mb-3" role="alert">
+      {{ msg }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

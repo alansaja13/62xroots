@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+{% if not cultivo %}
+<div class="text-center py-5">
+  <div class="num fw-black c-green" style="font-size:5rem;line-height:1">62</div>
+  <h2 class="mt-2 fw-bold">No hay cultivo activo</h2>
+  <p class="text-muted">Creá tu primer cultivo desde el admin.</p>
+  <a href="/admin/growlog/cultivo/add/" class="btn btn-brand mt-2">
+    <i class="bi bi-plus-circle me-1"></i>Nuevo cultivo
+  </a>
+</div>
+
+{% else %}
+
+<!-- ── Encabezado ── -->
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <div>
+    <h1 class="h4 mb-0 fw-bold">{{ cultivo.nombre }}</h1>
+    <div class="mt-1" style="font-size:.78rem">
+      {% if cultivo.estado == 'vegetativo' %}
+        <span class="c-green fw-semibold">● Vegetativo</span>
+      {% elif cultivo.estado == 'floracion' %}
+        <span class="c-purple fw-semibold">● Floración</span>
+      {% else %}
+        <span class="text-muted fw-semibold">● {{ cultivo.get_estado_display }}</span>
+      {% endif %}
+      <span class="text-muted ms-2">desde {{ cultivo.fecha_inicio }}</span>
+    </div>
+  </div>
+  <a href="{% url 'growlog:quick' %}" class="btn btn-brand">
+    <i class="bi bi-lightning-charge-fill me-1"></i>Anotar ahora
+  </a>
+</div>
+
+<!-- ── KPI Row ── -->
+<div class="row g-2 mb-3">
+
+  <!-- Día -->
+  <div class="col-6 col-sm-4 col-lg">
+    <div class="kpi kpi-green">
+      <div class="kpi-label"><i class="bi bi-calendar3 me-1"></i>Día</div>
+      <div class="kpi-value c-green num">{{ cultivo.dias_desde_inicio }}</div>
+      <div class="kpi-status text-muted">desde inicio</div>
+    </div>
+  </div>
+
+  <!-- Temperatura -->
+  <div class="col-6 col-sm-4 col-lg">
+    {% if ultima_medicion %}
+    <div class="kpi kpi-{% if semaforo %}{{ semaforo.temp }}{% else %}neutral{% endif %}">
+      <div class="kpi-label"><i class="bi bi-thermometer-half me-1"></i>Temperatura</div>
+      <div class="kpi-value c-{% if semaforo %}{{ semaforo.temp }}{% else %}muted{% endif %} num">
+        {{ ultima_medicion.temperatura_c }}<small>°C</small>
+      </div>
+      <div class="kpi-status c-{% if semaforo %}{{ semaforo.temp }}{% else %}muted{% endif %}">
+        {% if semaforo %}{{ semaforo.temp|upper }}{% else %}—{% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="kpi kpi-neutral">
+      <div class="kpi-label"><i class="bi bi-thermometer-half me-1"></i>Temperatura</div>
+      <div class="kpi-value text-muted num">—</div>
+      <div class="kpi-status text-muted">sin datos</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Humedad -->
+  <div class="col-6 col-sm-4 col-lg">
+    {% if ultima_medicion %}
+    <div class="kpi kpi-{% if semaforo %}{{ semaforo.hr }}{% else %}neutral{% endif %}">
+      <div class="kpi-label"><i class="bi bi-droplet-half me-1"></i>Humedad</div>
+      <div class="kpi-value c-{% if semaforo %}{{ semaforo.hr }}{% else %}muted{% endif %} num">
+        {{ ultima_medicion.humedad_relativa }}<small>%</small>
+      </div>
+      <div class="kpi-status c-{% if semaforo %}{{ semaforo.hr }}{% else %}muted{% endif %}">
+        {% if semaforo %}{{ semaforo.hr|upper }}{% else %}—{% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="kpi kpi-neutral">
+      <div class="kpi-label"><i class="bi bi-droplet-half me-1"></i>Humedad</div>
+      <div class="kpi-value text-muted num">—</div>
+      <div class="kpi-status text-muted">sin datos</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- VPD -->
+  <div class="col-6 col-sm-4 col-lg">
+    {% if ultima_medicion %}
+    <div class="kpi kpi-{% if semaforo %}{{ semaforo.vpd }}{% else %}neutral{% endif %}">
+      <div class="kpi-label"><i class="bi bi-activity me-1"></i>VPD</div>
+      <div class="kpi-value c-{% if semaforo %}{{ semaforo.vpd }}{% else %}muted{% endif %} num">
+        {{ ultima_medicion.vpd }}<small> kPa</small>
+      </div>
+      <div class="kpi-status c-{% if semaforo %}{{ semaforo.vpd }}{% else %}muted{% endif %}">
+        {% if semaforo %}{{ semaforo.vpd|upper }}{% else %}—{% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="kpi kpi-neutral">
+      <div class="kpi-label"><i class="bi bi-activity me-1"></i>VPD</div>
+      <div class="kpi-value text-muted num">—</div>
+      <div class="kpi-status text-muted">sin datos</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Plantas -->
+  <div class="col-6 col-sm-4 col-lg">
+    <div class="kpi kpi-neutral">
+      <div class="kpi-label"><i class="bi bi-flower1 me-1"></i>Plantas</div>
+      <div class="kpi-value num" style="color:var(--c-text)">{{ cultivo.plantas.all|length }}</div>
+      <div class="kpi-status text-muted">activas</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Cuerpo: 2 columnas ── -->
+<div class="row g-3">
+
+  <!-- LEFT: últimos registros -->
+  <div class="col-12 col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-clock-history me-1"></i>Últimos registros</span>
+        <a href="{% url 'growlog:timeline' cultivo.pk %}"
+           class="btn btn-sm btn-outline-secondary border-0"
+           style="font-size:.72rem;padding:.2rem .55rem;color:var(--c-muted)">
+          Ver todo <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th style="width:72px">Tipo</th>
+              <th>Dato</th>
+              <th>Detalle</th>
+              <th class="text-end" style="width:85px">Hora</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for reg in ultimos_registros %}
+            <tr class="row-{{ reg.tipo }}">
+              <td>
+                {% if reg.tipo == 'medicion' %}<span class="badge-tipo bt-med">MED</span>
+                {% elif reg.tipo == 'riego' %}<span class="badge-tipo bt-riego">RIEGO</span>
+                {% else %}<span class="badge-tipo bt-evento">EVT</span>
+                {% endif %}
+              </td>
+              <td class="num fw-semibold">
+                {% if reg.tipo == 'medicion' %}
+                  {{ reg.obj.temperatura_c }}°C <span class="text-muted fw-normal">/</span> {{ reg.obj.humedad_relativa }}%
+                {% elif reg.tipo == 'riego' %}
+                  {{ reg.obj.volumen_total_ml }} ml
+                {% else %}
+                  {{ reg.obj.get_tipo_display }}
+                {% endif %}
+              </td>
+              <td class="text-muted small">
+                {% if reg.tipo == 'medicion' %}
+                  VPD&nbsp;
+                  <span class="badge-tipo
+                    {% if reg.obj.vpd_estado == 'ideal' %}bt-vpd-ideal
+                    {% elif reg.obj.vpd_estado == 'alto' %}bt-vpd-alto
+                    {% else %}bt-vpd-bajo{% endif %}
+                    num">{{ reg.obj.vpd }}&nbsp;kPa</span>
+                  {% if reg.obj.notas %}<span class="ms-2">{{ reg.obj.notas|truncatechars:35 }}</span>{% endif %}
+                {% elif reg.tipo == 'riego' %}
+                  {% if reg.obj.ph_agua %}pH&nbsp;<span class="num">{{ reg.obj.ph_agua }}</span>{% endif %}
+                  {% if reg.obj.ec_solucion %}&nbsp;·&nbsp;EC&nbsp;<span class="num">{{ reg.obj.ec_solucion }}</span>{% endif %}
+                  {% if reg.obj.notas %}&nbsp;·&nbsp;{{ reg.obj.notas|truncatechars:30 }}{% endif %}
+                {% else %}
+                  {{ reg.obj.descripcion|truncatechars:55 }}
+                {% endif %}
+              </td>
+              <td class="text-end text-muted num" style="font-size:.78rem">{{ reg.ts|date:"d/m H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted py-4">
+                Sin registros aún. <a href="{% url 'growlog:quick' %}">Anotá el primero →</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: tareas + setup -->
+  <div class="col-12 col-lg-4">
+
+    <!-- Tareas pendientes -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-check2-square me-1"></i>Tareas pendientes</span>
+        <a href="/admin/growlog/tarea/add/"
+           class="btn btn-sm btn-outline-success border-0"
+           style="font-size:.72rem;padding:.2rem .55rem;">
+          <i class="bi bi-plus"></i> Nueva
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Tarea</th>
+              <th class="text-center" style="width:52px">Vence</th>
+              <th style="width:34px"></th>
+            </tr>
+          </thead>
+          <tbody id="tareas-lista">
+            {% for tarea in tareas_pendientes %}
+              {% include "growlog/partials/tarea_row.html" %}
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-center text-muted py-3" style="font-size:.82rem">
+                Sin tareas pendientes 🎉
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Setup -->
+    <div class="card">
+      <div class="card-header"><i class="bi bi-hdd-rack me-1"></i>Setup del cultivo</div>
+      <div class="table-responsive">
+        <table class="table">
+          <tbody>
+            {% if cultivo.lampara_modelo %}
+            <tr>
+              <td class="text-muted" style="width:42%;font-size:.8rem">Lámpara</td>
+              <td class="fw-medium num" style="font-size:.85rem">
+                {{ cultivo.lampara_modelo }}{% if cultivo.lampara_watts_reales %}&nbsp;·&nbsp;{{ cultivo.lampara_watts_reales }}W{% endif %}
+              </td>
+            </tr>
+            {% endif %}
+            {% if cultivo.sustrato %}
+            <tr>
+              <td class="text-muted" style="font-size:.8rem">Sustrato</td>
+              <td class="fw-medium" style="font-size:.85rem">{{ cultivo.sustrato }}</td>
+            </tr>
+            {% endif %}
+            {% if cultivo.carpa_dimensiones %}
+            <tr>
+              <td class="text-muted" style="font-size:.8rem">Carpa</td>
+              <td class="fw-medium num" style="font-size:.85rem">{{ cultivo.carpa_dimensiones }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="text-muted" style="font-size:.8rem">Plantas activas</td>
+              <td class="fw-medium num" style="font-size:.85rem">{{ cultivo.plantas.all|length }}</td>
+            </tr>
+            {% if ultima_medicion %}
+            <tr>
+              <td class="text-muted" style="font-size:.8rem">Última medición</td>
+              <td class="num" style="font-size:.78rem;color:var(--c-muted)">{{ ultima_medicion.timestamp|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Timeline — {{ cultivo.nombre }}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <div>
+    <h2 class="h4 mb-0 fw-bold">{{ cultivo.nombre }}</h2>
+    <div style="font-size:.78rem" class="mt-1">
+      {% if cultivo.estado == 'vegetativo' %}
+        <span class="c-green fw-semibold">● Vegetativo</span>
+      {% elif cultivo.estado == 'floracion' %}
+        <span class="c-purple fw-semibold">● Floración</span>
+      {% else %}
+        <span class="text-muted fw-semibold">● {{ cultivo.get_estado_display }}</span>
+      {% endif %}
+      <span class="text-muted ms-2">Día {{ cultivo.dias_desde_inicio }} · desde {{ cultivo.fecha_inicio }}</span>
+    </div>
+  </div>
+  <a href="{% url 'growlog:quick' %}" class="btn btn-brand">
+    <i class="bi bi-lightning-charge-fill me-1"></i>Anotar
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-table me-1"></i>Historial completo</span>
+    <span class="text-muted" style="font-size:.7rem">{{ registros|length }} registros</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th style="width:90px">Fecha</th>
+          <th style="width:72px">Tipo</th>
+          <th style="width:200px">Dato principal</th>
+          <th>Detalle</th>
+          <th>Notas / Extra</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for reg in registros %}
+        <tr class="row-{{ reg.tipo }}">
+
+          <!-- Fecha -->
+          <td class="text-muted num" style="font-size:.78rem;white-space:nowrap">
+            {{ reg.ts|date:"d/m/y" }}<br>
+            <span style="font-size:.7rem">{{ reg.ts|date:"H:i" }}</span>
+          </td>
+
+          <!-- Tipo -->
+          <td>
+            {% if reg.tipo == 'medicion' %}
+              <span class="badge-tipo bt-med">MED</span>
+            {% elif reg.tipo == 'riego' %}
+              <span class="badge-tipo bt-riego">RIEGO</span>
+            {% else %}
+              <span class="badge-tipo bt-evento">EVENTO</span>
+            {% endif %}
+          </td>
+
+          <!-- Dato principal -->
+          <td class="num fw-semibold">
+            {% if reg.tipo == 'medicion' %}
+              {{ reg.obj.temperatura_c }}°C
+              <span class="text-muted fw-normal"> / </span>
+              {{ reg.obj.humedad_relativa }}%HR
+            {% elif reg.tipo == 'riego' %}
+              {{ reg.obj.volumen_total_ml }}&nbsp;ml
+              {% if reg.obj.volumen_por_planta_ml %}
+                <span class="text-muted fw-normal small">({{ reg.obj.volumen_por_planta_ml }}ml/planta)</span>
+              {% endif %}
+            {% else %}
+              {{ reg.obj.get_tipo_display }}
+            {% endif %}
+          </td>
+
+          <!-- Detalle -->
+          <td class="small">
+            {% if reg.tipo == 'medicion' %}
+              <span class="badge-tipo num
+                {% if reg.obj.vpd_estado == 'ideal' %}bt-vpd-ideal
+                {% elif reg.obj.vpd_estado == 'alto' %}bt-vpd-alto
+                {% else %}bt-vpd-bajo{% endif %}">
+                VPD {{ reg.obj.vpd }} kPa
+              </span>
+            {% elif reg.tipo == 'riego' %}
+              <span class="text-muted">
+                {% if reg.obj.ph_agua %}pH <span class="num c-green">{{ reg.obj.ph_agua }}</span>{% endif %}
+                {% if reg.obj.ec_solucion %}&nbsp;·&nbsp;EC <span class="num">{{ reg.obj.ec_solucion }}</span>{% endif %}
+                {% if reg.obj.runoff_observado %}&nbsp;·&nbsp;<span class="c-green">Runoff ✓</span>{% endif %}
+              </span>
+              {% if reg.obj.nutrientes_aplicados.exists %}
+              <div class="mt-1">
+                {% for na in reg.obj.nutrientes_aplicados.all %}
+                <span class="badge-tipo bt-baja me-1" style="font-size:.6rem">
+                  {{ na.nutriente }} {{ na.dosis_g_por_litro }}g/L
+                </span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            {% else %}
+              <div class="text-muted">{{ reg.obj.descripcion|truncatechars:70 }}</div>
+              {% if reg.obj.plantas_afectadas.exists %}
+              <div class="mt-1">
+                {% for p in reg.obj.plantas_afectadas.all %}
+                <span class="badge-tipo bt-baja me-1" style="font-size:.6rem">{{ p.apodo }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+              {% if reg.obj.follow_up_fecha and not reg.obj.follow_up_resuelto %}
+              <div class="mt-1 c-warn" style="font-size:.72rem">
+                <i class="bi bi-alarm me-1"></i>Follow-up: {{ reg.obj.follow_up_fecha|date:"d/m/Y" }}
+                — {{ reg.obj.follow_up_descripcion }}
+              </div>
+              {% endif %}
+            {% endif %}
+          </td>
+
+          <!-- Notas -->
+          <td class="text-muted small">
+            {% if reg.tipo == 'medicion' %}
+              {{ reg.obj.notas }}
+            {% elif reg.tipo == 'riego' %}
+              {{ reg.obj.notas }}
+            {% endif %}
+          </td>
+
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center text-muted py-5">
+            <i class="bi bi-journal-x" style="font-size:2rem;display:block;margin-bottom:.5rem"></i>
+            Todavía no hay registros.
+            <a href="{% url 'growlog:quick' %}">Anotá el primero →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

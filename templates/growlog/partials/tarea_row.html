@@ -1,0 +1,33 @@
+<tr id="tarea-{{ tarea.pk }}" class="{% if tarea.completada %}opacity-50{% endif %}">
+  <td>
+    {% if not tarea.completada %}
+      {% if tarea.prioridad == 'urgente' %}
+        <span class="badge-tipo bt-urge me-1">URG</span>
+      {% elif tarea.prioridad == 'normal' %}
+        <span class="badge-tipo bt-normal me-1">NOR</span>
+      {% else %}
+        <span class="badge-tipo bt-baja me-1">BAJA</span>
+      {% endif %}
+    {% endif %}
+    <span class="{% if tarea.completada %}text-decoration-line-through text-muted{% endif %}" style="font-size:.83rem">
+      {{ tarea.titulo }}
+    </span>
+    <div class="text-muted" style="font-size:.68rem;margin-top:.1rem">{{ tarea.get_categoria_display }}</div>
+  </td>
+  <td class="text-center num text-muted" style="font-size:.75rem">
+    {% if tarea.fecha_objetivo %}{{ tarea.fecha_objetivo|date:"d/m" }}{% else %}—{% endif %}
+  </td>
+  <td>
+    {% if not tarea.completada %}
+    <button class="btn btn-sm btn-outline-success border-0 p-1"
+            hx-post="{% url 'growlog:tarea_completar' tarea.pk %}"
+            hx-target="#tarea-{{ tarea.pk }}"
+            hx-swap="outerHTML"
+            style="width:26px;height:26px;line-height:1">
+      <i class="bi bi-check-lg" style="font-size:.75rem"></i>
+    </button>
+    {% else %}
+    <i class="bi bi-check-circle-fill c-green" style="font-size:.85rem"></i>
+    {% endif %}
+  </td>
+</tr>

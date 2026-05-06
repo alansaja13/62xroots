@@ -1,0 +1,13 @@
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+  <i class="bi bi-check-circle-fill me-1"></i>
+  <strong>Guardado</strong> —
+  {{ medicion.temperatura_c }}°C / {{ medicion.humedad_relativa }}%HR /
+  VPD <strong>{{ medicion.vpd }} kPa</strong>
+  <span class="badge
+    {% if medicion.vpd_estado == 'ideal' %}bg-success
+    {% elif medicion.vpd_estado == 'alto' %}bg-danger
+    {% else %}bg-warning text-dark{% endif %}
+    ms-1">{{ medicion.vpd_estado }}</span>
+  {% if rego %} · <i class="bi bi-droplet-fill text-info"></i> Riego registrado{% endif %}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
