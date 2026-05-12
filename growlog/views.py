@@ -6,7 +6,8 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.http import HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.templatetags.static import static as static_url
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.urls import reverse
@@ -745,6 +746,60 @@ def invitado_eliminar(request, pk):
     user.delete()
     messages.success(request, "Invitado eliminado.")
     return redirect("growlog:invitados_panel")
+
+
+# ---------------------------------------------------------------------------
+# PWA — manifest + service worker
+# ---------------------------------------------------------------------------
+
+def pwa_manifest(request):
+    icon = request.build_absolute_uri(static_url("growlog/logo.png"))
+    data = {
+        "name": "62×ROOTS GrowLog",
+        "short_name": "62xROOTS",
+        "description": "Terminal de cultivo indoor",
+        "start_url": "/",
+        "scope": "/",
+        "display": "standalone",
+        "orientation": "portrait-primary",
+        "background_color": "#16110b",
+        "theme_color": "#16110b",
+        "icons": [
+            {"src": icon, "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+            {"src": icon, "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+        ],
+    }
+    return JsonResponse(data)
+
+
+def pwa_service_worker(request):
+    js = r"""
+const CACHE = '62xroots-v2';
+
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+
+self.addEventListener('fetch', e => {
+    if (e.request.method !== 'GET') return;
+    if (!e.request.url.startsWith('http')) return;
+
+    e.respondWith(
+        fetch(e.request)
+            .then(res => {
+                if (e.request.mode === 'navigate') {
+                    const clone = res.clone();
+                    caches.open(CACHE).then(c => c.put(e.request, clone));
+                }
+                return res;
+            })
+            .catch(() => caches.match(e.request))
+    );
+});
+"""
+    resp = HttpResponse(js.strip(), content_type="application/javascript; charset=utf-8")
+    resp["Service-Worker-Allowed"] = "/"
+    resp["Cache-Control"] = "no-cache"
+    return resp
 
 
 # ---------------------------------------------------------------------------
