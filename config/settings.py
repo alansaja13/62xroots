@@ -105,3 +105,4 @@ LOGOUT_REDIRECT_URL = "/login/"
 # CSRF — necesario para que Railway no bloquee los formularios
 _csrf = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [x.strip() for x in _csrf.split(",") if x.strip()]
+CSRF_TRUSTED_ORIGINS += ["https://62xroots.up.railway.app"]
