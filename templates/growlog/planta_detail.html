@@ -125,12 +125,14 @@
   </div>
 
   <div class="pd-actions">
+    {% if request.user.is_staff %}
     <a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="btn-brand">
       <i class="bi bi-plus-lg"></i> medir
     </a>
     <a href="{% url 'growlog:planta_editar' planta.pk %}" class="btn-ghost">
       <i class="bi bi-pencil"></i> editar
     </a>
+    {% endif %}
   </div>
 </div>
 
@@ -184,7 +186,7 @@
       <span class="label-eyebrow panel__title">mediciones · histórico</span>
       <span class="mono c-fine" style="font-size:10px;">· {{ mediciones|length }}</span>
     </div>
-    <a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="panel__action panel__action--green">+ nueva medición</a>
+    {% if request.user.is_staff %}<a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="panel__action panel__action--green">+ nueva medición</a>{% endif %}
   </div>
   <table class="table">
     <thead>

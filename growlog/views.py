@@ -1,11 +1,27 @@
+import secrets
+from functools import wraps
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.http import HttpResponseForbidden
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django import forms
+
+
+def staff_required(view_func):
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        if not request.user.is_staff:
+            return HttpResponseForbidden(
+                "<h2 style='font-family:monospace;padding:40px'>Acceso restringido — modo solo lectura.</h2>"
+            )
+        return view_func(request, *args, **kwargs)
+    return _wrapped
 
 from .models import (
     Cultivo, Planta, MedicionAmbiente, Riego, NutrienteAplicado,
@@ -225,6 +241,7 @@ def cultivo_detail(request, pk):
 
 
 @login_required
+@staff_required
 def quick_entry(request, pk):
     cultivo = get_object_or_404(Cultivo, pk=pk)
     form = QuickEntryForm(request.POST or None)
@@ -251,6 +268,7 @@ def timeline(request, pk):
 
 
 @login_required
+@staff_required
 def nuevo_cultivo(request):
     form = NuevoCultivoForm(request.POST or None, initial={"fecha_inicio": timezone.localdate()})
     if request.method == "POST" and form.is_valid():
@@ -261,6 +279,7 @@ def nuevo_cultivo(request):
 
 
 @login_required
+@staff_required
 def cultivo_editar(request, pk):
     cultivo = get_object_or_404(Cultivo, pk=pk)
     form = NuevoCultivoForm(request.POST or None, instance=cultivo)
@@ -280,6 +299,7 @@ def cultivo_editar(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
+@staff_required
 def planta_crear(request, cultivo_pk):
     cultivo = get_object_or_404(Cultivo, pk=cultivo_pk)
     form = PlantaForm(request.POST or None)
@@ -297,6 +317,7 @@ def planta_crear(request, cultivo_pk):
 
 
 @login_required
+@staff_required
 def planta_editar(request, pk):
     planta = get_object_or_404(Planta, pk=pk)
     form = PlantaForm(request.POST or None, instance=planta)
@@ -313,6 +334,7 @@ def planta_editar(request, pk):
 
 
 @login_required
+@staff_required
 def planta_eliminar(request, pk):
     planta = get_object_or_404(Planta, pk=pk)
     cultivo_pk = planta.cultivo_id
@@ -342,6 +364,7 @@ def planta_detail(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
+@staff_required
 def tarea_crear(request, cultivo_pk):
     cultivo = get_object_or_404(Cultivo, pk=cultivo_pk)
     form = TareaForm(request.POST or None)
@@ -359,6 +382,7 @@ def tarea_crear(request, cultivo_pk):
 
 
 @login_required
+@staff_required
 def tarea_editar(request, pk):
     tarea = get_object_or_404(Tarea, pk=pk)
     form = TareaForm(request.POST or None, instance=tarea)
@@ -375,6 +399,7 @@ def tarea_editar(request, pk):
 
 
 @login_required
+@staff_required
 def tarea_eliminar(request, pk):
     tarea = get_object_or_404(Tarea, pk=pk)
     cultivo_pk = tarea.cultivo_id
@@ -390,6 +415,7 @@ def tarea_eliminar(request, pk):
 
 @require_POST
 @login_required
+@staff_required
 def tarea_completar(request, pk):
     tarea = get_object_or_404(Tarea, pk=pk)
     tarea.completada = True
@@ -405,6 +431,7 @@ def tarea_completar(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
+@staff_required
 def evento_crear(request, cultivo_pk):
     cultivo = get_object_or_404(Cultivo, pk=cultivo_pk)
     initial = {"timestamp": timezone.localtime().strftime(_DT_FMT)}
@@ -425,6 +452,7 @@ def evento_crear(request, cultivo_pk):
 
 
 @login_required
+@staff_required
 def evento_editar(request, pk):
     evento = get_object_or_404(Evento, pk=pk)
     form = EventoForm(request.POST or None, instance=evento)
@@ -442,6 +470,7 @@ def evento_editar(request, pk):
 
 
 @login_required
+@staff_required
 def evento_eliminar(request, pk):
     evento = get_object_or_404(Evento, pk=pk)
     cultivo_pk = evento.cultivo_id
@@ -460,6 +489,7 @@ def evento_eliminar(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
+@staff_required
 def riego_crear(request, cultivo_pk):
     cultivo = get_object_or_404(Cultivo, pk=cultivo_pk)
     initial = {"timestamp": timezone.localtime().strftime(_DT_FMT)}
@@ -478,6 +508,7 @@ def riego_crear(request, cultivo_pk):
 
 
 @login_required
+@staff_required
 def riego_editar(request, pk):
     riego = get_object_or_404(Riego, pk=pk)
     form = RiegoForm(request.POST or None, instance=riego)
@@ -496,6 +527,7 @@ def riego_editar(request, pk):
 
 
 @login_required
+@staff_required
 def riego_eliminar(request, pk):
     riego = get_object_or_404(Riego, pk=pk)
     cultivo_pk = riego.cultivo_id
@@ -514,6 +546,7 @@ def riego_eliminar(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
+@staff_required
 def nutriente_aplicado_crear(request, riego_pk):
     riego = get_object_or_404(Riego, pk=riego_pk)
     form = NutrienteAplicadoForm(request.POST or None)
@@ -532,6 +565,7 @@ def nutriente_aplicado_crear(request, riego_pk):
 
 @require_POST
 @login_required
+@staff_required
 def nutriente_aplicado_eliminar(request, pk):
     na = get_object_or_404(NutrienteAplicado, pk=pk)
     riego_pk = na.riego_id
@@ -545,6 +579,7 @@ def nutriente_aplicado_eliminar(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
+@staff_required
 def medicion_planta_crear(request, planta_pk):
     planta = get_object_or_404(Planta, pk=planta_pk)
     form = MedicionPlantaForm(request.POST or None, request.FILES or None,
@@ -564,6 +599,7 @@ def medicion_planta_crear(request, planta_pk):
 
 
 @login_required
+@staff_required
 def medicion_planta_editar(request, pk):
     medicion = get_object_or_404(MedicionPlanta, pk=pk)
     form = MedicionPlantaForm(request.POST or None, request.FILES or None, instance=medicion)
@@ -581,6 +617,7 @@ def medicion_planta_editar(request, pk):
 
 
 @login_required
+@staff_required
 def medicion_planta_eliminar(request, pk):
     medicion = get_object_or_404(MedicionPlanta, pk=pk)
     planta_pk = medicion.planta_id
@@ -592,6 +629,47 @@ def medicion_planta_eliminar(request, pk):
         "title": "Eliminar medición", "object_name": str(medicion),
         "back_url": reverse("growlog:planta_detail", args=[planta_pk]),
     })
+
+
+# ---------------------------------------------------------------------------
+# Invitados
+# ---------------------------------------------------------------------------
+
+_ADJETIVOS = ["verde", "oscuro", "suave", "fresco", "lento", "rapido", "alto", "bajo",
+               "denso", "claro", "largo", "nuevo", "viejo", "sabio", "fuerte", "fino"]
+_SUSTANTIVOS = ["arbol", "hoja", "raiz", "flor", "tallo", "brote", "fruto", "campo",
+                "tronco", "limon", "roca", "viento", "bosque", "campo", "lirio", "cedro"]
+
+
+@login_required
+@staff_required
+def invitados_panel(request):
+    invitados = User.objects.filter(is_staff=False, is_superuser=False).order_by("date_joined")
+    nuevo = request.session.pop("nuevo_invitado", None)
+    return render(request, "growlog/invitados.html", {"invitados": invitados, "nuevo": nuevo})
+
+
+@login_required
+@staff_required
+@require_POST
+def invitado_crear(request):
+    username = f"{secrets.choice(_ADJETIVOS)}{secrets.choice(_SUSTANTIVOS)}{secrets.randbelow(90) + 10}"
+    while User.objects.filter(username=username).exists():
+        username = f"{secrets.choice(_ADJETIVOS)}{secrets.choice(_SUSTANTIVOS)}{secrets.randbelow(90) + 10}"
+    password = secrets.token_urlsafe(10)
+    User.objects.create_user(username=username, password=password, is_staff=False)
+    request.session["nuevo_invitado"] = {"username": username, "password": password}
+    return redirect("growlog:invitados_panel")
+
+
+@login_required
+@staff_required
+@require_POST
+def invitado_eliminar(request, pk):
+    user = get_object_or_404(User, pk=pk, is_staff=False, is_superuser=False)
+    user.delete()
+    messages.success(request, "Invitado eliminado.")
+    return redirect("growlog:invitados_panel")
 
 
 # ---------------------------------------------------------------------------

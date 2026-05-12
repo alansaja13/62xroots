@@ -194,9 +194,11 @@
       {% if archivados %}<span class="sep">·</span><span>{{ archivados|length }} archivados</span>{% endif %}
     </div>
   </div>
+  {% if request.user.is_staff %}
   <a href="{% url 'growlog:nuevo_cultivo' %}" class="btn-ghost" style="border-color: var(--green); color: var(--green); position: relative; z-index: 1;">
     <i class="bi bi-plus-lg"></i> nuevo cultivo
   </a>
+  {% endif %}
 </div>
 
 <!-- ACTIVOS -->
@@ -257,6 +259,7 @@
     {% endwith %}
   {% endfor %}
 
+  {% if request.user.is_staff %}
   <a href="{% url 'growlog:nuevo_cultivo' %}" class="cultivo-card cultivo-card--new">
     <div class="cultivo-card--new__plus">+</div>
     <span class="mono" style="font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;">
@@ -264,6 +267,7 @@
     </span>
     <span class="mono c-fine" style="font-size: 10px;">iniciar log</span>
   </a>
+  {% endif %}
 </div>
 {% endif %}
 

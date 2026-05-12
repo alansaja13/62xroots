@@ -1,6 +1,7 @@
 <div id="tarea-{{ tarea.pk }}" class="cd-tarea cd-tarea--{{ tarea.prioridad }}{% if tarea.completada %} opacity-50{% endif %}">
   <div style="display: flex; gap: 10px; align-items: flex-start; flex: 1; min-width: 0;">
     {% if not tarea.completada %}
+    {% if request.user.is_staff %}
     <button
       class="border-0 p-0"
       style="background: transparent; cursor: pointer; width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0;"
@@ -10,6 +11,9 @@
       title="Completar">
       <span style="display: inline-block; width: 16px; height: 16px; border: 1.5px solid var(--fine); transition: border-color .12s, background .12s;"></span>
     </button>
+    {% else %}
+    <span style="display: inline-block; width: 16px; height: 16px; border: 1.5px solid var(--rule); margin-top: 2px; flex-shrink: 0; opacity:.4;"></span>
+    {% endif %}
     {% else %}
     <span style="display: inline-flex; align-items: center; justify-content: center;
                  width: 16px; height: 16px; background: var(--green); color: var(--bg);
@@ -34,8 +38,10 @@
     </div>
   </div>
 
+  {% if request.user.is_staff %}
   <a href="{% url 'growlog:tarea_editar' tarea.pk %}"
      style="color: var(--fine); font-size: 11px; text-decoration: none; padding: 4px;" title="Editar">
     <i class="bi bi-pencil"></i>
   </a>
+  {% endif %}
 </div>

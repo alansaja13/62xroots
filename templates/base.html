@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}GrowLog{% endblock %} — 62xroots</title>
-  <link rel="icon" type="image/png" href="{% static 'growlog/logo.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'growlog/logo.png' %}">
+  <link rel="shortcut icon" href="{% static 'growlog/logo.png' %}">
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -128,9 +129,13 @@
       border-radius: 0;
       transition: background .12s, border-color .12s;
     }
-    .nav-link__num {
-      font-size: 9px; color: var(--fine); font-weight: 500;
+    .nav-clock {
+      display: flex; flex-direction: column; align-items: flex-end;
+      font-family: "Geist Mono", monospace; line-height: 1.25;
+      padding: 4px 14px; border-left: 1px solid var(--rule);
     }
+    .nav-clock__date { font-size: 9px; color: var(--fine); letter-spacing: .18em; text-transform: uppercase; }
+    .nav-clock__time { font-size: 15px; color: var(--cream-soft); font-variant-numeric: tabular-nums; font-weight: 600; }
     .nav-link:hover { color: var(--cream) !important; background: var(--card-alt); border-color: var(--rule); }
     .nav-link.active { color: var(--cream) !important; background: var(--card-alt); border-color: var(--rule); font-weight: 600; }
 
@@ -147,6 +152,13 @@
     .nav-user__name {
       font-family: "Geist Mono", monospace; font-size: 10px;
       letter-spacing: .15em; text-transform: uppercase; color: var(--cream);
+    }
+    .nav-user__dot--guest { background: var(--honey); box-shadow: 0 0 8px var(--honey); }
+    .nav-user__guest-tag {
+      font-family: "Geist Mono", monospace; font-size: 9px;
+      letter-spacing: .15em; text-transform: uppercase;
+      color: var(--honey); border: 1px solid var(--honey);
+      padding: 1px 6px; opacity: .8;
     }
     .nav-user__logout {
       margin-left: 6px; color: var(--fine);
@@ -465,26 +477,42 @@
         <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
              href="{% url 'growlog:dashboard' %}">
-            <span class="nav-link__num">01</span> dashboard
+            cultivos
           </a>
         </li>
+        {% if user.is_staff %}
         <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.url_name == 'nuevo_cultivo' %}active{% endif %}"
              href="{% url 'growlog:nuevo_cultivo' %}">
-            <span class="nav-link__num">02</span> nuevo
+            nuevo
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'invitados_panel' %}active{% endif %}"
+             href="{% url 'growlog:invitados_panel' %}">
+            invitados
           </a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="/admin/">
-            <span class="nav-link__num">03</span> admin
+            admin
           </a>
         </li>
+        {% endif %}
       </ul>
+
+      <div id="nav-clock" class="nav-clock d-none d-lg-flex">
+        <span id="nav-clock__date" class="nav-clock__date"></span>
+        <span id="nav-clock__time" class="nav-clock__time"></span>
+      </div>
 
       {% if user.is_authenticated %}
       <div class="nav-user">
-        <span class="nav-user__dot"></span>
+        <span class="nav-user__dot{% if not user.is_staff %} nav-user__dot--guest{% endif %}"></span>
         <span class="nav-user__name">{{ user.username }}</span>
+        {% if not user.is_staff %}
+          <span class="nav-user__guest-tag">solo lectura</span>
+        {% endif %}
         <a href="{% url 'growlog:logout' %}" class="nav-user__logout" title="Cerrar sesión">
           <i class="bi bi-box-arrow-right"></i>
         </a>
@@ -517,5 +545,23 @@
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
 {% block extra_js %}{% endblock %}
+
+<script>
+(function() {
+  var DAYS   = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+  var MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+  function pad(n) { return String(n).padStart(2,'0'); }
+  function tick() {
+    var d = new Date();
+    var dateEl = document.getElementById('nav-clock__date');
+    var timeEl = document.getElementById('nav-clock__time');
+    if (!dateEl) return;
+    dateEl.textContent = DAYS[d.getDay()] + ' ' + pad(d.getDate()) + ' ' + MONTHS[d.getMonth()];
+    timeEl.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
 </body>
 </html>
