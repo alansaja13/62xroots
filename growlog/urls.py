@@ -18,6 +18,8 @@ urlpatterns = [
     path("cultivo/<int:pk>/", views.cultivo_detail, name="cultivo_detail"),
     path("cultivo/<int:pk>/editar/", views.cultivo_editar, name="cultivo_editar"),
     path("cultivo/<int:pk>/quick/", views.quick_entry, name="quick"),
+    path("cultivo/<int:pk>/quick/evento/", views.quick_evento, name="quick_evento"),
+    path("cultivo/<int:pk>/quick/tarea/", views.quick_tarea, name="quick_tarea"),
     path("cultivo/<int:pk>/timeline/", views.timeline, name="timeline"),
 
     # Planta

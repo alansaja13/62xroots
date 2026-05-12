@@ -1,0 +1,17 @@
+<div class="alert alert-success alert-dismissible fade show" role="alert"
+     style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+  <span style="display: inline-flex; align-items: center; justify-content: center;
+               width: 22px; height: 22px; background: var(--honey); color: var(--bg);
+               font-weight: 800; font-size: 12px;">✓</span>
+  <span class="mono c-honey" style="font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;">
+    evento guardado
+  </span>
+  <span class="c-cream mono" style="font-size: 13px;">
+    {{ evento.get_tipo_display }}
+  </span>
+  <span class="c-fine">·</span>
+  <span class="c-soft" style="font-size: 12px; font-style: italic;">
+    "{{ evento.descripcion|truncatechars:60 }}"
+  </span>
+  <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>

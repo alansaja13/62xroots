@@ -186,6 +186,41 @@ class NutrienteAplicadoForm(forms.ModelForm):
         }
 
 
+class QuickEventoForm(forms.Form):
+    tipo = forms.ChoiceField(
+        choices=Evento.TIPO_CHOICES,
+        widget=forms.Select(attrs={"class": "form-select form-select-lg"}),
+    )
+    descripcion = forms.CharField(
+        widget=forms.Textarea(attrs={
+            "class": "form-control", "rows": 4,
+            "placeholder": "Describí qué pasó, qué observaste...",
+        }),
+    )
+
+
+class QuickTareaForm(forms.Form):
+    titulo = forms.CharField(
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "¿Qué hay que hacer?",
+        }),
+    )
+    categoria = forms.ChoiceField(
+        choices=Tarea.CATEGORIA_CHOICES,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    prioridad = forms.ChoiceField(
+        choices=Tarea.PRIORIDAD_CHOICES,
+        initial="normal",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    fecha_objetivo = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Dashboard & Cultivo
 # ---------------------------------------------------------------------------
@@ -223,6 +258,7 @@ def cultivo_detail(request, pk):
     cultivo = get_object_or_404(Cultivo, pk=pk)
     ultima_medicion = cultivo.mediciones.first()
     tareas_pendientes = cultivo.tareas.filter(completada=False).order_by("fecha_objetivo", "-prioridad")[:5]
+    tareas_completadas = cultivo.tareas.filter(completada=True).order_by("-completada_en")[:10]
     ultimos_registros = _build_timeline(cultivo, limit=8)
     plantas_count = cultivo.plantas.filter(estado="activa").count()
     plantas = cultivo.plantas.all()
@@ -235,7 +271,8 @@ def cultivo_detail(request, pk):
             pass
     return render(request, "growlog/cultivo_detail.html", {
         "cultivo": cultivo, "ultima_medicion": ultima_medicion,
-        "tareas_pendientes": tareas_pendientes, "ultimos_registros": ultimos_registros,
+        "tareas_pendientes": tareas_pendientes, "tareas_completadas": tareas_completadas,
+        "ultimos_registros": ultimos_registros,
         "semaforo": semaforo, "plantas_count": plantas_count, "plantas": plantas,
     })
 
@@ -257,7 +294,45 @@ def quick_entry(request, pk):
             return render(request, "growlog/partials/quick_success.html", {"medicion": medicion, "rego": d["rego"]})
         messages.success(request, f"✓ Guardado — {medicion.temperatura_c}°C / {medicion.humedad_relativa}%HR / VPD {medicion.vpd} kPa")
         return redirect("growlog:quick", pk=cultivo.pk)
-    return render(request, "growlog/quick.html", {"form": form, "cultivo": cultivo})
+    return render(request, "growlog/quick.html", {
+        "form": form,
+        "evento_form": QuickEventoForm(),
+        "tarea_form": QuickTareaForm(),
+        "cultivo": cultivo,
+    })
+
+
+@login_required
+@staff_required
+def quick_evento(request, pk):
+    cultivo = get_object_or_404(Cultivo, pk=pk)
+    form = QuickEventoForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        d = form.cleaned_data
+        evento = Evento.objects.create(
+            cultivo=cultivo, tipo=d["tipo"], descripcion=d["descripcion"],
+        )
+        if request.htmx:
+            return render(request, "growlog/partials/quick_evento_success.html", {"evento": evento})
+        messages.success(request, f"Evento «{evento.get_tipo_display()}» registrado.")
+    return redirect("growlog:quick", pk=pk)
+
+
+@login_required
+@staff_required
+def quick_tarea(request, pk):
+    cultivo = get_object_or_404(Cultivo, pk=pk)
+    form = QuickTareaForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        d = form.cleaned_data
+        tarea = Tarea.objects.create(
+            cultivo=cultivo, titulo=d["titulo"], categoria=d["categoria"],
+            prioridad=d["prioridad"], fecha_objetivo=d.get("fecha_objetivo"),
+        )
+        if request.htmx:
+            return render(request, "growlog/partials/quick_tarea_success.html", {"tarea": tarea})
+        messages.success(request, f"Tarea «{tarea.titulo}» creada.")
+    return redirect("growlog:quick", pk=pk)
 
 
 @login_required

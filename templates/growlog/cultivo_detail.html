@@ -388,6 +388,38 @@
       </div>
     </div>
 
+    <!-- Tareas completadas -->
+    {% if tareas_completadas %}
+    <div class="panel">
+      <div class="panel__head" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#tareas-done">
+        <div class="panel__head-left">
+          <span class="panel__sigil c-fine">§</span>
+          <span class="label-eyebrow panel__title c-fine">completadas · {{ tareas_completadas|length }}</span>
+        </div>
+        <span class="mono c-fine" style="font-size:10px;">▾</span>
+      </div>
+      <div id="tareas-done" class="collapse">
+        {% for tarea in tareas_completadas %}
+        <div class="cd-tarea opacity-50" style="border-left-color: var(--fine);">
+          <span style="display:inline-flex; align-items:center; justify-content:center;
+                       width:16px; height:16px; background:var(--green); color:var(--bg);
+                       margin-top:2px; flex-shrink:0; font-size:10px; font-weight:800;">✓</span>
+          <div style="flex:1; min-width:0;">
+            <div class="cd-tarea__title text-decoration-line-through c-fine">{{ tarea.titulo }}</div>
+            <div class="cd-tarea__meta">
+              {% if tarea.completada_en %}
+                <span>{{ tarea.completada_en|date:"d/m" }}</span>
+                <span class="c-fine">·</span>
+              {% endif %}
+              <span class="c-fine">{{ tarea.get_categoria_display }}</span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Setup -->
     <div class="panel">
       <div class="panel__head">

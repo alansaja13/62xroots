@@ -37,15 +37,36 @@
     font-family: "Geist Mono", monospace; font-size: 12px; color: var(--cream-soft);
   }
 
-  .qe-vital-input {
-    display: block; position: relative;
+  /* ── TABS ── */
+  .qe-tabs {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 0;
   }
+  .qe-tab {
+    background: transparent;
+    border: none; border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    padding: 11px 22px;
+    font-family: "Geist Mono", monospace;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: var(--fine); cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: color .12s, border-color .12s;
+  }
+  .qe-tab:hover { color: var(--cream-soft); }
+  .qe-tab--med.active  { color: var(--slate);  border-bottom-color: var(--slate); }
+  .qe-tab--evt.active  { color: var(--honey);  border-bottom-color: var(--honey); }
+  .qe-tab--tar.active  { color: var(--plum);   border-bottom-color: var(--plum); }
+
+  /* ── FORM INPUTS ── */
+  .qe-vital-input { display: block; position: relative; }
   .qe-vital-input input {
     font-family: "Bricolage Grotesque", sans-serif !important;
     font-variation-settings: "wdth" 90, "opsz" 96 !important;
     font-size: 44px !important; font-weight: 800 !important;
-    letter-spacing: -.02em !important;
-    line-height: 1.05 !important;
+    letter-spacing: -.02em !important; line-height: 1.05 !important;
     color: var(--green) !important;
     padding: 10px 60px 10px 16px !important;
     width: 100% !important;
@@ -56,39 +77,28 @@
     color: var(--cream-soft); letter-spacing: .1em; pointer-events: none;
   }
 
-  .qe-rego-toggle {
-    background: var(--bg-alt); border: 1px solid var(--rule);
-    padding: 12px 16px;
-  }
+  .qe-rego-toggle { background: var(--bg-alt); border: 1px solid var(--rule); padding: 12px 16px; }
   .qe-rego-toggle--on { background: var(--green-wash); border-color: var(--green); }
 
-  /* Override form fields rendered by Django widgets */
-  #quick-form input[type=number],
-  #quick-form input[type=text] {
+  #quick-form input[type=number], #quick-form input[type=text] {
     font-family: "Bricolage Grotesque", sans-serif;
     font-variation-settings: "wdth" 90, "opsz" 96;
     font-size: 32px; font-weight: 800; color: var(--green);
-    letter-spacing: -.02em; line-height: 1.05;
-    padding: 10px 14px;
+    letter-spacing: -.02em; line-height: 1.05; padding: 10px 14px;
   }
   #quick-form textarea {
     font-family: "Geist", sans-serif; font-size: 13.5px; font-weight: 500;
     color: var(--cream); line-height: 1.5;
   }
 
-  .qe-shortcut {
-    font-family: "Geist Mono", monospace; font-size: 11px; color: var(--cream-soft);
-  }
+  .qe-shortcut { font-family: "Geist Mono", monospace; font-size: 11px; color: var(--cream-soft); }
   .qe-shortcut kbd {
     background: var(--bg-alt); border: 1px solid var(--rule);
     padding: 1px 6px; font-size: 10px; color: var(--fine);
     font-family: "Geist Mono", monospace; border-radius: 0;
   }
 
-  @media (max-width: 900px) {
-    .qe-header { grid-template-columns: 1fr; }
-    .qe-title { font-size: 48px; }
-  }
+  @media (max-width: 900px) { .qe-header { grid-template-columns: 1fr; } .qe-title { font-size: 48px; } }
 </style>
 {% endblock %}
 
@@ -115,120 +125,241 @@
   </div>
 </div>
 
-<!-- HTMX RESULT TARGET -->
-<div id="quick-result" class="mb-3"></div>
+<!-- TABS -->
+<div x-data="{ tab: 'medicion' }">
 
-<div class="row g-3">
-  <div class="col-12 col-lg-8">
-    <div class="panel">
-      <div class="panel__head">
-        <div class="panel__head-left">
-          <span class="panel__sigil panel__sigil--slate">§</span>
-          <span class="label-eyebrow panel__title">medición · ambiente carpa</span>
-        </div>
-        <span class="mono c-fine" style="font-size:10px;">* requeridos</span>
-      </div>
-      <div class="panel__body">
-        <form id="quick-form" method="post"
-              hx-post="{% url 'growlog:quick' cultivo.pk %}"
-              hx-target="#quick-result"
-              hx-swap="innerHTML"
-              x-data="{ rego: false }"
-              hx-on::after-request="if(event.detail.successful){ this.reset(); document.querySelector('[x-data]').__x.$data.rego = false; document.getElementById('id_temperatura_c').focus(); }">
-          {% csrf_token %}
-
-          <!-- Temp + HR (big numbers) -->
-          <div class="row g-3">
-            <div class="col-6">
-              <label for="id_temperatura_c">* temperatura</label>
-              <div class="qe-vital-input">
-                {{ form.temperatura_c }}
-                <span class="qe-vital-input__suffix">°C</span>
-              </div>
-              {% if form.temperatura_c.errors %}
-              <div class="field-error">{{ form.temperatura_c.errors.0 }}</div>
-              {% endif %}
-            </div>
-            <div class="col-6">
-              <label for="id_humedad_relativa">* humedad relativa</label>
-              <div class="qe-vital-input">
-                {{ form.humedad_relativa }}
-                <span class="qe-vital-input__suffix">%</span>
-              </div>
-              {% if form.humedad_relativa.errors %}
-              <div class="field-error">{{ form.humedad_relativa.errors.0 }}</div>
-              {% endif %}
-            </div>
-          </div>
-
-          <!-- Riego toggle -->
-          <div class="qe-rego-toggle mt-3" :class="{ 'qe-rego-toggle--on': rego }">
-            <label class="form-check-label d-flex align-items-center gap-3" style="cursor:pointer; margin: 0;">
-              <input class="form-check-input" type="checkbox" name="rego" id="id_rego" x-model="rego">
-              <span class="mono" style="font-size:11px; letter-spacing:.15em; text-transform:uppercase; color: var(--cream); font-weight: 700;"
-                    :style="rego ? 'color: var(--green);' : ''">
-                <i class="bi bi-droplet-fill"></i> Regué hoy
-              </span>
-            </label>
-
-            <div x-show="rego" x-transition class="row g-3 mt-2">
-              <div class="col-6">
-                <label>volumen (ml)</label>
-                {{ form.volumen_total_ml }}
-              </div>
-              <div class="col-6">
-                <label>pH agua</label>
-                {{ form.ph_agua }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Notas -->
-          <div class="mt-3">
-            <label for="id_notas">notas (opcional)</label>
-            {{ form.notas }}
-          </div>
-
-          <!-- Actions -->
-          <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap" style="gap: 10px;">
-            <span class="qe-shortcut">
-              <kbd>esc</kbd> cancelar · <kbd>⌘+enter</kbd> guardar
-            </span>
-            <div style="display: flex; gap: 10px;">
-              <a href="{% url 'growlog:cultivo_detail' cultivo.pk %}" class="btn-ghost">cancelar</a>
-              <button type="submit" class="btn-brand">+ anotar medición</button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+  <!-- Tab bar -->
+  <div class="qe-tabs mb-0">
+    <button type="button" class="qe-tab qe-tab--med" :class="{ active: tab === 'medicion' }" @click="tab = 'medicion'">
+      <i class="bi bi-thermometer-half"></i> Medición
+    </button>
+    <button type="button" class="qe-tab qe-tab--evt" :class="{ active: tab === 'evento' }" @click="tab = 'evento'">
+      <i class="bi bi-calendar-event"></i> Evento
+    </button>
+    <button type="button" class="qe-tab qe-tab--tar" :class="{ active: tab === 'tarea' }" @click="tab = 'tarea'">
+      <i class="bi bi-check2-square"></i> Tarea
+    </button>
   </div>
 
-  <!-- SIDEBAR -->
-  <div class="col-12 col-lg-4">
-    <div class="panel">
-      <div class="panel__head">
-        <div class="panel__head-left">
-          <span class="panel__sigil">§</span>
-          <span class="label-eyebrow panel__title">tips · ambiente veg</span>
+  <div class="row g-3 mt-0" style="padding-top: 14px;">
+    <div class="col-12 col-lg-8">
+
+      <!-- ══ TAB: MEDICIÓN ══ -->
+      <div x-show="tab === 'medicion'" x-transition.opacity.duration.150ms>
+        <div id="result-medicion" class="mb-3"></div>
+        <div class="panel">
+          <div class="panel__head">
+            <div class="panel__head-left">
+              <span class="panel__sigil panel__sigil--slate">§</span>
+              <span class="label-eyebrow panel__title">medición · ambiente carpa</span>
+            </div>
+            <span class="mono c-fine" style="font-size:10px;">* requeridos</span>
+          </div>
+          <div class="panel__body">
+            <form id="quick-form" method="post"
+                  hx-post="{% url 'growlog:quick' cultivo.pk %}"
+                  hx-target="#result-medicion"
+                  hx-swap="innerHTML"
+                  x-data="{ rego: false }"
+                  hx-on::after-request="if(event.detail.successful){ this.reset(); this.__x.$data.rego = false; document.getElementById('id_temperatura_c').focus(); }">
+              {% csrf_token %}
+              <div class="row g-3">
+                <div class="col-6">
+                  <label for="id_temperatura_c">* temperatura</label>
+                  <div class="qe-vital-input">
+                    {{ form.temperatura_c }}
+                    <span class="qe-vital-input__suffix">°C</span>
+                  </div>
+                  {% if form.temperatura_c.errors %}<div class="field-error">{{ form.temperatura_c.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-6">
+                  <label for="id_humedad_relativa">* humedad relativa</label>
+                  <div class="qe-vital-input">
+                    {{ form.humedad_relativa }}
+                    <span class="qe-vital-input__suffix">%</span>
+                  </div>
+                  {% if form.humedad_relativa.errors %}<div class="field-error">{{ form.humedad_relativa.errors.0 }}</div>{% endif %}
+                </div>
+              </div>
+
+              <div class="qe-rego-toggle mt-3" :class="{ 'qe-rego-toggle--on': rego }">
+                <label class="form-check-label d-flex align-items-center gap-3" style="cursor:pointer; margin:0;">
+                  <input class="form-check-input" type="checkbox" name="rego" id="id_rego" x-model="rego">
+                  <span class="mono" style="font-size:11px; letter-spacing:.15em; text-transform:uppercase; color:var(--cream); font-weight:700;"
+                        :style="rego ? 'color:var(--green);' : ''">
+                    <i class="bi bi-droplet-fill"></i> Regué hoy
+                  </span>
+                </label>
+                <div x-show="rego" x-transition class="row g-3 mt-2">
+                  <div class="col-6">
+                    <label>volumen (ml)</label>{{ form.volumen_total_ml }}
+                  </div>
+                  <div class="col-6">
+                    <label>pH agua</label>{{ form.ph_agua }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-3">
+                <label for="id_notas">notas (opcional)</label>
+                {{ form.notas }}
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap" style="gap:10px;">
+                <span class="qe-shortcut"><kbd>esc</kbd> cancelar · <kbd>⌘+enter</kbd> guardar</span>
+                <div style="display:flex; gap:10px;">
+                  <a href="{% url 'growlog:cultivo_detail' cultivo.pk %}" class="btn-ghost">cancelar</a>
+                  <button type="submit" class="btn-brand">+ anotar medición</button>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
-      <div class="panel__body" style="font-size: 12.5px; color: var(--cream-soft); line-height: 1.6;">
-        <div style="margin-bottom: 10px;">
-          <span class="mono c-green" style="font-size:10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;">● IDEAL</span>
-          &nbsp;Temp 22–27°C, HR 55–70%, VPD 0.8–1.2 kPa
+
+      <!-- ══ TAB: EVENTO ══ -->
+      <div x-show="tab === 'evento'" x-transition.opacity.duration.150ms>
+        <div id="result-evento" class="mb-3"></div>
+        <div class="panel">
+          <div class="panel__head">
+            <div class="panel__head-left">
+              <span class="panel__sigil panel__sigil--honey">§</span>
+              <span class="label-eyebrow panel__title">evento · registro de acción</span>
+            </div>
+          </div>
+          <div class="panel__body">
+            <form method="post"
+                  hx-post="{% url 'growlog:quick_evento' cultivo.pk %}"
+                  hx-target="#result-evento"
+                  hx-swap="innerHTML"
+                  hx-on::after-request="if(event.detail.successful){ this.reset(); }">
+              {% csrf_token %}
+
+              <div class="mb-3">
+                <label>tipo de evento</label>
+                {{ evento_form.tipo }}
+              </div>
+              <div class="mb-3">
+                <label>descripción</label>
+                {{ evento_form.descripcion }}
+              </div>
+
+              <div class="d-flex justify-content-end mt-4" style="gap:10px;">
+                <a href="{% url 'growlog:cultivo_detail' cultivo.pk %}" class="btn-ghost">cancelar</a>
+                <button type="submit" class="btn-brand" style="background: var(--honey);">
+                  <i class="bi bi-calendar-event"></i> registrar evento
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-        <div style="margin-bottom: 10px;">
-          <span class="mono c-honey" style="font-size:10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;">○ TIP</span>
-          &nbsp;Medí a la misma hora cada día para tendencias comparables.
+      </div>
+
+      <!-- ══ TAB: TAREA ══ -->
+      <div x-show="tab === 'tarea'" x-transition.opacity.duration.150ms>
+        <div id="result-tarea" class="mb-3"></div>
+        <div class="panel">
+          <div class="panel__head">
+            <div class="panel__head-left">
+              <span class="panel__sigil panel__sigil--rust" style="color: var(--plum);">§</span>
+              <span class="label-eyebrow panel__title">tarea · pendiente</span>
+            </div>
+          </div>
+          <div class="panel__body">
+            <form method="post"
+                  hx-post="{% url 'growlog:quick_tarea' cultivo.pk %}"
+                  hx-target="#result-tarea"
+                  hx-swap="innerHTML"
+                  hx-on::after-request="if(event.detail.successful){ this.reset(); }">
+              {% csrf_token %}
+
+              <div class="mb-3">
+                <label>título de la tarea</label>
+                {{ tarea_form.titulo }}
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label>categoría</label>
+                  {{ tarea_form.categoria }}
+                </div>
+                <div class="col-6">
+                  <label>prioridad</label>
+                  {{ tarea_form.prioridad }}
+                </div>
+              </div>
+              <div class="mb-3">
+                <label>fecha objetivo (opcional)</label>
+                {{ tarea_form.fecha_objetivo }}
+              </div>
+
+              <div class="d-flex justify-content-end mt-4" style="gap:10px;">
+                <a href="{% url 'growlog:cultivo_detail' cultivo.pk %}" class="btn-ghost">cancelar</a>
+                <button type="submit" class="btn-brand" style="background: var(--plum);">
+                  <i class="bi bi-check2-square"></i> agregar tarea
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-        <div>
-          <span class="mono c-slate" style="font-size:10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;">◆ VPD</span>
-          &nbsp;Se calcula automáticamente con la fórmula Magnus después de guardar.
+      </div>
+
+    </div><!-- /col -->
+
+    <!-- SIDEBAR -->
+    <div class="col-12 col-lg-4">
+      <div class="panel">
+        <div class="panel__head">
+          <div class="panel__head-left">
+            <span class="panel__sigil">§</span>
+            <span class="label-eyebrow panel__title" x-text="tab === 'medicion' ? 'tips · ambiente' : tab === 'evento' ? 'tipos de evento' : 'prioridades'"></span>
+          </div>
+        </div>
+        <div class="panel__body" style="font-size: 12.5px; color: var(--cream-soft); line-height: 1.6;">
+
+          <div x-show="tab === 'medicion'">
+            <div style="margin-bottom:10px;">
+              <span class="mono c-green" style="font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;">● VEG</span>
+              &nbsp;Temp 22–27°C · HR 55–70% · VPD 0.8–1.2 kPa
+            </div>
+            <div style="margin-bottom:10px;">
+              <span class="mono" style="font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color: var(--plum);">● FLORA</span>
+              &nbsp;Temp 20–26°C · HR 40–55% · VPD 1.0–1.5 kPa
+            </div>
+            <div>
+              <span class="mono c-slate" style="font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;">◆ VPD</span>
+              &nbsp;Se calcula automáticamente con la fórmula Magnus.
+            </div>
+          </div>
+
+          <div x-show="tab === 'evento'">
+            <div style="margin-bottom:8px;"><span class="tc tc--evento">topping</span> — corte del meristema apical</div>
+            <div style="margin-bottom:8px;"><span class="tc tc--evento">lst</span> — training sin corte</div>
+            <div style="margin-bottom:8px;"><span class="tc tc--evento">defoliación</span> — remoción de hojas</div>
+            <div style="margin-bottom:8px;"><span class="tc tc--evento">problema</span> — deficiencia, plaga, etc.</div>
+            <div style="margin-bottom:8px;"><span class="tc tc--evento">cambio ciclo</span> — paso veg → flora</div>
+            <div><span class="tc tc--evento">otro</span> — cualquier observación</div>
+          </div>
+
+          <div x-show="tab === 'tarea'">
+            <div style="margin-bottom:10px;">
+              <span class="mono c-rust" style="font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;">● urgente</span>
+              &nbsp;Hacerlo hoy o mañana.
+            </div>
+            <div style="margin-bottom:10px;">
+              <span class="mono c-cream" style="font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;">○ normal</span>
+              &nbsp;Esta semana.
+            </div>
+            <div>
+              <span class="mono c-fine" style="font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;">· baja</span>
+              &nbsp;Cuando haya tiempo.
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
-  </div>
-</div>
+
+  </div><!-- /row -->
+</div><!-- /x-data tabs -->
 
 {% endblock %}
