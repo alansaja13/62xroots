@@ -753,7 +753,9 @@ def invitado_eliminar(request, pk):
 # ---------------------------------------------------------------------------
 
 def pwa_manifest(request):
-    icon = request.build_absolute_uri(static_url("growlog/logo.png"))
+    def icon_url(name):
+        return request.build_absolute_uri(static_url(f"growlog/icons/{name}"))
+
     data = {
         "name": "62×ROOTS GrowLog",
         "short_name": "62xROOTS",
@@ -765,8 +767,14 @@ def pwa_manifest(request):
         "background_color": "#16110b",
         "theme_color": "#16110b",
         "icons": [
-            {"src": icon, "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-            {"src": icon, "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+            {"src": icon_url("icon-72x72.png"),   "sizes": "72x72",   "type": "image/png"},
+            {"src": icon_url("icon-96x96.png"),   "sizes": "96x96",   "type": "image/png"},
+            {"src": icon_url("icon-128x128.png"), "sizes": "128x128", "type": "image/png"},
+            {"src": icon_url("icon-144x144.png"), "sizes": "144x144", "type": "image/png"},
+            {"src": icon_url("icon-152x152.png"), "sizes": "152x152", "type": "image/png"},
+            {"src": icon_url("icon-192x192.png"), "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+            {"src": icon_url("icon-384x384.png"), "sizes": "384x384", "type": "image/png"},
+            {"src": icon_url("icon-512x512.png"), "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
         ],
     }
     return JsonResponse(data)
