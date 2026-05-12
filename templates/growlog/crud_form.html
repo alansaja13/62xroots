@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.cf-back {
+  font-size:.65rem;color:var(--c-muted);text-decoration:none;
+  letter-spacing:.04em;display:inline-flex;align-items:center;gap:.3rem;
+  transition:color .12s;margin-bottom:.6rem;
+}
+.cf-back:hover { color:var(--c-green); }
+.cf-eyebrow {
+  font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--c-muted);font-family:ui-monospace,monospace;margin-bottom:.35rem;
+}
+.cf-title {
+  font-size:1.6rem;font-weight:900;margin:0 0 .2rem;letter-spacing:-.025em;
+}
+.cf-subtitle {
+  font-size:.75rem;color:var(--c-muted);margin-bottom:1.5rem;
+}
+.cf-card {
+  background:var(--c-s1);border:1px solid var(--c-border);
+  border-top:3px solid var(--c-green);border-radius:6px;padding:1.5rem;
+}
+.cf-label {
+  display:block;font-size:.72rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--c-muted);margin-bottom:.45rem;
+  font-family:ui-monospace,monospace;
+}
+.cf-field-error {
+  font-size:.72rem;color:var(--c-danger);margin-top:.35rem;
+}
+.cf-delete-link {
+  font-size:.72rem;color:var(--c-muted);text-decoration:none;
+  display:inline-flex;align-items:center;gap:.35rem;transition:color .12s;
+}
+.cf-delete-link:hover { color:var(--c-danger); }
+
+/* M2M checkboxes */
+.m2m-group ul {
+  list-style:none;padding:0;margin:0;
+  display:flex;flex-wrap:wrap;gap:.4rem;
+}
+.m2m-group li label {
+  display:inline-flex;align-items:center;gap:.4rem;
+  padding:.3rem .7rem;border-radius:4px;cursor:pointer;font-size:.8rem;
+  border:1px solid var(--c-border);background:var(--c-s2);color:var(--c-muted);
+  transition:border-color .12s,color .12s;
+}
+.m2m-group li input[type="checkbox"] { display:none; }
+.m2m-group li input[type="checkbox"]:checked + label,
+.m2m-group li label:has(input[type="checkbox"]:checked) {
+  border-color:var(--c-green);color:var(--c-green);background:rgba(172,222,29,.06);
+}
+/* fallback for older browsers without :has() */
+.m2m-group li label:hover { border-color:var(--c-green);color:var(--c-green); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-7 col-lg-5">
+
+    <div class="mb-1">
+      <a href="{{ back_url }}" class="cf-back">
+        <i class="bi bi-chevron-left"></i> volver
+      </a>
+    </div>
+    <div class="cf-eyebrow">◈ formulario</div>
+    <h1 class="cf-title">{{ title }}</h1>
+    {% if subtitle %}<p class="cf-subtitle">{{ subtitle }}</p>{% endif %}
+
+    <div class="cf-card">
+      <form method="post"{% if multipart %} enctype="multipart/form-data"{% endif %}>
+        {% csrf_token %}
+
+        {% for field in form %}
+        {% with wclass=field.field.widget.attrs.class %}
+
+        {% if wclass == 'form-check-input' %}
+        <div class="mb-3 d-flex align-items-center gap-2" style="padding:.25rem 0">
+          {{ field }}
+          <label class="form-check-label" for="{{ field.id_for_label }}" style="font-size:.85rem">
+            {{ field.label }}
+          </label>
+        </div>
+
+        {% elif not wclass %}
+        <div class="mb-3">
+          <label class="cf-label">{{ field.label }}</label>
+          <div class="m2m-group">{{ field }}</div>
+        </div>
+
+        {% else %}
+        <div class="mb-3">
+          <label class="cf-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+        </div>
+        {% endif %}
+
+        {% if field.errors %}
+        <div class="cf-field-error">{{ field.errors.0 }}</div>
+        {% endif %}
+
+        {% endwith %}
+        {% endfor %}
+
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-brand flex-fill" style="padding:.65rem">
+            <i class="bi bi-check-lg me-1"></i>{{ submit_label|default:"Guardar" }}
+          </button>
+          <a href="{{ back_url }}" class="btn btn-outline-secondary" style="padding:.65rem .85rem;font-size:.85rem">
+            Cancelar
+          </a>
+        </div>
+
+        {% if delete_url %}
+        <div class="text-center mt-3">
+          <a href="{{ delete_url }}" class="cf-delete-link">
+            <i class="bi bi-trash3"></i> Eliminar
+          </a>
+        </div>
+        {% endif %}
+
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

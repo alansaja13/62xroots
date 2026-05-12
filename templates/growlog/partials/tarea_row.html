@@ -30,4 +30,10 @@
     <i class="bi bi-check-circle-fill c-green" style="font-size:.85rem"></i>
     {% endif %}
   </td>
+  <td>
+    <a href="{% url 'growlog:tarea_editar' tarea.pk %}"
+       style="font-size:.7rem;color:var(--c-muted)" title="Editar">
+      <i class="bi bi-pencil"></i>
+    </a>
+  </td>
 </tr>

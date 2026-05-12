@@ -1,279 +1,277 @@
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Mis Cultivos{% endblock %}
+
+{% block extra_head %}
+<style>
+.dash-eyebrow {
+  font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--c-muted);font-family:ui-monospace,monospace;margin-bottom:.35rem;
+}
+.dash-title {
+  font-size:1.5rem;font-weight:900;margin:0 0 1.25rem;letter-spacing:-.02em;
+}
+
+/* ── Grid de cultivoss ── */
+.cultivos-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:.85rem;
+  margin-bottom:1.5rem;
+}
+
+/* ── Tarjeta de cultivo ── */
+.cultivo-card {
+  background:var(--c-s1);
+  border:1px solid var(--c-border);
+  border-top:3px solid var(--c-border2);
+  border-radius:6px;
+  text-decoration:none;
+  color:var(--c-text);
+  display:block;
+  transition:border-color .15s, background .15s;
+  position:relative;
+  overflow:hidden;
+}
+.cultivo-card:hover {
+  border-color:var(--c-border2);
+  background:var(--c-s2);
+  color:var(--c-text);
+}
+.cultivo-card--activo { border-top-color:var(--c-green); }
+.cultivo-card--floracion { border-top-color:var(--c-purple); }
+.cultivo-card--secado,
+.cultivo-card--curado   { border-top-color:var(--c-warn); }
+.cultivo-card--finalizado,
+.cultivo-card--archivado { border-top-color:var(--c-border2); opacity:.65; }
+
+.cc-head {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  padding:.9rem 1rem .6rem;
+  gap:.5rem;
+}
+.cc-nombre {
+  font-size:1rem;font-weight:800;line-height:1.2;
+}
+.cc-dia {
+  font-size:1.6rem;font-weight:900;font-family:ui-monospace,monospace;
+  color:var(--c-green);line-height:1;text-align:right;flex-shrink:0;
+}
+.cc-dia small {
+  display:block;font-size:.52rem;font-weight:700;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--c-muted);margin-bottom:.1rem;
+}
+.cc-estado {
+  font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  margin-top:.3rem;
+}
+.cc-estado--vegetativo { color:var(--c-green); }
+.cc-estado--floracion  { color:var(--c-purple); }
+.cc-estado--secado,
+.cc-estado--curado     { color:var(--c-warn); }
+.cc-estado--finalizado { color:var(--c-muted); }
+
+.cc-vitals {
+  display:flex;
+  gap:0;
+  padding:0 1rem .85rem;
+}
+.cc-vital {
+  flex:1;
+  font-size:.78rem;
+}
+.cc-vital__label {
+  font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--c-muted);margin-bottom:.15rem;
+}
+.cc-vital__val {
+  font-family:ui-monospace,monospace;font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+.cc-vital__val--ideal  { color:var(--c-green); }
+.cc-vital__val--alto   { color:var(--c-danger); }
+.cc-vital__val--bajo   { color:var(--c-warn); }
+.cc-vital__val--none   { color:var(--c-muted); }
+
+.cc-footer {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:.5rem 1rem;
+  border-top:1px solid var(--c-border);
+  font-size:.7rem;
+  color:var(--c-muted);
+}
+.cc-footer__arrow {
+  color:var(--c-green);font-size:.8rem;
+  transition:transform .15s;
+}
+.cultivo-card:hover .cc-footer__arrow { transform:translateX(3px); }
+
+/* ── Card "nuevo" ── */
+.cultivo-card--new {
+  border-style:dashed;
+  border-top-style:dashed;
+  border-top-color:var(--c-border);
+  display:flex;align-items:center;justify-content:center;
+  min-height:140px;gap:.6rem;
+  font-size:.82rem;font-weight:700;color:var(--c-muted);
+  transition:border-color .15s,color .15s;
+}
+.cultivo-card--new:hover {
+  border-color:var(--c-green);color:var(--c-green);background:var(--c-s1);
+}
+
+/* ── Sección header ── */
+.section-label {
+  font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--c-muted);font-family:ui-monospace,monospace;
+  display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;
+}
+.section-label::after {
+  content:'';flex:1;height:1px;background:var(--c-border);
+}
+
+/* ── Empty state ── */
+.dash-empty {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:55vh;gap:1rem;text-align:center;
+}
+.dash-empty__glyph {
+  font-family:ui-monospace,monospace;font-size:6rem;font-weight:900;line-height:1;
+  color:var(--c-green);opacity:.12;letter-spacing:-.05em;
+}
+</style>
+{% endblock %}
 
 {% block content %}
-{% if not cultivo %}
-<div class="text-center py-5">
-  <div class="num fw-black c-green" style="font-size:5rem;line-height:1">62</div>
-  <h2 class="mt-2 fw-bold">No hay cultivo activo</h2>
-  <p class="text-muted">Creá tu primer cultivo desde el admin.</p>
-  <a href="/admin/growlog/cultivo/add/" class="btn btn-brand mt-2">
-    <i class="bi bi-plus-circle me-1"></i>Nuevo cultivo
+
+<div class="dash-eyebrow">◈ tus cultivos</div>
+<h1 class="dash-title">Mis Cultivos</h1>
+
+{% if not activos and not finalizados and not archivados %}
+<!-- Empty state -->
+<div class="dash-empty">
+  <div class="dash-empty__glyph">62</div>
+  <h2 style="font-size:1.3rem;font-weight:700;margin:0">Sin cultivos todavía</h2>
+  <p class="text-muted mb-0" style="font-size:.85rem">Empezá tu primer registro.</p>
+  <a href="{% url 'growlog:nuevo_cultivo' %}" class="btn-brand mt-2">
+    <i class="bi bi-plus-lg me-1"></i> Nuevo cultivo
   </a>
 </div>
 
 {% else %}
 
-<!-- ── Encabezado ── -->
-<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-  <div>
-    <h1 class="h4 mb-0 fw-bold">{{ cultivo.nombre }}</h1>
-    <div class="mt-1" style="font-size:.78rem">
-      {% if cultivo.estado == 'vegetativo' %}
-        <span class="c-green fw-semibold">● Vegetativo</span>
-      {% elif cultivo.estado == 'floracion' %}
-        <span class="c-purple fw-semibold">● Floración</span>
-      {% else %}
-        <span class="text-muted fw-semibold">● {{ cultivo.get_estado_display }}</span>
-      {% endif %}
-      <span class="text-muted ms-2">desde {{ cultivo.fecha_inicio }}</span>
+<!-- Activos -->
+{% if activos %}
+<div class="section-label">activos</div>
+<div class="cultivos-grid">
+  {% for item in activos %}
+  {% with c=item.cultivo m=item.ultima_medicion s=item.semaforo %}
+  <a href="{% url 'growlog:cultivo_detail' c.pk %}" class="cultivo-card cultivo-card--{{ c.estado }}">
+    <div class="cc-head">
+      <div>
+        <div class="cc-nombre">{{ c.nombre }}</div>
+        <div class="cc-estado cc-estado--{{ c.estado }}">◉ {{ c.get_estado_display }}</div>
+      </div>
+      <div class="cc-dia">
+        <small>día</small>
+        {{ c.dias_desde_inicio }}
+      </div>
     </div>
-  </div>
-  <a href="{% url 'growlog:quick' %}" class="btn btn-brand">
-    <i class="bi bi-lightning-charge-fill me-1"></i>Anotar ahora
+    <div class="cc-vitals">
+      <div class="cc-vital">
+        <div class="cc-vital__label">Temp</div>
+        <div class="cc-vital__val cc-vital__val--{% if m %}{% if s %}{{ s.temp }}{% else %}none{% endif %}{% else %}none{% endif %}">
+          {% if m %}{{ m.temperatura_c }}°{% else %}—{% endif %}
+        </div>
+      </div>
+      <div class="cc-vital">
+        <div class="cc-vital__label">HR</div>
+        <div class="cc-vital__val cc-vital__val--{% if m %}{% if s %}{{ s.hr }}{% else %}none{% endif %}{% else %}none{% endif %}">
+          {% if m %}{{ m.humedad_relativa }}%{% else %}—{% endif %}
+        </div>
+      </div>
+      <div class="cc-vital">
+        <div class="cc-vital__label">VPD</div>
+        <div class="cc-vital__val cc-vital__val--{% if m %}{% if s %}{{ s.vpd }}{% else %}none{% endif %}{% else %}none{% endif %}">
+          {% if m %}{{ m.vpd }}{% else %}—{% endif %}
+        </div>
+      </div>
+      <div class="cc-vital">
+        <div class="cc-vital__label">Plantas</div>
+        <div class="cc-vital__val" style="color:var(--c-text)">{{ item.plantas_count }}</div>
+      </div>
+    </div>
+    <div class="cc-footer">
+      <span>
+        {% if m %}Última med. {{ m.timestamp|date:"d/m H:i" }}{% else %}Sin mediciones aún{% endif %}
+      </span>
+      <i class="bi bi-arrow-right cc-footer__arrow"></i>
+    </div>
+  </a>
+  {% endwith %}
+  {% endfor %}
+
+  <!-- Tarjeta nueva -->
+  <a href="{% url 'growlog:nuevo_cultivo' %}" class="cultivo-card cultivo-card--new">
+    <i class="bi bi-plus-lg" style="font-size:1.1rem"></i> Nuevo cultivo
   </a>
 </div>
+{% endif %}
 
-<!-- ── KPI Row ── -->
-<div class="row g-2 mb-3">
-
-  <!-- Día -->
-  <div class="col-6 col-sm-4 col-lg">
-    <div class="kpi kpi-green">
-      <div class="kpi-label"><i class="bi bi-calendar3 me-1"></i>Día</div>
-      <div class="kpi-value c-green num">{{ cultivo.dias_desde_inicio }}</div>
-      <div class="kpi-status text-muted">desde inicio</div>
-    </div>
-  </div>
-
-  <!-- Temperatura -->
-  <div class="col-6 col-sm-4 col-lg">
-    {% if ultima_medicion %}
-    <div class="kpi kpi-{% if semaforo %}{{ semaforo.temp }}{% else %}neutral{% endif %}">
-      <div class="kpi-label"><i class="bi bi-thermometer-half me-1"></i>Temperatura</div>
-      <div class="kpi-value c-{% if semaforo %}{{ semaforo.temp }}{% else %}muted{% endif %} num">
-        {{ ultima_medicion.temperatura_c }}<small>°C</small>
+<!-- Finalizados -->
+{% if finalizados %}
+<div class="section-label" style="margin-top:.75rem">finalizados</div>
+<div class="cultivos-grid">
+  {% for item in finalizados %}
+  {% with c=item.cultivo %}
+  <a href="{% url 'growlog:cultivo_detail' c.pk %}" class="cultivo-card cultivo-card--finalizado">
+    <div class="cc-head">
+      <div>
+        <div class="cc-nombre">{{ c.nombre }}</div>
+        <div class="cc-estado cc-estado--finalizado">◉ Finalizado</div>
       </div>
-      <div class="kpi-status c-{% if semaforo %}{{ semaforo.temp }}{% else %}muted{% endif %}">
-        {% if semaforo %}{{ semaforo.temp|upper }}{% else %}—{% endif %}
+      <div class="cc-dia" style="color:var(--c-muted)">
+        <small>días</small>{{ c.dias_desde_inicio }}
       </div>
     </div>
-    {% else %}
-    <div class="kpi kpi-neutral">
-      <div class="kpi-label"><i class="bi bi-thermometer-half me-1"></i>Temperatura</div>
-      <div class="kpi-value text-muted num">—</div>
-      <div class="kpi-status text-muted">sin datos</div>
+    <div class="cc-footer">
+      <span>{{ c.fecha_inicio }} → {{ c.fecha_fin|default:"en curso" }}</span>
+      <i class="bi bi-arrow-right cc-footer__arrow"></i>
     </div>
-    {% endif %}
-  </div>
-
-  <!-- Humedad -->
-  <div class="col-6 col-sm-4 col-lg">
-    {% if ultima_medicion %}
-    <div class="kpi kpi-{% if semaforo %}{{ semaforo.hr }}{% else %}neutral{% endif %}">
-      <div class="kpi-label"><i class="bi bi-droplet-half me-1"></i>Humedad</div>
-      <div class="kpi-value c-{% if semaforo %}{{ semaforo.hr }}{% else %}muted{% endif %} num">
-        {{ ultima_medicion.humedad_relativa }}<small>%</small>
-      </div>
-      <div class="kpi-status c-{% if semaforo %}{{ semaforo.hr }}{% else %}muted{% endif %}">
-        {% if semaforo %}{{ semaforo.hr|upper }}{% else %}—{% endif %}
-      </div>
-    </div>
-    {% else %}
-    <div class="kpi kpi-neutral">
-      <div class="kpi-label"><i class="bi bi-droplet-half me-1"></i>Humedad</div>
-      <div class="kpi-value text-muted num">—</div>
-      <div class="kpi-status text-muted">sin datos</div>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- VPD -->
-  <div class="col-6 col-sm-4 col-lg">
-    {% if ultima_medicion %}
-    <div class="kpi kpi-{% if semaforo %}{{ semaforo.vpd }}{% else %}neutral{% endif %}">
-      <div class="kpi-label"><i class="bi bi-activity me-1"></i>VPD</div>
-      <div class="kpi-value c-{% if semaforo %}{{ semaforo.vpd }}{% else %}muted{% endif %} num">
-        {{ ultima_medicion.vpd }}<small> kPa</small>
-      </div>
-      <div class="kpi-status c-{% if semaforo %}{{ semaforo.vpd }}{% else %}muted{% endif %}">
-        {% if semaforo %}{{ semaforo.vpd|upper }}{% else %}—{% endif %}
-      </div>
-    </div>
-    {% else %}
-    <div class="kpi kpi-neutral">
-      <div class="kpi-label"><i class="bi bi-activity me-1"></i>VPD</div>
-      <div class="kpi-value text-muted num">—</div>
-      <div class="kpi-status text-muted">sin datos</div>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- Plantas -->
-  <div class="col-6 col-sm-4 col-lg">
-    <div class="kpi kpi-neutral">
-      <div class="kpi-label"><i class="bi bi-flower1 me-1"></i>Plantas</div>
-      <div class="kpi-value num" style="color:var(--c-text)">{{ cultivo.plantas.all|length }}</div>
-      <div class="kpi-status text-muted">activas</div>
-    </div>
-  </div>
-
+  </a>
+  {% endwith %}
+  {% endfor %}
 </div>
+{% endif %}
 
-<!-- ── Cuerpo: 2 columnas ── -->
-<div class="row g-3">
-
-  <!-- LEFT: últimos registros -->
-  <div class="col-12 col-lg-8">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-clock-history me-1"></i>Últimos registros</span>
-        <a href="{% url 'growlog:timeline' cultivo.pk %}"
-           class="btn btn-sm btn-outline-secondary border-0"
-           style="font-size:.72rem;padding:.2rem .55rem;color:var(--c-muted)">
-          Ver todo <i class="bi bi-arrow-right"></i>
-        </a>
+<!-- Archivados -->
+{% if archivados %}
+<div class="section-label" style="margin-top:.75rem">archivados</div>
+<div class="cultivos-grid">
+  {% for item in archivados %}
+  {% with c=item.cultivo %}
+  <a href="{% url 'growlog:cultivo_detail' c.pk %}" class="cultivo-card cultivo-card--archivado">
+    <div class="cc-head">
+      <div>
+        <div class="cc-nombre">{{ c.nombre }}</div>
+        <div class="cc-estado cc-estado--finalizado">◉ {{ c.get_estado_display }}</div>
       </div>
-      <div class="table-responsive">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th style="width:72px">Tipo</th>
-              <th>Dato</th>
-              <th>Detalle</th>
-              <th class="text-end" style="width:85px">Hora</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for reg in ultimos_registros %}
-            <tr class="row-{{ reg.tipo }}">
-              <td>
-                {% if reg.tipo == 'medicion' %}<span class="badge-tipo bt-med">MED</span>
-                {% elif reg.tipo == 'riego' %}<span class="badge-tipo bt-riego">RIEGO</span>
-                {% else %}<span class="badge-tipo bt-evento">EVT</span>
-                {% endif %}
-              </td>
-              <td class="num fw-semibold">
-                {% if reg.tipo == 'medicion' %}
-                  {{ reg.obj.temperatura_c }}°C <span class="text-muted fw-normal">/</span> {{ reg.obj.humedad_relativa }}%
-                {% elif reg.tipo == 'riego' %}
-                  {{ reg.obj.volumen_total_ml }} ml
-                {% else %}
-                  {{ reg.obj.get_tipo_display }}
-                {% endif %}
-              </td>
-              <td class="text-muted small">
-                {% if reg.tipo == 'medicion' %}
-                  VPD&nbsp;
-                  <span class="badge-tipo
-                    {% if reg.obj.vpd_estado == 'ideal' %}bt-vpd-ideal
-                    {% elif reg.obj.vpd_estado == 'alto' %}bt-vpd-alto
-                    {% else %}bt-vpd-bajo{% endif %}
-                    num">{{ reg.obj.vpd }}&nbsp;kPa</span>
-                  {% if reg.obj.notas %}<span class="ms-2">{{ reg.obj.notas|truncatechars:35 }}</span>{% endif %}
-                {% elif reg.tipo == 'riego' %}
-                  {% if reg.obj.ph_agua %}pH&nbsp;<span class="num">{{ reg.obj.ph_agua }}</span>{% endif %}
-                  {% if reg.obj.ec_solucion %}&nbsp;·&nbsp;EC&nbsp;<span class="num">{{ reg.obj.ec_solucion }}</span>{% endif %}
-                  {% if reg.obj.notas %}&nbsp;·&nbsp;{{ reg.obj.notas|truncatechars:30 }}{% endif %}
-                {% else %}
-                  {{ reg.obj.descripcion|truncatechars:55 }}
-                {% endif %}
-              </td>
-              <td class="text-end text-muted num" style="font-size:.78rem">{{ reg.ts|date:"d/m H:i" }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="4" class="text-center text-muted py-4">
-                Sin registros aún. <a href="{% url 'growlog:quick' %}">Anotá el primero →</a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <div class="cc-dia" style="color:var(--c-muted)">
+        <small>días</small>{{ c.dias_desde_inicio }}
       </div>
     </div>
-  </div>
-
-  <!-- RIGHT: tareas + setup -->
-  <div class="col-12 col-lg-4">
-
-    <!-- Tareas pendientes -->
-    <div class="card mb-3">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-check2-square me-1"></i>Tareas pendientes</span>
-        <a href="/admin/growlog/tarea/add/"
-           class="btn btn-sm btn-outline-success border-0"
-           style="font-size:.72rem;padding:.2rem .55rem;">
-          <i class="bi bi-plus"></i> Nueva
-        </a>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>Tarea</th>
-              <th class="text-center" style="width:52px">Vence</th>
-              <th style="width:34px"></th>
-            </tr>
-          </thead>
-          <tbody id="tareas-lista">
-            {% for tarea in tareas_pendientes %}
-              {% include "growlog/partials/tarea_row.html" %}
-            {% empty %}
-            <tr>
-              <td colspan="3" class="text-center text-muted py-3" style="font-size:.82rem">
-                Sin tareas pendientes 🎉
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+    <div class="cc-footer">
+      <span>desde {{ c.fecha_inicio }}</span>
+      <i class="bi bi-arrow-right cc-footer__arrow"></i>
     </div>
-
-    <!-- Setup -->
-    <div class="card">
-      <div class="card-header"><i class="bi bi-hdd-rack me-1"></i>Setup del cultivo</div>
-      <div class="table-responsive">
-        <table class="table">
-          <tbody>
-            {% if cultivo.lampara_modelo %}
-            <tr>
-              <td class="text-muted" style="width:42%;font-size:.8rem">Lámpara</td>
-              <td class="fw-medium num" style="font-size:.85rem">
-                {{ cultivo.lampara_modelo }}{% if cultivo.lampara_watts_reales %}&nbsp;·&nbsp;{{ cultivo.lampara_watts_reales }}W{% endif %}
-              </td>
-            </tr>
-            {% endif %}
-            {% if cultivo.sustrato %}
-            <tr>
-              <td class="text-muted" style="font-size:.8rem">Sustrato</td>
-              <td class="fw-medium" style="font-size:.85rem">{{ cultivo.sustrato }}</td>
-            </tr>
-            {% endif %}
-            {% if cultivo.carpa_dimensiones %}
-            <tr>
-              <td class="text-muted" style="font-size:.8rem">Carpa</td>
-              <td class="fw-medium num" style="font-size:.85rem">{{ cultivo.carpa_dimensiones }}</td>
-            </tr>
-            {% endif %}
-            <tr>
-              <td class="text-muted" style="font-size:.8rem">Plantas activas</td>
-              <td class="fw-medium num" style="font-size:.85rem">{{ cultivo.plantas.all|length }}</td>
-            </tr>
-            {% if ultima_medicion %}
-            <tr>
-              <td class="text-muted" style="font-size:.8rem">Última medición</td>
-              <td class="num" style="font-size:.78rem;color:var(--c-muted)">{{ ultima_medicion.timestamp|date:"d/m/Y H:i" }}</td>
-            </tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div>
+  </a>
+  {% endwith %}
+  {% endfor %}
 </div>
+{% endif %}
 
 {% endif %}
 {% endblock %}

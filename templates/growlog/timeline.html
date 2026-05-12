@@ -17,7 +17,7 @@
       <span class="text-muted ms-2">Día {{ cultivo.dias_desde_inicio }} · desde {{ cultivo.fecha_inicio }}</span>
     </div>
   </div>
-  <a href="{% url 'growlog:quick' %}" class="btn btn-brand">
+  <a href="{% url 'growlog:quick' cultivo.pk %}" class="btn btn-brand">
     <i class="bi bi-lightning-charge-fill me-1"></i>Anotar
   </a>
 </div>

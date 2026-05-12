@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}{{ planta.apodo }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.pd-back {
+  font-size:.65rem;color:var(--c-muted);text-decoration:none;
+  letter-spacing:.04em;display:inline-flex;align-items:center;gap:.3rem;
+  transition:color .12s;margin-bottom:.5rem;
+}
+.pd-back:hover { color:var(--c-green); }
+.pd-eyebrow {
+  font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--c-muted);font-family:ui-monospace,monospace;margin-bottom:.35rem;
+}
+.pd-header {
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:1.25rem;gap:1rem;
+}
+.pd-name {
+  font-size:1.75rem;font-weight:900;margin:0 0 .2rem;letter-spacing:-.025em;
+}
+.pd-strain { font-size:.82rem;color:var(--c-muted); }
+.pd-estado {
+  font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:.3rem;
+}
+.pd-estado--activa   { color:var(--c-green); }
+.pd-estado--descartada { color:var(--c-danger); }
+.pd-estado--cosechada  { color:var(--c-warn); }
+
+.pd-meta-grid {
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.6rem;
+  margin-bottom:1.25rem;
+}
+.pd-meta-card {
+  background:var(--c-s1);border:1px solid var(--c-border);
+  border-radius:5px;padding:.7rem .9rem;
+}
+.pd-meta-card__label {
+  font-size:.55rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--c-muted);margin-bottom:.3rem;font-family:ui-monospace,monospace;
+}
+.pd-meta-card__val {
+  font-size:1.1rem;font-weight:700;font-family:ui-monospace,monospace;color:var(--c-text);
+}
+.pd-meta-card__val--none { color:var(--c-muted);font-size:.85rem; }
+
+.pd-panel {
+  background:var(--c-s1);border:1px solid var(--c-border);border-radius:5px;overflow:hidden;
+}
+.pd-panel__head {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.6rem 1rem;border-bottom:1px solid var(--c-border);background:var(--c-s2);
+}
+.pd-panel__title {
+  font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--c-muted);font-family:ui-monospace,monospace;
+}
+.pd-panel__link {
+  font-size:.62rem;color:var(--c-muted);text-decoration:none;transition:color .12s;
+}
+.pd-panel__link:hover { color:var(--c-green); }
+
+.med-table td, .med-table th {
+  font-size:.78rem;padding:.5rem .75rem;
+}
+.med-table th {
+  font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--c-muted);border-bottom:1px solid var(--c-border);
+}
+.aspecto--bueno   { color:var(--c-green); }
+.aspecto--regular { color:var(--c-warn); }
+.aspecto--malo    { color:var(--c-danger); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="mb-1">
+  <a href="{% url 'growlog:cultivo_detail' cultivo.pk %}" class="pd-back">
+    <i class="bi bi-chevron-left"></i> {{ cultivo.nombre }}
+  </a>
+</div>
+<div class="pd-eyebrow">◈ planta</div>
+
+<div class="pd-header">
+  <div>
+    <h1 class="pd-name">{{ planta.apodo }}</h1>
+    {% if planta.strain %}<div class="pd-strain">{{ planta.strain }}</div>{% endif %}
+    <div class="pd-estado pd-estado--{{ planta.estado }}">◉ {{ planta.get_estado_display }}</div>
+  </div>
+  <a href="{% url 'growlog:planta_editar' planta.pk %}" class="btn btn-brand" style="white-space:nowrap;font-size:.75rem;padding:.45rem .9rem">
+    <i class="bi bi-pencil me-1"></i> Editar
+  </a>
+</div>
+
+<!-- Meta grid -->
+<div class="pd-meta-grid">
+  <div class="pd-meta-card">
+    <div class="pd-meta-card__label">Posición</div>
+    <div class="pd-meta-card__val{% if not planta.posicion_tent %}--none{% endif %}">
+      {% if planta.posicion_tent %}{{ planta.get_posicion_tent_display }}{% else %}—{% endif %}
+    </div>
+  </div>
+  <div class="pd-meta-card">
+    <div class="pd-meta-card__label">Días flora est.</div>
+    <div class="pd-meta-card__val{% if not planta.dias_flora_estimados %}--none{% endif %}">
+      {% if planta.dias_flora_estimados %}{{ planta.dias_flora_estimados }}d{% else %}—{% endif %}
+    </div>
+  </div>
+  <div class="pd-meta-card">
+    <div class="pd-meta-card__label">THC est.</div>
+    <div class="pd-meta-card__val{% if not planta.thc_estimado %}--none{% endif %}">
+      {% if planta.thc_estimado %}{{ planta.thc_estimado }}%{% else %}—{% endif %}
+    </div>
+  </div>
+  <div class="pd-meta-card">
+    <div class="pd-meta-card__label">Yield est.</div>
+    <div class="pd-meta-card__val{% if not planta.yield_estimado_g %}--none{% endif %}">
+      {% if planta.yield_estimado_g %}{{ planta.yield_estimado_g }}g{% else %}—{% endif %}
+    </div>
+  </div>
+  {% if planta.indica_sativa_ratio %}
+  <div class="pd-meta-card">
+    <div class="pd-meta-card__label">Indica/Sativa</div>
+    <div class="pd-meta-card__val">{{ planta.indica_sativa_ratio }}</div>
+  </div>
+  {% endif %}
+</div>
+
+{% if planta.notas_genetica %}
+<div style="font-size:.8rem;color:var(--c-muted);margin-bottom:1.25rem;
+  padding:.75rem 1rem;background:var(--c-s1);border:1px solid var(--c-border);border-radius:5px;">
+  <span style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-family:ui-monospace,monospace;display:block;margin-bottom:.3rem">Notas genética</span>
+  {{ planta.notas_genetica }}
+</div>
+{% endif %}
+
+<!-- Mediciones -->
+<div class="pd-panel">
+  <div class="pd-panel__head">
+    <span class="pd-panel__title">◂ mediciones</span>
+    <a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="pd-panel__link">
+      <i class="bi bi-plus"></i> nueva medición
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover med-table mb-0">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Altura</th>
+          <th>Canopy</th>
+          <th>Nudos</th>
+          <th>Aspecto</th>
+          <th>Síntomas</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for med in mediciones %}
+        <tr>
+          <td class="num text-muted">{{ med.fecha|date:"d/m/Y" }}</td>
+          <td class="num fw-semibold">{% if med.altura_cm %}{{ med.altura_cm }} cm{% else %}—{% endif %}</td>
+          <td class="num">{% if med.ancho_canopy_cm %}{{ med.ancho_canopy_cm }} cm{% else %}—{% endif %}</td>
+          <td class="num">{% if med.nudos_count %}{{ med.nudos_count }}{% else %}—{% endif %}</td>
+          <td class="aspecto--{{ med.aspecto_general }}">{{ med.get_aspecto_general_display }}</td>
+          <td class="text-muted">{{ med.sintomas|truncatechars:50 }}</td>
+          <td style="text-align:right">
+            <a href="{% url 'growlog:medicion_planta_editar' med.pk %}"
+               style="font-size:.7rem;color:var(--c-muted);text-decoration:none" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-4" style="color:var(--c-muted);font-size:.8rem">
+            Sin mediciones aún.
+            <a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" style="color:var(--c-green)">Registrar la primera →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

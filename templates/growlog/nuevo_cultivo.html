@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Nuevo cultivo{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-sm-9 col-md-7 col-lg-5">
+
+    <div class="mb-4">
+      <div style="font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--c-muted);font-family:ui-monospace,monospace;margin-bottom:.4rem">
+        ◈ nuevo cultivo
+      </div>
+      <h1 style="font-size:1.6rem;font-weight:900;margin:0;letter-spacing:-.02em">¿Qué estamos cultivando?</h1>
+      <p class="text-muted mt-1 mb-0" style="font-size:.82rem">Completá los datos básicos. Todo se puede editar después.</p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- Nombre + fecha -->
+      <div class="row g-3 mb-3">
+        <div class="col-8">
+          <label class="form-label text-muted mb-1" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em">
+            Nombre del cultivo *
+          </label>
+          {{ form.nombre }}
+          {% if form.nombre.errors %}
+          <div style="color:var(--c-danger);font-size:.74rem;margin-top:.25rem">{{ form.nombre.errors.0 }}</div>
+          {% endif %}
+        </div>
+        <div class="col-4">
+          <label class="form-label text-muted mb-1" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em">
+            Inicio *
+          </label>
+          {{ form.fecha_inicio }}
+          {% if form.fecha_inicio.errors %}
+          <div style="color:var(--c-danger);font-size:.74rem;margin-top:.25rem">{{ form.fecha_inicio.errors.0 }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Estado -->
+      <div class="mb-3">
+        <label class="form-label text-muted mb-1" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em">
+          Estado inicial
+        </label>
+        {{ form.estado }}
+      </div>
+
+      <!-- Setup (colapsable visualmente) -->
+      <div style="border:1px solid var(--c-border);border-radius:5px;padding:1rem;background:var(--c-s1);margin-bottom:1.25rem">
+        <div style="font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c-muted);margin-bottom:.85rem;font-family:ui-monospace,monospace">
+          Setup opcional
+        </div>
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label text-muted mb-1" style="font-size:.7rem">Sustrato</label>
+            {{ form.sustrato }}
+          </div>
+          <div class="col-7">
+            <label class="form-label text-muted mb-1" style="font-size:.7rem">Lámpara</label>
+            {{ form.lampara_modelo }}
+          </div>
+          <div class="col-5">
+            <label class="form-label text-muted mb-1" style="font-size:.7rem">Watts reales</label>
+            {{ form.lampara_watts_reales }}
+          </div>
+          <div class="col-12">
+            <label class="form-label text-muted mb-1" style="font-size:.7rem">Dimensiones carpa</label>
+            {{ form.carpa_dimensiones }}
+          </div>
+          <div class="col-12">
+            <label class="form-label text-muted mb-1" style="font-size:.7rem">Notas iniciales</label>
+            {{ form.notas }}
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn-brand flex-grow-1" style="padding:.65rem;font-size:.82rem">
+          <i class="bi bi-check-lg me-1"></i> Crear cultivo
+        </button>
+        <a href="{% url 'growlog:dashboard' %}" class="btn btn-outline-secondary border-0"
+           style="color:var(--c-muted);padding:.65rem .9rem">
+          Cancelar
+        </a>
+      </div>
+
+    </form>
+
+  </div>
+</div>
+{% endblock %}

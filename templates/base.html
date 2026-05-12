@@ -10,19 +10,19 @@
 
   <style>
     :root {
-      --c-bg:       #0b0b0b;
-      --c-s1:       #131313;
-      --c-s2:       #1a1a1a;
-      --c-s3:       #222222;
-      --c-border:   #262626;
-      --c-border2:  #303030;
-      --c-green:    #39e058;
-      --c-green-d:  #1c6b2a;
-      --c-text:     #e0e0e0;
-      --c-muted:    #5c5c5c;
+      --c-bg:       #050507;
+      --c-s1:       #0a0a10;
+      --c-s2:       #0f0f18;
+      --c-s3:       #141420;
+      --c-border:   #1c1c2c;
+      --c-border2:  #262638;
+      --c-green:    #ACDE1D;
+      --c-green-d:  #6e8f10;
+      --c-text:     #c8c8dc;
+      --c-muted:    #44445e;
       --c-info:     #38bdf8;
-      --c-warn:     #fb923c;
-      --c-danger:   #f87171;
+      --c-warn:     #f5a000;
+      --c-danger:   #ff4d6d;
       --c-purple:   #c084fc;
     }
 
@@ -30,12 +30,13 @@
 
     body {
       background: var(--c-bg);
+      background-image: radial-gradient(rgba(60,60,120,.035) 1px, transparent 1px);
+      background-size: 24px 24px;
       color: var(--c-text);
       font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
       font-size: .9rem;
     }
 
-    /* Números siempre tabulares */
     .num {
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum";
@@ -48,118 +49,81 @@
       border-bottom: 1px solid var(--c-border) !important;
       padding: .4rem 1rem;
     }
+
     .brand-62 {
       font-weight: 900;
-      font-size: 1.4rem;
-      letter-spacing: -.03em;
+      font-size: 1.2rem;
+      letter-spacing: -.02em;
       color: var(--c-green) !important;
       text-decoration: none;
       line-height: 1;
       font-family: ui-monospace, monospace;
     }
-    .brand-62 .brand-x {
-      color: #555;
-      font-weight: 400;
-      font-size: 1.1rem;
-      letter-spacing: 0;
-      font-family: system-ui, sans-serif;
+    .brand-bracket {
+      color: var(--c-muted);
+      font-weight: 300;
+      font-size: .9em;
+      margin: 0 .08em;
     }
+    .brand-x {
+      color: var(--c-muted);
+      font-weight: 400;
+      font-size: .88em;
+      letter-spacing: 0;
+    }
+
     .nav-link {
-      color: #666 !important;
-      font-size: .82rem;
-      padding: .3rem .65rem !important;
-      border-radius: 5px;
+      color: var(--c-muted) !important;
+      font-size: .8rem;
+      padding: .3rem .6rem !important;
+      border-radius: 4px;
       transition: color .12s, background .12s;
+      letter-spacing: .01em;
     }
     .nav-link:hover { color: var(--c-text) !important; background: var(--c-s2); }
     .nav-link.active { color: var(--c-text) !important; background: var(--c-s2); }
+
     .cultivo-pill {
-      font-size: .72rem;
+      font-size: .7rem;
       color: var(--c-green);
-      background: rgba(57, 224, 88, .08);
-      border: 1px solid rgba(57, 224, 88, .2);
+      background: rgba(172,222,29,.07);
+      border: 1px solid rgba(172,222,29,.18);
       border-radius: 20px;
-      padding: .2rem .7rem;
+      padding: .22rem .75rem;
       white-space: nowrap;
+      font-family: ui-monospace, monospace;
+      letter-spacing: .03em;
     }
     .cultivo-pill .dot {
       display: inline-block;
-      width: 6px; height: 6px;
+      width: 5px; height: 5px;
       border-radius: 50%;
       background: var(--c-green);
       margin-right: 5px;
       vertical-align: middle;
-      animation: pulse 2s infinite;
+      animation: blink 2.4s infinite;
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: .3; }
+    @keyframes blink {
+      0%, 90%, 100% { opacity: 1; }
+      45%            { opacity: .2; }
     }
 
     /* ── Cards ── */
     .card {
       background: var(--c-s1);
       border: 1px solid var(--c-border);
-      border-radius: 8px;
+      border-radius: 6px;
     }
     .card-header {
       background: transparent;
       border-bottom: 1px solid var(--c-border);
       padding: .55rem 1rem;
-      font-size: .7rem;
+      font-size: .62rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: .08em;
+      letter-spacing: .1em;
       color: var(--c-muted);
     }
-
-    /* ── KPI cards ── */
-    .kpi {
-      background: var(--c-s1);
-      border: 1px solid var(--c-border);
-      border-radius: 8px;
-      padding: .85rem 1rem .75rem;
-      text-align: center;
-      border-top-width: 3px;
-    }
-    .kpi.kpi-neutral  { border-top-color: var(--c-border2); }
-    .kpi.kpi-ideal    { border-top-color: var(--c-green); }
-    .kpi.kpi-alto     { border-top-color: var(--c-danger); }
-    .kpi.kpi-bajo     { border-top-color: var(--c-warn); }
-    .kpi.kpi-green    { border-top-color: var(--c-green); }
-
-    .kpi-label {
-      font-size: .65rem;
-      text-transform: uppercase;
-      letter-spacing: .09em;
-      color: var(--c-muted);
-      margin-bottom: .3rem;
-    }
-    .kpi-value {
-      font-size: 2.1rem;
-      font-weight: 700;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-      font-family: ui-monospace, monospace;
-    }
-    .kpi-value small { font-size: 1rem; font-weight: 400; }
-    .kpi-status {
-      font-size: .65rem;
-      text-transform: uppercase;
-      letter-spacing: .07em;
-      margin-top: .3rem;
-      font-weight: 700;
-    }
-
-    /* Semáforo */
-    .c-ideal  { color: var(--c-green) !important; }
-    .c-alto   { color: var(--c-danger) !important; }
-    .c-bajo   { color: var(--c-warn) !important; }
-    .c-info   { color: var(--c-info) !important; }
-    .c-warn   { color: var(--c-warn) !important; }
-    .c-muted  { color: var(--c-muted) !important; }
-    .c-green  { color: var(--c-green) !important; }
-    .c-purple { color: var(--c-purple) !important; }
 
     /* ── Tables ── */
     .table {
@@ -170,9 +134,9 @@
       margin: 0;
     }
     .table thead th {
-      font-size: .65rem;
+      font-size: .62rem;
       text-transform: uppercase;
-      letter-spacing: .08em;
+      letter-spacing: .09em;
       color: var(--c-muted);
       font-weight: 700;
       border-bottom: 1px solid var(--c-border2);
@@ -185,54 +149,65 @@
       vertical-align: middle;
     }
     .table tbody tr:last-child td { border-bottom: none; }
-    .table-hover tbody tr:hover td { background: rgba(255,255,255,.02); }
+    .table-hover tbody tr:hover td { background: rgba(255,255,255,.015); }
 
-    /* Acento lateral por tipo */
-    .row-medicion td:first-child { border-left: 3px solid var(--c-info);   padding-left: .7rem; }
-    .row-riego    td:first-child { border-left: 3px solid var(--c-green);  padding-left: .7rem; }
-    .row-evento   td:first-child { border-left: 3px solid var(--c-warn);   padding-left: .7rem; }
+    .row-medicion td:first-child { border-left: 2px solid var(--c-info);   padding-left: .75rem; }
+    .row-riego    td:first-child { border-left: 2px solid var(--c-green);  padding-left: .75rem; }
+    .row-evento   td:first-child { border-left: 2px solid var(--c-warn);   padding-left: .75rem; }
 
-    /* Badges de tipo */
+    /* ── Badges ── */
     .badge-tipo {
       display: inline-block;
-      font-size: .62rem;
+      font-size: .6rem;
       font-weight: 700;
-      letter-spacing: .05em;
-      padding: .22em .55em;
-      border-radius: 4px;
+      letter-spacing: .06em;
+      padding: .2em .5em;
+      border-radius: 3px;
       text-transform: uppercase;
     }
-    .bt-med    { background: rgba(56,189,248,.12); color: var(--c-info);   border: 1px solid rgba(56,189,248,.25); }
-    .bt-riego  { background: rgba(57,224,88,.1);   color: var(--c-green);  border: 1px solid rgba(57,224,88,.25); }
-    .bt-evento { background: rgba(251,146,60,.1);  color: var(--c-warn);   border: 1px solid rgba(251,146,60,.25); }
-    .bt-urge   { background: rgba(248,113,113,.12);color: var(--c-danger); border: 1px solid rgba(248,113,113,.25); }
-    .bt-normal { background: rgba(57,224,88,.08);  color: var(--c-green);  border: 1px solid rgba(57,224,88,.2); }
+    .bt-med    { background: rgba(56,189,248,.1);  color: var(--c-info);   border: 1px solid rgba(56,189,248,.22); }
+    .bt-riego  { background: rgba(172,222,29,.08);  color: var(--c-green);  border: 1px solid rgba(172,222,29,.22); }
+    .bt-evento { background: rgba(245,160,0,.08);  color: var(--c-warn);   border: 1px solid rgba(245,160,0,.22); }
+    .bt-urge   { background: rgba(255,77,109,.1);  color: var(--c-danger); border: 1px solid rgba(255,77,109,.22); }
+    .bt-normal { background: rgba(172,222,29,.07);  color: var(--c-green);  border: 1px solid rgba(172,222,29,.18); }
     .bt-baja   { background: var(--c-s2);          color: var(--c-muted);  border: 1px solid var(--c-border); }
-    .bt-vpd-ideal  { background: rgba(57,224,88,.1);  color: var(--c-green);  border: 1px solid rgba(57,224,88,.25); }
-    .bt-vpd-alto   { background: rgba(248,113,113,.12);color:var(--c-danger); border: 1px solid rgba(248,113,113,.25); }
-    .bt-vpd-bajo   { background: rgba(251,146,60,.1);  color: var(--c-warn);  border: 1px solid rgba(251,146,60,.25); }
+    .bt-vpd-ideal { background: rgba(172,222,29,.1);  color: var(--c-green);  border: 1px solid rgba(172,222,29,.25); }
+    .bt-vpd-alto  { background: rgba(255,77,109,.1); color: var(--c-danger); border: 1px solid rgba(255,77,109,.25); }
+    .bt-vpd-bajo  { background: rgba(245,160,0,.1);  color: var(--c-warn);   border: 1px solid rgba(245,160,0,.25); }
 
     /* ── Botón principal ── */
     .btn-brand {
       background: var(--c-green);
-      color: #050505;
-      font-weight: 700;
+      color: #020a06;
+      font-weight: 800;
       border: none;
-      border-radius: 6px;
-      padding: .45rem 1.15rem;
-      font-size: .85rem;
-      letter-spacing: .02em;
+      border-radius: 4px;
+      padding: .45rem 1.1rem;
+      font-size: .8rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
       transition: opacity .15s;
+      text-decoration: none;
+      display: inline-block;
     }
     .btn-brand:hover { opacity: .85; color: #000; }
 
-    /* ── Misc ── */
-    .text-muted { color: var(--c-muted) !important; }
+    /* ── Color utilities ── */
+    .text-muted  { color: var(--c-muted) !important; }
+    .c-ideal     { color: var(--c-green) !important; }
+    .c-alto      { color: var(--c-danger) !important; }
+    .c-bajo      { color: var(--c-warn) !important; }
+    .c-info      { color: var(--c-info) !important; }
+    .c-warn      { color: var(--c-warn) !important; }
+    .c-muted     { color: var(--c-muted) !important; }
+    .c-green     { color: var(--c-green) !important; }
+    .c-purple    { color: var(--c-purple) !important; }
+    .c-danger    { color: var(--c-danger) !important; }
     a { color: var(--c-green); }
     a:hover { color: var(--c-green); opacity: .8; }
 
     @media (max-width: 576px) {
-      .kpi-value { font-size: 1.65rem; }
+      body { font-size: .85rem; }
     }
   </style>
 
@@ -243,11 +218,12 @@
 <nav class="navbar navbar-expand-lg">
   <div class="container-fluid gap-3">
     <a class="brand-62" href="{% url 'growlog:dashboard' %}">
-      62<span class="brand-x">xroots</span>
+      <span class="brand-bracket">‹</span>62<span class="brand-x">xroots</span><span class="brand-bracket">›</span>
     </a>
 
-    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain"
-            style="color:#555">
+    <button class="navbar-toggler border-0 p-1" type="button"
+            data-bs-toggle="collapse" data-bs-target="#navMain"
+            style="color:var(--c-muted)">
       <span class="navbar-toggler-icon"></span>
     </button>
 
@@ -259,17 +235,10 @@
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'growlog:quick' %}">
-            <i class="bi bi-lightning-charge-fill me-1"></i>Anotar
+          <a class="nav-link" href="{% url 'growlog:nuevo_cultivo' %}">
+            <i class="bi bi-plus-circle me-1"></i>Nuevo cultivo
           </a>
         </li>
-        {% if cultivo_activo %}
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'growlog:timeline' cultivo_activo.pk %}">
-            <i class="bi bi-table me-1"></i>Timeline
-          </a>
-        </li>
-        {% endif %}
         <li class="nav-item">
           <a class="nav-link" href="/admin/">
             <i class="bi bi-sliders2 me-1"></i>Admin
@@ -277,11 +246,17 @@
         </li>
       </ul>
 
-      {% if cultivo_activo %}
-      <span class="cultivo-pill">
-        <span class="dot"></span>
-        {{ cultivo_activo.nombre }} &nbsp;·&nbsp; Día {{ cultivo_activo.dias_desde_inicio }}
-      </span>
+      {% if user.is_authenticated %}
+      <div class="d-flex align-items-center gap-2">
+        <span class="cultivo-pill" style="cursor:default">
+          <span class="dot"></span>{{ user.username }}
+        </span>
+        <a href="{% url 'growlog:logout' %}"
+           style="font-size:.65rem;color:var(--c-muted);text-decoration:none;letter-spacing:.04em;"
+           title="Cerrar sesión">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+      </div>
       {% endif %}
     </div>
   </div>
@@ -290,7 +265,7 @@
 <main class="container-fluid py-3 px-3 px-md-4">
   {% if messages %}
     {% for msg in messages %}
-    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show border-0 rounded-2 py-2 mb-3" role="alert">
+    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show border-0 rounded-1 py-2 mb-3" role="alert">
       {{ msg }}
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Riego{% endblock %}
+
+{% block extra_head %}
+<style>
+.rf-back {
+  font-size:.65rem;color:var(--c-muted);text-decoration:none;
+  letter-spacing:.04em;display:inline-flex;align-items:center;gap:.3rem;
+  transition:color .12s;margin-bottom:.5rem;
+}
+.rf-back:hover { color:var(--c-green); }
+.rf-eyebrow {
+  font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--c-muted);font-family:ui-monospace,monospace;margin-bottom:.35rem;
+}
+.rf-title {
+  font-size:1.6rem;font-weight:900;margin:0 0 1.25rem;letter-spacing:-.025em;
+}
+.rf-card {
+  background:var(--c-s1);border:1px solid var(--c-border);
+  border-top:3px solid var(--c-green);border-radius:6px;padding:1.25rem;
+  margin-bottom:.85rem;
+}
+.rf-card-title {
+  font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--c-muted);font-family:ui-monospace,monospace;margin-bottom:1rem;
+  padding-bottom:.5rem;border-bottom:1px solid var(--c-border);
+}
+.rf-label {
+  display:block;font-size:.72rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--c-muted);margin-bottom:.4rem;
+  font-family:ui-monospace,monospace;
+}
+.rf-check-row {
+  display:flex;align-items:center;gap:.5rem;padding:.25rem 0;
+}
+.rf-check-row label { font-size:.85rem; }
+.rf-field-error { font-size:.72rem;color:var(--c-danger);margin-top:.3rem; }
+.rf-delete-link {
+  font-size:.72rem;color:var(--c-muted);text-decoration:none;
+  display:inline-flex;align-items:center;gap:.35rem;transition:color .12s;
+}
+.rf-delete-link:hover { color:var(--c-danger); }
+
+/* Nutrientes table */
+.na-table td, .na-table th {
+  font-size:.8rem;padding:.45rem .75rem;vertical-align:middle;
+}
+.na-table th {
+  font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--c-muted);border-bottom:1px solid var(--c-border);
+}
+.na-empty {
+  padding:1.5rem;text-align:center;color:var(--c-muted);font-size:.8rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-8 col-lg-6">
+
+    <div class="mb-1">
+      <a href="{{ back_url }}" class="rf-back">
+        <i class="bi bi-chevron-left"></i> volver al cultivo
+      </a>
+    </div>
+    <div class="rf-eyebrow">◈ riego</div>
+    <h1 class="rf-title">{{ riego }}</h1>
+
+    <!-- Riego form -->
+    <div class="rf-card">
+      <div class="rf-card-title">Datos del riego</div>
+      <form method="post">
+        {% csrf_token %}
+        <div class="row g-2">
+          {% for field in form %}
+          {% with wclass=field.field.widget.attrs.class %}
+          {% if wclass == 'form-check-input' %}
+          <div class="col-12">
+            <div class="rf-check-row">
+              {{ field }}
+              <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            </div>
+          </div>
+          {% elif field.name == 'timestamp' or field.name == 'notas' %}
+          <div class="col-12">
+            <label class="rf-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<div class="rf-field-error">{{ field.errors.0 }}</div>{% endif %}
+          </div>
+          {% else %}
+          <div class="col-sm-6">
+            <label class="rf-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<div class="rf-field-error">{{ field.errors.0 }}</div>{% endif %}
+          </div>
+          {% endif %}
+          {% endwith %}
+          {% endfor %}
+        </div>
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-brand flex-fill" style="padding:.65rem">
+            <i class="bi bi-check-lg me-1"></i> Actualizar riego
+          </button>
+          <a href="{{ back_url }}" class="btn btn-outline-secondary" style="padding:.65rem .85rem;font-size:.85rem">
+            Cancelar
+          </a>
+        </div>
+        {% if delete_url %}
+        <div class="text-center mt-3">
+          <a href="{{ delete_url }}" class="rf-delete-link">
+            <i class="bi bi-trash3"></i> Eliminar este riego
+          </a>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+
+    <!-- Nutrientes aplicados -->
+    <div style="background:var(--c-s1);border:1px solid var(--c-border);border-radius:6px;overflow:hidden;margin-bottom:.85rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;
+        padding:.6rem 1rem;border-bottom:1px solid var(--c-border);background:var(--c-s2)">
+        <span style="font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c-muted);font-family:ui-monospace,monospace">
+          ◂ nutrientes aplicados
+        </span>
+        <span style="font-size:.7rem;color:var(--c-muted)">{{ nutrientes|length }} productos</span>
+      </div>
+      {% if nutrientes %}
+      <div class="table-responsive">
+        <table class="table table-hover na-table mb-0">
+          <thead>
+            <tr>
+              <th>Nutriente</th>
+              <th>Dosis (g/L)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for na in nutrientes %}
+            <tr>
+              <td class="fw-semibold">{{ na.nutriente }}</td>
+              <td class="num">{{ na.dosis_g_por_litro }}</td>
+              <td style="text-align:right">
+                <form method="post" action="{% url 'growlog:nutriente_aplicado_eliminar' na.pk %}"
+                      style="display:inline" onsubmit="return confirm('¿Eliminar {{ na.nutriente }}?')">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm border-0 p-1"
+                          style="color:var(--c-muted);width:24px;height:24px;line-height:1" title="Eliminar">
+                    <i class="bi bi-x-lg" style="font-size:.7rem"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="na-empty">Sin nutrientes registrados aún.</div>
+      {% endif %}
+    </div>
+
+    <!-- Agregar nutriente -->
+    <div class="rf-card">
+      <div class="rf-card-title">Agregar nutriente</div>
+      <form method="post" action="{% url 'growlog:nutriente_aplicado_crear' riego.pk %}">
+        {% csrf_token %}
+        <div class="row g-2 align-items-end">
+          <div class="col-sm-7">
+            <label class="rf-label" for="{{ na_form.nutriente.id_for_label }}">{{ na_form.nutriente.label }}</label>
+            {{ na_form.nutriente }}
+          </div>
+          <div class="col-sm-3">
+            <label class="rf-label" for="{{ na_form.dosis_g_por_litro.id_for_label }}">g/L</label>
+            {{ na_form.dosis_g_por_litro }}
+          </div>
+          <div class="col-sm-2">
+            <button type="submit" class="btn btn-brand w-100" style="padding:.55rem">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
