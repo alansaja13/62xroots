@@ -1,274 +1,312 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Mis Cultivos{% endblock %}
 
 {% block extra_head %}
 <style>
-.dash-eyebrow {
-  font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
-  color:var(--c-muted);font-family:ui-monospace,monospace;margin-bottom:.35rem;
-}
-.dash-title {
-  font-size:1.5rem;font-weight:900;margin:0 0 1.25rem;letter-spacing:-.02em;
-}
+  /* ── DASHBOARD ── */
+  .dash-hero {
+    position: relative; overflow: hidden;
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 24px; align-items: flex-end;
+    padding-bottom: 24px; margin-bottom: 30px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .dash-hero__watermark {
+    position: absolute; right: -60px; bottom: -80px;
+    width: 320px; height: 320px; opacity: .06; pointer-events: none;
+  }
+  .dash-hero__title {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 92px; font-weight: 700; letter-spacing: -.022em; line-height: .95;
+    margin: 10px 0 0; color: var(--cream);
+  }
+  .dash-hero__title-accent { color: var(--green); margin-left: 14px; }
+  .dash-hero__meta {
+    margin-top: 14px; display: flex; gap: 22px; align-items: baseline; flex-wrap: wrap;
+    font-family: "Geist Mono", monospace; font-size: 12px; color: var(--cream-soft);
+  }
+  .dash-hero__meta span.sep { color: var(--fine); }
 
-/* ── Grid de cultivoss ── */
-.cultivos-grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
-  gap:.85rem;
-  margin-bottom:1.5rem;
-}
+  .section-label {
+    display: flex; align-items: center; gap: 14px; margin: 6px 0 16px;
+  }
+  .section-label__rule { width: 24px; height: 1px; background: var(--green); }
+  .section-label__rule--fine { background: var(--fine); }
+  .section-label__line { flex: 1; height: 1px; background: var(--rule); }
 
-/* ── Tarjeta de cultivo ── */
-.cultivo-card {
-  background:var(--c-s1);
-  border:1px solid var(--c-border);
-  border-top:3px solid var(--c-border2);
-  border-radius:6px;
-  text-decoration:none;
-  color:var(--c-text);
-  display:block;
-  transition:border-color .15s, background .15s;
-  position:relative;
-  overflow:hidden;
-}
-.cultivo-card:hover {
-  border-color:var(--c-border2);
-  background:var(--c-s2);
-  color:var(--c-text);
-}
-.cultivo-card--activo { border-top-color:var(--c-green); }
-.cultivo-card--floracion { border-top-color:var(--c-purple); }
-.cultivo-card--secado,
-.cultivo-card--curado   { border-top-color:var(--c-warn); }
-.cultivo-card--finalizado,
-.cultivo-card--archivado { border-top-color:var(--c-border2); opacity:.65; }
+  /* ── CULTIVO CARDS ── */
+  .cultivo-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 1100px) { .cultivo-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px)  { .cultivo-grid { grid-template-columns: 1fr; } }
 
-.cc-head {
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  padding:.9rem 1rem .6rem;
-  gap:.5rem;
-}
-.cc-nombre {
-  font-size:1rem;font-weight:800;line-height:1.2;
-}
-.cc-dia {
-  font-size:1.6rem;font-weight:900;font-family:ui-monospace,monospace;
-  color:var(--c-green);line-height:1;text-align:right;flex-shrink:0;
-}
-.cc-dia small {
-  display:block;font-size:.52rem;font-weight:700;letter-spacing:.15em;
-  text-transform:uppercase;color:var(--c-muted);margin-bottom:.1rem;
-}
-.cc-estado {
-  font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
-  margin-top:.3rem;
-}
-.cc-estado--vegetativo { color:var(--c-green); }
-.cc-estado--floracion  { color:var(--c-purple); }
-.cc-estado--secado,
-.cc-estado--curado     { color:var(--c-warn); }
-.cc-estado--finalizado { color:var(--c-muted); }
+  .cultivo-card {
+    background: var(--card); border: 1px solid var(--rule);
+    padding: 20px 22px 16px;
+    display: flex; flex-direction: column; gap: 16px;
+    min-height: 264px;
+    color: var(--cream); text-decoration: none;
+    transition: border-color .12s, background .12s;
+  }
+  .cultivo-card:hover { background: var(--card-alt); color: var(--cream); border-color: var(--green-deep); }
 
-.cc-vitals {
-  display:flex;
-  gap:0;
-  padding:0 1rem .85rem;
-}
-.cc-vital {
-  flex:1;
-  font-size:.78rem;
-}
-.cc-vital__label {
-  font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--c-muted);margin-bottom:.15rem;
-}
-.cc-vital__val {
-  font-family:ui-monospace,monospace;font-weight:700;
-  font-variant-numeric:tabular-nums;
-}
-.cc-vital__val--ideal  { color:var(--c-green); }
-.cc-vital__val--alto   { color:var(--c-danger); }
-.cc-vital__val--bajo   { color:var(--c-warn); }
-.cc-vital__val--none   { color:var(--c-muted); }
+  .cultivo-card__head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .cultivo-card__id {
+    font-family: "Geist Mono", monospace; font-size: 10px;
+    color: var(--fine); letter-spacing: .15em;
+  }
+  .cultivo-card__name {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 26px; font-weight: 700; line-height: 1;
+    letter-spacing: -.022em;
+    margin: 0;
+  }
+  .cultivo-card__dayrow {
+    margin-top: 12px;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .cultivo-card__day {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 72px; font-weight: 800; line-height: .85;
+    color: var(--green); letter-spacing: -.022em;
+  }
+  .cultivo-card__day--muted { color: var(--fine); }
 
-.cc-footer {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:.5rem 1rem;
-  border-top:1px solid var(--c-border);
-  font-size:.7rem;
-  color:var(--c-muted);
-}
-.cc-footer__arrow {
-  color:var(--c-green);font-size:.8rem;
-  transition:transform .15s;
-}
-.cultivo-card:hover .cc-footer__arrow { transform:translateX(3px); }
+  .cultivo-card__vitals {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--rule); padding-top: 12px;
+  }
+  .cultivo-card__vital + .cultivo-card__vital { border-left: 1px solid var(--rule); padding-left: 12px; }
+  .cultivo-card__vital-val {
+    font-family: "Geist Mono", monospace; font-size: 18px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .cultivo-card__vital-val--ideal { color: var(--green); }
+  .cultivo-card__vital-val--alto  { color: var(--rust); }
+  .cultivo-card__vital-val--bajo  { color: var(--honey); }
+  .cultivo-card__vital-val--none  { color: var(--fine); }
 
-/* ── Card "nuevo" ── */
-.cultivo-card--new {
-  border-style:dashed;
-  border-top-style:dashed;
-  border-top-color:var(--c-border);
-  display:flex;align-items:center;justify-content:center;
-  min-height:140px;gap:.6rem;
-  font-size:.82rem;font-weight:700;color:var(--c-muted);
-  transition:border-color .15s,color .15s;
-}
-.cultivo-card--new:hover {
-  border-color:var(--c-green);color:var(--c-green);background:var(--c-s1);
-}
+  .cultivo-card__foot {
+    margin-top: auto; display: flex; justify-content: space-between; align-items: center;
+  }
+  .cultivo-card__upd {
+    font-family: "Geist Mono", monospace; font-size: 10px; color: var(--fine);
+  }
+  .cultivo-card__open {
+    font-family: "Geist Mono", monospace; font-size: 11px; color: var(--green);
+    font-weight: 600; letter-spacing: .15em; text-transform: uppercase;
+  }
 
-/* ── Sección header ── */
-.section-label {
-  font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--c-muted);font-family:ui-monospace,monospace;
-  display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;
-}
-.section-label::after {
-  content:'';flex:1;height:1px;background:var(--c-border);
-}
+  /* ── NEW CARD ── */
+  .cultivo-card--new {
+    border-style: dashed; align-items: center; justify-content: center;
+    color: var(--green);
+  }
+  .cultivo-card--new__plus {
+    width: 44px; height: 44px; border: 1px solid var(--green);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--green); font-size: 22px;
+  }
 
-/* ── Empty state ── */
-.dash-empty {
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:55vh;gap:1rem;text-align:center;
-}
-.dash-empty__glyph {
-  font-family:ui-monospace,monospace;font-size:6rem;font-weight:900;line-height:1;
-  color:var(--c-green);opacity:.12;letter-spacing:-.05em;
-}
+  /* ── FINALIZADOS ── */
+  .finalizados-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+  }
+  @media (max-width: 640px) { .finalizados-grid { grid-template-columns: 1fr; } }
+  .finalizado-row {
+    background: var(--bg-alt); border: 1px solid var(--rule);
+    padding: 14px 20px; opacity: .75;
+    display: flex; align-items: center; justify-content: space-between;
+    color: var(--cream); text-decoration: none;
+  }
+  .finalizado-row:hover { opacity: 1; color: var(--cream); }
+  .finalizado-row__name {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 20px; font-weight: 700; line-height: 1;
+  }
+  .finalizado-row__dates {
+    font-family: "Geist Mono", monospace; font-size: 10px;
+    color: var(--fine); margin-top: 4px; display: block;
+  }
+  .finalizado-row__days {
+    font-family: "Geist Mono", monospace; font-size: 20px; font-weight: 700; color: var(--fine);
+  }
+
+  /* ── EMPTY ── */
+  .dash-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 55vh; gap: 18px; text-align: center;
+    position: relative;
+  }
+  .dash-empty__logo {
+    width: 180px; height: 180px; opacity: .15;
+  }
+  .dash-empty__title {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 36px; font-weight: 700; margin: 0; letter-spacing: -.022em;
+  }
+
+  @media (max-width: 640px) {
+    .dash-hero__title { font-size: 56px; }
+    .dash-hero { grid-template-columns: 1fr; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<div class="dash-eyebrow">◈ tus cultivos</div>
-<h1 class="dash-title">Mis Cultivos</h1>
-
 {% if not activos and not finalizados and not archivados %}
 <!-- Empty state -->
 <div class="dash-empty">
-  <div class="dash-empty__glyph">62</div>
-  <h2 style="font-size:1.3rem;font-weight:700;margin:0">Sin cultivos todavía</h2>
-  <p class="text-muted mb-0" style="font-size:.85rem">Empezá tu primer registro.</p>
+  <img src="{% static 'growlog/logo.png' %}" alt="" class="dash-empty__logo">
+  <div class="label-eyebrow">// no entries yet</div>
+  <h1 class="dash-empty__title">Sin cultivos todavía</h1>
+  <p class="c-soft" style="font-size: 14px; margin: 0;">Empezá tu primer registro.</p>
   <a href="{% url 'growlog:nuevo_cultivo' %}" class="btn-brand mt-2">
-    <i class="bi bi-plus-lg me-1"></i> Nuevo cultivo
+    <i class="bi bi-plus-lg"></i> Nuevo cultivo
   </a>
 </div>
 
 {% else %}
 
-<!-- Activos -->
+<!-- HERO -->
+<div class="dash-hero">
+  <img src="{% static 'growlog/logo.png' %}" alt="" class="dash-hero__watermark" aria-hidden="true">
+  <div style="position: relative; z-index: 1;">
+    <div class="label-eyebrow">// home · log book</div>
+    <h1 class="dash-hero__title">
+      MIS<span class="dash-hero__title-accent">CULTIVOS</span>
+    </h1>
+    <div class="dash-hero__meta">
+      <span>{{ activos|length }} activos</span>
+      <span class="sep">·</span>
+      <span>{{ finalizados|length }} finalizados</span>
+      {% if archivados %}<span class="sep">·</span><span>{{ archivados|length }} archivados</span>{% endif %}
+    </div>
+  </div>
+  <a href="{% url 'growlog:nuevo_cultivo' %}" class="btn-ghost" style="border-color: var(--green); color: var(--green); position: relative; z-index: 1;">
+    <i class="bi bi-plus-lg"></i> nuevo cultivo
+  </a>
+</div>
+
+<!-- ACTIVOS -->
 {% if activos %}
-<div class="section-label">activos</div>
-<div class="cultivos-grid">
+<div class="section-label">
+  <span class="section-label__rule"></span>
+  <span class="label-eyebrow c-green">§ activos · {{ activos|length }}</span>
+  <span class="section-label__line"></span>
+</div>
+
+<div class="cultivo-grid">
   {% for item in activos %}
-  {% with c=item.cultivo m=item.ultima_medicion s=item.semaforo %}
-  <a href="{% url 'growlog:cultivo_detail' c.pk %}" class="cultivo-card cultivo-card--{{ c.estado }}">
-    <div class="cc-head">
+    {% with c=item.cultivo m=item.ultima_medicion s=item.semaforo %}
+    <a href="{% url 'growlog:cultivo_detail' c.pk %}" class="cultivo-card">
+      <div class="cultivo-card__head">
+        <span class="cultivo-card__id">#{{ c.pk|stringformat:"03d" }}</span>
+        <span class="pill pill--{% if c.estado == 'vegetativo' %}green{% elif c.estado == 'floracion' %}plum{% elif c.estado == 'secado' or c.estado == 'curado' %}honey{% else %}cream{% endif %}">
+          {{ c.estado }}
+        </span>
+      </div>
       <div>
-        <div class="cc-nombre">{{ c.nombre }}</div>
-        <div class="cc-estado cc-estado--{{ c.estado }}">◉ {{ c.get_estado_display }}</div>
-      </div>
-      <div class="cc-dia">
-        <small>día</small>
-        {{ c.dias_desde_inicio }}
-      </div>
-    </div>
-    <div class="cc-vitals">
-      <div class="cc-vital">
-        <div class="cc-vital__label">Temp</div>
-        <div class="cc-vital__val cc-vital__val--{% if m %}{% if s %}{{ s.temp }}{% else %}none{% endif %}{% else %}none{% endif %}">
-          {% if m %}{{ m.temperatura_c }}°{% else %}—{% endif %}
+        <h3 class="cultivo-card__name">{{ c.nombre }}</h3>
+        <div class="cultivo-card__dayrow">
+          <span class="cultivo-card__day">{{ c.dias_desde_inicio }}</span>
+          <div>
+            <div class="label-eyebrow">día</div>
+            <div class="mono c-soft" style="font-size: 11px; margin-top: 4px;">{{ item.plantas_count }} plantas</div>
+          </div>
         </div>
       </div>
-      <div class="cc-vital">
-        <div class="cc-vital__label">HR</div>
-        <div class="cc-vital__val cc-vital__val--{% if m %}{% if s %}{{ s.hr }}{% else %}none{% endif %}{% else %}none{% endif %}">
-          {% if m %}{{ m.humedad_relativa }}%{% else %}—{% endif %}
+      <div class="cultivo-card__vitals">
+        <div class="cultivo-card__vital">
+          <div class="label-eyebrow">T</div>
+          <div class="cultivo-card__vital-val cultivo-card__vital-val--{% if m %}{% if s %}{{ s.temp }}{% else %}none{% endif %}{% else %}none{% endif %}">
+            {% if m %}{{ m.temperatura_c }}°{% else %}—{% endif %}
+          </div>
+        </div>
+        <div class="cultivo-card__vital">
+          <div class="label-eyebrow">HR</div>
+          <div class="cultivo-card__vital-val cultivo-card__vital-val--{% if m %}{% if s %}{{ s.hr }}{% else %}none{% endif %}{% else %}none{% endif %}">
+            {% if m %}{{ m.humedad_relativa }}%{% else %}—{% endif %}
+          </div>
+        </div>
+        <div class="cultivo-card__vital">
+          <div class="label-eyebrow">VPD</div>
+          <div class="cultivo-card__vital-val cultivo-card__vital-val--{% if m %}{% if s %}{{ s.vpd }}{% else %}none{% endif %}{% else %}none{% endif %}">
+            {% if m %}{{ m.vpd }}{% else %}—{% endif %}
+          </div>
         </div>
       </div>
-      <div class="cc-vital">
-        <div class="cc-vital__label">VPD</div>
-        <div class="cc-vital__val cc-vital__val--{% if m %}{% if s %}{{ s.vpd }}{% else %}none{% endif %}{% else %}none{% endif %}">
-          {% if m %}{{ m.vpd }}{% else %}—{% endif %}
-        </div>
+      <div class="cultivo-card__foot">
+        <span class="cultivo-card__upd">
+          {% if m %}upd {{ m.timestamp|date:"d/m H:i" }}{% else %}sin mediciones{% endif %}
+        </span>
+        <span class="cultivo-card__open">open →</span>
       </div>
-      <div class="cc-vital">
-        <div class="cc-vital__label">Plantas</div>
-        <div class="cc-vital__val" style="color:var(--c-text)">{{ item.plantas_count }}</div>
-      </div>
-    </div>
-    <div class="cc-footer">
-      <span>
-        {% if m %}Última med. {{ m.timestamp|date:"d/m H:i" }}{% else %}Sin mediciones aún{% endif %}
-      </span>
-      <i class="bi bi-arrow-right cc-footer__arrow"></i>
-    </div>
-  </a>
-  {% endwith %}
+    </a>
+    {% endwith %}
   {% endfor %}
 
-  <!-- Tarjeta nueva -->
   <a href="{% url 'growlog:nuevo_cultivo' %}" class="cultivo-card cultivo-card--new">
-    <i class="bi bi-plus-lg" style="font-size:1.1rem"></i> Nuevo cultivo
+    <div class="cultivo-card--new__plus">+</div>
+    <span class="mono" style="font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;">
+      nuevo cultivo
+    </span>
+    <span class="mono c-fine" style="font-size: 10px;">iniciar log</span>
   </a>
 </div>
 {% endif %}
 
-<!-- Finalizados -->
+<!-- FINALIZADOS -->
 {% if finalizados %}
-<div class="section-label" style="margin-top:.75rem">finalizados</div>
-<div class="cultivos-grid">
+<div class="section-label">
+  <span class="section-label__rule section-label__rule--fine"></span>
+  <span class="label-eyebrow">§ finalizados · {{ finalizados|length }}</span>
+  <span class="section-label__line"></span>
+</div>
+<div class="finalizados-grid">
   {% for item in finalizados %}
-  {% with c=item.cultivo %}
-  <a href="{% url 'growlog:cultivo_detail' c.pk %}" class="cultivo-card cultivo-card--finalizado">
-    <div class="cc-head">
+    {% with c=item.cultivo %}
+    <a href="{% url 'growlog:cultivo_detail' c.pk %}" class="finalizado-row">
       <div>
-        <div class="cc-nombre">{{ c.nombre }}</div>
-        <div class="cc-estado cc-estado--finalizado">◉ Finalizado</div>
+        <div class="finalizado-row__name">{{ c.nombre }}</div>
+        <span class="finalizado-row__dates">{{ c.fecha_inicio|date:"d/m/y" }} → {{ c.fecha_fin|date:"d/m/y"|default:"en curso" }}</span>
       </div>
-      <div class="cc-dia" style="color:var(--c-muted)">
-        <small>días</small>{{ c.dias_desde_inicio }}
-      </div>
-    </div>
-    <div class="cc-footer">
-      <span>{{ c.fecha_inicio }} → {{ c.fecha_fin|default:"en curso" }}</span>
-      <i class="bi bi-arrow-right cc-footer__arrow"></i>
-    </div>
-  </a>
-  {% endwith %}
+      <span class="finalizado-row__days">{{ c.dias_desde_inicio }}d</span>
+    </a>
+    {% endwith %}
   {% endfor %}
 </div>
 {% endif %}
 
-<!-- Archivados -->
+<!-- ARCHIVADOS -->
 {% if archivados %}
-<div class="section-label" style="margin-top:.75rem">archivados</div>
-<div class="cultivos-grid">
+<div class="section-label" style="margin-top: 22px;">
+  <span class="section-label__rule section-label__rule--fine"></span>
+  <span class="label-eyebrow">§ archivados · {{ archivados|length }}</span>
+  <span class="section-label__line"></span>
+</div>
+<div class="finalizados-grid">
   {% for item in archivados %}
-  {% with c=item.cultivo %}
-  <a href="{% url 'growlog:cultivo_detail' c.pk %}" class="cultivo-card cultivo-card--archivado">
-    <div class="cc-head">
+    {% with c=item.cultivo %}
+    <a href="{% url 'growlog:cultivo_detail' c.pk %}" class="finalizado-row">
       <div>
-        <div class="cc-nombre">{{ c.nombre }}</div>
-        <div class="cc-estado cc-estado--finalizado">◉ {{ c.get_estado_display }}</div>
+        <div class="finalizado-row__name">{{ c.nombre }}</div>
+        <span class="finalizado-row__dates">desde {{ c.fecha_inicio|date:"d/m/y" }} · {{ c.get_estado_display }}</span>
       </div>
-      <div class="cc-dia" style="color:var(--c-muted)">
-        <small>días</small>{{ c.dias_desde_inicio }}
-      </div>
-    </div>
-    <div class="cc-footer">
-      <span>desde {{ c.fecha_inicio }}</span>
-      <i class="bi bi-arrow-right cc-footer__arrow"></i>
-    </div>
-  </a>
-  {% endwith %}
+      <span class="finalizado-row__days">{{ c.dias_desde_inicio }}d</span>
+    </a>
+    {% endwith %}
   {% endfor %}
 </div>
 {% endif %}

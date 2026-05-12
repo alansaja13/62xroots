@@ -1,213 +1,440 @@
-<!doctype html>
+{% load static %}<!doctype html>
 <html lang="es" data-bs-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}GrowLog{% endblock %} — 62xroots</title>
+  <link rel="icon" type="image/png" href="{% static 'growlog/logo.png' %}">
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@300..700&family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap" rel="stylesheet">
+
   <style>
+    /* ═══ FOREST BRUTALIST · DESIGN TOKENS ═══════════════════ */
     :root {
-      --c-bg:       #050507;
-      --c-s1:       #0a0a10;
-      --c-s2:       #0f0f18;
-      --c-s3:       #141420;
-      --c-border:   #1c1c2c;
-      --c-border2:  #262638;
-      --c-green:    #ACDE1D;
-      --c-green-d:  #6e8f10;
-      --c-text:     #c8c8dc;
-      --c-muted:    #44445e;
-      --c-info:     #38bdf8;
-      --c-warn:     #f5a000;
-      --c-danger:   #ff4d6d;
-      --c-purple:   #c084fc;
+      --bg:       #16110b;
+      --bg-alt:   #1d1610;
+      --card:     #221c14;
+      --card-alt: #2a2218;
+      --rule:     #3a2f1f;
+      --rule-soft:#28201a;
+      --cream:    #f3e9d1;
+      --cream-soft:#bfb091;
+      --fine:     #7a6c52;
+
+      --green:    #b1d160;
+      --green-deep:#5a7929;
+      --green-wash:rgba(177,209,96,.08);
+      --honey:    #d4923a;
+      --rust:     #d96a3d;
+      --plum:     #b384d8;
+      --slate:    #79a4d4;
+
+      /* Bootstrap dark overrides */
+      --bs-body-bg: var(--bg);
+      --bs-body-color: var(--cream);
+      --bs-border-color: var(--rule);
     }
 
+    /* ── Reset ── */
     *, *::before, *::after { box-sizing: border-box; }
-
+    html, body { background: var(--bg); }
     body {
-      background: var(--c-bg);
-      background-image: radial-gradient(rgba(60,60,120,.035) 1px, transparent 1px);
-      background-size: 24px 24px;
-      color: var(--c-text);
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-      font-size: .9rem;
+      color: var(--cream);
+      font-family: "Geist", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(177,209,96,.04) 0, transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(217,106,61,.03) 0, transparent 35%),
+        var(--bg);
     }
 
-    .num {
+    /* ═══ TYPOGRAPHY ═════════════════════════════════════════ */
+    .display-b {
+      font-family: "Bricolage Grotesque", "Geist", sans-serif;
+      font-variation-settings: "wdth" 85, "opsz" 96;
+      font-weight: 700;
+      letter-spacing: -.022em;
+      line-height: .95;
+      color: var(--cream);
+    }
+    .display-b--italic { font-style: italic; }
+
+    .mono {
+      font-family: "Geist Mono", ui-monospace, "Consolas", monospace;
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum";
-      font-family: ui-monospace, "SFMono-Regular", "Consolas", monospace;
+    }
+    .num { font-family: "Geist Mono", monospace; font-variant-numeric: tabular-nums; }
+
+    .label-eyebrow {
+      font-family: "Geist Mono", monospace;
+      font-size: 10px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--fine);
+      font-weight: 500;
     }
 
-    /* ── Navbar ── */
+    /* ═══ NAVBAR ═════════════════════════════════════════════ */
     .navbar {
-      background: var(--c-s1) !important;
-      border-bottom: 1px solid var(--c-border) !important;
-      padding: .4rem 1rem;
+      background: var(--bg) !important;
+      border-bottom: 1px solid var(--rule) !important;
+      padding: 14px 28px;
     }
-
-    .brand-62 {
-      font-weight: 900;
-      font-size: 1.2rem;
-      letter-spacing: -.02em;
-      color: var(--c-green) !important;
+    .nav-brand {
+      display: inline-flex; align-items: center; gap: 14px;
       text-decoration: none;
-      line-height: 1;
-      font-family: ui-monospace, monospace;
     }
-    .brand-bracket {
-      color: var(--c-muted);
-      font-weight: 300;
-      font-size: .9em;
-      margin: 0 .08em;
+    .nav-brand img {
+      width: 38px; height: 38px; display: block;
+      filter: drop-shadow(0 0 6px rgba(177,209,96,.35));
     }
-    .brand-x {
-      color: var(--c-muted);
-      font-weight: 400;
-      font-size: .88em;
-      letter-spacing: 0;
+    .nav-brand__title {
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-variation-settings: "wdth" 85, "opsz" 96;
+      font-size: 20px; font-weight: 700; letter-spacing: .02em;
+      color: var(--cream); line-height: 1;
     }
+    .nav-brand__sub {
+      font-family: "Geist Mono", monospace;
+      font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
+      color: var(--fine); display: block; margin-top: 4px;
+    }
+    .nav-crumb {
+      display: flex; align-items: center; gap: 10px;
+      margin-left: 18px; padding-left: 18px; border-left: 1px solid var(--rule);
+    }
+    .nav-crumb__sep { color: var(--fine); font-family: "Geist Mono", monospace; }
+    .nav-crumb__item {
+      font-family: "Geist Mono", monospace; font-size: 11px;
+      color: var(--cream-soft); white-space: nowrap;
+    }
+    .nav-crumb__item--last { color: var(--cream); font-weight: 600; }
 
     .nav-link {
-      color: var(--c-muted) !important;
-      font-size: .8rem;
-      padding: .3rem .6rem !important;
-      border-radius: 4px;
-      transition: color .12s, background .12s;
-      letter-spacing: .01em;
-    }
-    .nav-link:hover { color: var(--c-text) !important; background: var(--c-s2); }
-    .nav-link.active { color: var(--c-text) !important; background: var(--c-s2); }
-
-    .cultivo-pill {
-      font-size: .7rem;
-      color: var(--c-green);
-      background: rgba(172,222,29,.07);
-      border: 1px solid rgba(172,222,29,.18);
-      border-radius: 20px;
-      padding: .22rem .75rem;
-      white-space: nowrap;
-      font-family: ui-monospace, monospace;
-      letter-spacing: .03em;
-    }
-    .cultivo-pill .dot {
-      display: inline-block;
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: var(--c-green);
-      margin-right: 5px;
-      vertical-align: middle;
-      animation: blink 2.4s infinite;
-    }
-    @keyframes blink {
-      0%, 90%, 100% { opacity: 1; }
-      45%            { opacity: .2; }
-    }
-
-    /* ── Cards ── */
-    .card {
-      background: var(--c-s1);
-      border: 1px solid var(--c-border);
-      border-radius: 6px;
-    }
-    .card-header {
+      padding: 8px 14px !important;
+      display: inline-flex !important; align-items: center; gap: 8px;
+      color: var(--cream-soft) !important;
+      font-family: "Geist Mono", monospace;
+      font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+      font-weight: 500;
       background: transparent;
-      border-bottom: 1px solid var(--c-border);
-      padding: .55rem 1rem;
-      font-size: .62rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      color: var(--c-muted);
+      border: 1px solid transparent;
+      border-radius: 0;
+      transition: background .12s, border-color .12s;
     }
+    .nav-link__num {
+      font-size: 9px; color: var(--fine); font-weight: 500;
+    }
+    .nav-link:hover { color: var(--cream) !important; background: var(--card-alt); border-color: var(--rule); }
+    .nav-link.active { color: var(--cream) !important; background: var(--card-alt); border-color: var(--rule); font-weight: 600; }
 
-    /* ── Tables ── */
+    .nav-user {
+      margin-left: 20px; padding: 7px 13px;
+      border: 1px solid var(--rule);
+      display: inline-flex; align-items: center; gap: 8px;
+      text-decoration: none;
+    }
+    .nav-user__dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 8px var(--green);
+    }
+    .nav-user__name {
+      font-family: "Geist Mono", monospace; font-size: 10px;
+      letter-spacing: .15em; text-transform: uppercase; color: var(--cream);
+    }
+    .nav-user__logout {
+      margin-left: 6px; color: var(--fine);
+      font-size: 11px; text-decoration: none;
+    }
+    .nav-user__logout:hover { color: var(--rust); }
+
+    /* ═══ PILLS / BADGES ═════════════════════════════════════ */
+    .pill {
+      display: inline-block; padding: 2px 9px;
+      border: 1px solid var(--fine);
+      background: transparent;
+      font-family: "Geist Mono", monospace;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .15em; text-transform: uppercase;
+      color: var(--fine);
+      line-height: 1.5;
+    }
+    .pill--green  { color: var(--green);  border-color: var(--green); }
+    .pill--rust   { color: var(--rust);   border-color: var(--rust); }
+    .pill--honey  { color: var(--honey);  border-color: var(--honey); }
+    .pill--slate  { color: var(--slate);  border-color: var(--slate); }
+    .pill--plum   { color: var(--plum);   border-color: var(--plum); }
+    .pill--cream  { color: var(--cream);  border-color: var(--rule); }
+
+    /* ═══ PANELS ═════════════════════════════════════════════ */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--rule);
+      margin-bottom: 14px;
+    }
+    .panel__head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 18px;
+      background: var(--card-alt);
+      border-bottom: 1px solid var(--rule);
+    }
+    .panel__head-left { display: flex; align-items: center; gap: 10px; }
+    .panel__sigil { color: var(--green); font-weight: 700; }
+    .panel__sigil--honey { color: var(--honey); }
+    .panel__sigil--slate { color: var(--slate); }
+    .panel__sigil--rust  { color: var(--rust); }
+    .panel__title { /* uses .label-eyebrow */ color: var(--cream); }
+    .panel__action {
+      font-family: "Geist Mono", monospace; font-size: 10px;
+      letter-spacing: .15em; text-transform: uppercase;
+      color: var(--cream-soft); text-decoration: none;
+    }
+    .panel__action:hover { color: var(--green); }
+    .panel__action--green { color: var(--green); font-weight: 700; }
+    .panel__body { padding: 18px 22px; }
+
+    /* ═══ DATA TABLE ═════════════════════════════════════════ */
     .table {
       --bs-table-bg: transparent;
-      --bs-table-border-color: var(--c-border);
-      color: var(--c-text);
-      font-size: .855rem;
+      --bs-table-border-color: var(--rule);
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-family: "Geist Mono", ui-monospace, monospace;
+      font-size: 12px;
+      color: var(--cream);
       margin: 0;
     }
     .table thead th {
-      font-size: .62rem;
+      text-align: left;
+      padding: 10px 14px 9px;
+      font-family: "Geist Mono", monospace;
+      font-size: 9.5px;
+      letter-spacing: .22em;
       text-transform: uppercase;
-      letter-spacing: .09em;
-      color: var(--c-muted);
-      font-weight: 700;
-      border-bottom: 1px solid var(--c-border2);
-      padding: .45rem .85rem;
+      color: var(--fine);
+      font-weight: 600;
+      background: var(--card-alt);
+      border-bottom: 1px solid var(--rule);
+      border-top: 1px solid var(--rule);
       white-space: nowrap;
     }
     .table tbody td {
-      padding: .55rem .85rem;
-      border-color: var(--c-border);
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--rule-soft);
+      vertical-align: middle;
+      font-variant-numeric: tabular-nums;
+      color: var(--cream);
+    }
+    .table-hover tbody tr:hover td { background: rgba(255,255,255,.012); }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .table-zebra tbody tr:nth-child(even) { background: rgba(255,255,255,.012); }
+
+    /* Type chips inside tables */
+    .tc {
+      display: inline-block;
+      padding: 2px 9px;
+      border-left: 2px solid var(--fine);
+      background: rgba(255,255,255,.04);
+      color: var(--fine);
+      font-family: "Geist Mono", monospace;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .15em; text-transform: uppercase;
+    }
+    .tc--med    { border-left-color: var(--slate); background: rgba(121,164,212,.08); color: var(--slate); }
+    .tc--riego  { border-left-color: var(--green); background: var(--green-wash);     color: var(--green); }
+    .tc--evento { border-left-color: var(--honey); background: rgba(212,146,58,.08);  color: var(--honey); }
+    .tc--urge   { border-left-color: var(--rust);  background: rgba(217,106,61,.08);  color: var(--rust); }
+    .tc--baja   { border-left-color: var(--fine);  background: rgba(255,255,255,.03); color: var(--fine); }
+
+    /* VPD status chip */
+    .vpd {
+      display: inline-block; padding: 2px 7px;
+      border-left: 2px solid var(--green);
+      background: rgba(177,209,96,.1);
+      color: var(--green);
+      font-family: "Geist Mono", monospace;
+      font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
+    }
+    .vpd--ideal { border-left-color: var(--green);  background: rgba(177,209,96,.10); color: var(--green); }
+    .vpd--alto  { border-left-color: var(--rust);   background: rgba(217,106,61,.10); color: var(--rust); }
+    .vpd--bajo  { border-left-color: var(--honey);  background: rgba(212,146,58,.10); color: var(--honey); }
+
+    /* ═══ BUTTONS ════════════════════════════════════════════ */
+    .btn-brand {
+      background: var(--green);
+      color: var(--bg) !important;
+      border: none;
+      font-family: "Geist Mono", monospace;
+      font-size: 12px; font-weight: 700;
+      letter-spacing: .2em; text-transform: uppercase;
+      padding: 12px 24px;
+      border-radius: 0;
+      display: inline-flex; align-items: center; gap: 10px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    .btn-brand:hover { opacity: .85; color: var(--bg); }
+    .btn-brand--lg { padding: 14px 32px; font-size: 13px; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--cream);
+      border: 1px solid var(--rule);
+      font-family: "Geist Mono", monospace;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .18em; text-transform: uppercase;
+      padding: 11px 22px;
+      border-radius: 0;
+      display: inline-flex; align-items: center; gap: 10px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+    .btn-ghost:hover { border-color: var(--green); color: var(--green); }
+    .btn-ghost--danger:hover { border-color: var(--rust); color: var(--rust); }
+
+    /* ═══ FORM INPUTS ════════════════════════════════════════ */
+    .form-label, label {
+      font-family: "Geist Mono", monospace;
+      font-size: 10px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--fine);
+      font-weight: 600;
+      display: block; margin-bottom: 8px;
+    }
+    input[type=text], input[type=number], input[type=password],
+    input[type=email], input[type=date], input[type=time],
+    input[type=datetime-local], input:not([type]),
+    textarea, select {
+      width: 100%;
+      background: var(--bg-alt);
+      border: 1px solid var(--rule);
+      color: var(--cream);
+      font-family: "Geist", sans-serif;
+      font-size: 15px; font-weight: 500;
+      padding: 12px 14px;
+      outline: none;
+      border-radius: 0;
+      font-variant-numeric: tabular-nums;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input[type=text]:focus, input[type=number]:focus, input[type=password]:focus,
+    input[type=email]:focus, input[type=date]:focus, input[type=time]:focus,
+    input[type=datetime-local]:focus, input:not([type]):focus,
+    textarea:focus, select:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(177,209,96,.1);
+    }
+    /* Big chunky number inputs for vital data */
+    .input-num-big {
+      font-family: "Bricolage Grotesque", sans-serif !important;
+      font-variation-settings: "wdth" 90, "opsz" 96 !important;
+      font-size: 36px !important; font-weight: 800 !important;
+      letter-spacing: -.02em !important;
+      line-height: 1.1 !important;
+      padding: 10px 16px !important;
+      color: var(--green) !important;
+    }
+    textarea { min-height: 80px; resize: vertical; line-height: 1.5; font-size: 13.5px; }
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%237a6c52' d='M6 8L0 0h12z'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+    select option { background: var(--card); color: var(--cream); }
+
+    /* Bootstrap form-control fallback */
+    .form-control, .form-select { background: var(--bg-alt); color: var(--cream); border: 1px solid var(--rule); border-radius: 0; }
+    .form-control:focus, .form-select:focus { background: var(--bg-alt); color: var(--cream); border-color: var(--green); box-shadow: 0 0 0 3px rgba(177,209,96,.1); }
+
+    /* Checkbox / radio */
+    input[type=checkbox], input[type=radio] {
+      width: 18px; height: 18px;
+      accent-color: var(--green);
+      cursor: pointer;
       vertical-align: middle;
     }
-    .table tbody tr:last-child td { border-bottom: none; }
-    .table-hover tbody tr:hover td { background: rgba(255,255,255,.015); }
-
-    .row-medicion td:first-child { border-left: 2px solid var(--c-info);   padding-left: .75rem; }
-    .row-riego    td:first-child { border-left: 2px solid var(--c-green);  padding-left: .75rem; }
-    .row-evento   td:first-child { border-left: 2px solid var(--c-warn);   padding-left: .75rem; }
-
-    /* ── Badges ── */
-    .badge-tipo {
-      display: inline-block;
-      font-size: .6rem;
-      font-weight: 700;
-      letter-spacing: .06em;
-      padding: .2em .5em;
-      border-radius: 3px;
-      text-transform: uppercase;
+    .form-check-input {
+      background-color: var(--bg-alt) !important;
+      border: 1.5px solid var(--fine) !important;
+      border-radius: 0 !important;
     }
-    .bt-med    { background: rgba(56,189,248,.1);  color: var(--c-info);   border: 1px solid rgba(56,189,248,.22); }
-    .bt-riego  { background: rgba(172,222,29,.08);  color: var(--c-green);  border: 1px solid rgba(172,222,29,.22); }
-    .bt-evento { background: rgba(245,160,0,.08);  color: var(--c-warn);   border: 1px solid rgba(245,160,0,.22); }
-    .bt-urge   { background: rgba(255,77,109,.1);  color: var(--c-danger); border: 1px solid rgba(255,77,109,.22); }
-    .bt-normal { background: rgba(172,222,29,.07);  color: var(--c-green);  border: 1px solid rgba(172,222,29,.18); }
-    .bt-baja   { background: var(--c-s2);          color: var(--c-muted);  border: 1px solid var(--c-border); }
-    .bt-vpd-ideal { background: rgba(172,222,29,.1);  color: var(--c-green);  border: 1px solid rgba(172,222,29,.25); }
-    .bt-vpd-alto  { background: rgba(255,77,109,.1); color: var(--c-danger); border: 1px solid rgba(255,77,109,.25); }
-    .bt-vpd-bajo  { background: rgba(245,160,0,.1);  color: var(--c-warn);   border: 1px solid rgba(245,160,0,.25); }
+    .form-check-input:checked {
+      background-color: var(--green) !important;
+      border-color: var(--green) !important;
+    }
+    .form-check-input:focus { box-shadow: 0 0 0 3px rgba(177,209,96,.15) !important; }
+    .form-check-label { font-family: "Geist", sans-serif; font-size: 13.5px; color: var(--cream); letter-spacing: 0; text-transform: none; font-weight: 500; margin-bottom: 0; }
 
-    /* ── Botón principal ── */
-    .btn-brand {
-      background: var(--c-green);
-      color: #020a06;
-      font-weight: 800;
-      border: none;
-      border-radius: 4px;
-      padding: .45rem 1.1rem;
-      font-size: .8rem;
+    .field-error {
+      font-family: "Geist Mono", monospace;
+      font-size: 11px; color: var(--rust);
+      margin-top: 6px;
       letter-spacing: .04em;
-      text-transform: uppercase;
-      transition: opacity .15s;
-      text-decoration: none;
-      display: inline-block;
     }
-    .btn-brand:hover { opacity: .85; color: #000; }
+    .field-hint {
+      font-family: "Geist Mono", monospace;
+      font-size: 10px; color: var(--fine);
+      margin-top: 6px; letter-spacing: .05em;
+    }
 
-    /* ── Color utilities ── */
-    .text-muted  { color: var(--c-muted) !important; }
-    .c-ideal     { color: var(--c-green) !important; }
-    .c-alto      { color: var(--c-danger) !important; }
-    .c-bajo      { color: var(--c-warn) !important; }
-    .c-info      { color: var(--c-info) !important; }
-    .c-warn      { color: var(--c-warn) !important; }
-    .c-muted     { color: var(--c-muted) !important; }
-    .c-green     { color: var(--c-green) !important; }
-    .c-purple    { color: var(--c-purple) !important; }
-    .c-danger    { color: var(--c-danger) !important; }
-    a { color: var(--c-green); }
-    a:hover { color: var(--c-green); opacity: .8; }
+    /* ═══ ALERTS / MESSAGES ══════════════════════════════════ */
+    .alert {
+      border-radius: 0;
+      border: 1px solid var(--rule);
+      border-left: 3px solid var(--green);
+      background: var(--card);
+      color: var(--cream);
+      font-family: "Geist Mono", monospace;
+      font-size: 12px;
+      padding: 12px 18px;
+    }
+    .alert-success { border-left-color: var(--green); }
+    .alert-error, .alert-danger { border-left-color: var(--rust); }
+    .alert-warning { border-left-color: var(--honey); }
+    .alert-info { border-left-color: var(--slate); }
+    .btn-close { filter: invert(1); opacity: .5; }
 
-    @media (max-width: 576px) {
-      body { font-size: .85rem; }
+    /* ═══ STATUS COLOR UTILS ═════════════════════════════════ */
+    .c-green   { color: var(--green) !important; }
+    .c-rust    { color: var(--rust) !important; }
+    .c-honey   { color: var(--honey) !important; }
+    .c-slate   { color: var(--slate) !important; }
+    .c-plum    { color: var(--plum) !important; }
+    .c-cream   { color: var(--cream) !important; }
+    .c-soft    { color: var(--cream-soft) !important; }
+    .c-fine    { color: var(--fine) !important; }
+    .text-muted { color: var(--fine) !important; }
+    a { color: var(--green); text-decoration: none; }
+    a:hover { color: var(--green); opacity: .85; }
+
+    /* ═══ ESTADO COLORS ══════════════════════════════════════ */
+    .estado-vegetativo { color: var(--green); }
+    .estado-floracion  { color: var(--plum); }
+    .estado-secado, .estado-curado { color: var(--honey); }
+    .estado-finalizado { color: var(--fine); }
+
+    /* ═══ RESPONSIVE ═════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      .navbar { padding: 10px 16px; }
+      .nav-brand img { width: 30px; height: 30px; }
+      .nav-brand__title { font-size: 16px; }
+      .nav-crumb { display: none; }
+      .nav-link { padding: 6px 10px !important; font-size: 10px; }
+      .panel__body { padding: 14px 16px; }
+      body { font-size: 13px; }
+      main { padding-left: 16px !important; padding-right: 16px !important; }
     }
   </style>
 
@@ -216,44 +443,49 @@
 <body>
 
 <nav class="navbar navbar-expand-lg">
-  <div class="container-fluid gap-3">
-    <a class="brand-62" href="{% url 'growlog:dashboard' %}">
-      <span class="brand-bracket">‹</span>62<span class="brand-x">xroots</span><span class="brand-bracket">›</span>
+  <div class="container-fluid" style="gap:14px;">
+    <a class="nav-brand" href="{% url 'growlog:dashboard' %}">
+      <img src="{% static 'growlog/logo.png' %}" alt="62xroots">
+      <div>
+        <div class="nav-brand__title">62×ROOTS</div>
+        <div class="nav-brand__sub">grower's terminal</div>
+      </div>
     </a>
 
-    <button class="navbar-toggler border-0 p-1" type="button"
+    {% block crumb %}{% endblock %}
+
+    <button class="navbar-toggler border-0 p-1 ms-auto" type="button"
             data-bs-toggle="collapse" data-bs-target="#navMain"
-            style="color:var(--c-muted)">
+            style="color:var(--cream-soft)">
       <span class="navbar-toggler-icon"></span>
     </button>
 
     <div class="collapse navbar-collapse" id="navMain">
-      <ul class="navbar-nav me-auto gap-1">
+      <ul class="navbar-nav ms-auto" style="gap:4px;">
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'growlog:dashboard' %}">
-            <i class="bi bi-grid-1x2 me-1"></i>Dashboard
+          <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+             href="{% url 'growlog:dashboard' %}">
+            <span class="nav-link__num">01</span> dashboard
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'growlog:nuevo_cultivo' %}">
-            <i class="bi bi-plus-circle me-1"></i>Nuevo cultivo
+          <a class="nav-link {% if request.resolver_match.url_name == 'nuevo_cultivo' %}active{% endif %}"
+             href="{% url 'growlog:nuevo_cultivo' %}">
+            <span class="nav-link__num">02</span> nuevo
           </a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="/admin/">
-            <i class="bi bi-sliders2 me-1"></i>Admin
+            <span class="nav-link__num">03</span> admin
           </a>
         </li>
       </ul>
 
       {% if user.is_authenticated %}
-      <div class="d-flex align-items-center gap-2">
-        <span class="cultivo-pill" style="cursor:default">
-          <span class="dot"></span>{{ user.username }}
-        </span>
-        <a href="{% url 'growlog:logout' %}"
-           style="font-size:.65rem;color:var(--c-muted);text-decoration:none;letter-spacing:.04em;"
-           title="Cerrar sesión">
+      <div class="nav-user">
+        <span class="nav-user__dot"></span>
+        <span class="nav-user__name">{{ user.username }}</span>
+        <a href="{% url 'growlog:logout' %}" class="nav-user__logout" title="Cerrar sesión">
           <i class="bi bi-box-arrow-right"></i>
         </a>
       </div>
@@ -262,10 +494,10 @@
   </div>
 </nav>
 
-<main class="container-fluid py-3 px-3 px-md-4">
+<main class="container-fluid" style="padding: 28px 40px 36px;">
   {% if messages %}
     {% for msg in messages %}
-    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show border-0 rounded-1 py-2 mb-3" role="alert">
+    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
       {{ msg }}
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>

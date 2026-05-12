@@ -1,39 +1,41 @@
-<tr id="tarea-{{ tarea.pk }}" class="{% if tarea.completada %}opacity-50{% endif %}">
-  <td>
+<div id="tarea-{{ tarea.pk }}" class="cd-tarea cd-tarea--{{ tarea.prioridad }}{% if tarea.completada %} opacity-50{% endif %}">
+  <div style="display: flex; gap: 10px; align-items: flex-start; flex: 1; min-width: 0;">
     {% if not tarea.completada %}
-      {% if tarea.prioridad == 'urgente' %}
-        <span class="badge-tipo bt-urge me-1">URG</span>
-      {% elif tarea.prioridad == 'normal' %}
-        <span class="badge-tipo bt-normal me-1">NOR</span>
-      {% else %}
-        <span class="badge-tipo bt-baja me-1">BAJA</span>
-      {% endif %}
-    {% endif %}
-    <span class="{% if tarea.completada %}text-decoration-line-through text-muted{% endif %}" style="font-size:.83rem">
-      {{ tarea.titulo }}
-    </span>
-    <div class="text-muted" style="font-size:.68rem;margin-top:.1rem">{{ tarea.get_categoria_display }}</div>
-  </td>
-  <td class="text-center num text-muted" style="font-size:.75rem">
-    {% if tarea.fecha_objetivo %}{{ tarea.fecha_objetivo|date:"d/m" }}{% else %}—{% endif %}
-  </td>
-  <td>
-    {% if not tarea.completada %}
-    <button class="btn btn-sm btn-outline-success border-0 p-1"
-            hx-post="{% url 'growlog:tarea_completar' tarea.pk %}"
-            hx-target="#tarea-{{ tarea.pk }}"
-            hx-swap="outerHTML"
-            style="width:26px;height:26px;line-height:1">
-      <i class="bi bi-check-lg" style="font-size:.75rem"></i>
+    <button
+      class="border-0 p-0"
+      style="background: transparent; cursor: pointer; width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0;"
+      hx-post="{% url 'growlog:tarea_completar' tarea.pk %}"
+      hx-target="#tarea-{{ tarea.pk }}"
+      hx-swap="outerHTML"
+      title="Completar">
+      <span style="display: inline-block; width: 16px; height: 16px; border: 1.5px solid var(--fine); transition: border-color .12s, background .12s;"></span>
     </button>
     {% else %}
-    <i class="bi bi-check-circle-fill c-green" style="font-size:.85rem"></i>
+    <span style="display: inline-flex; align-items: center; justify-content: center;
+                 width: 16px; height: 16px; background: var(--green); color: var(--bg);
+                 margin-top: 2px; flex-shrink: 0; font-size: 11px; font-weight: 800;">✓</span>
     {% endif %}
-  </td>
-  <td>
-    <a href="{% url 'growlog:tarea_editar' tarea.pk %}"
-       style="font-size:.7rem;color:var(--c-muted)" title="Editar">
-      <i class="bi bi-pencil"></i>
-    </a>
-  </td>
-</tr>
+
+    <div style="flex: 1; min-width: 0;">
+      <div class="cd-tarea__title{% if tarea.completada %} text-decoration-line-through c-fine{% endif %}">
+        {{ tarea.titulo }}
+      </div>
+      <div class="cd-tarea__meta{% if tarea.prioridad == 'urgente' and not tarea.completada %} cd-tarea__meta--urg{% endif %}">
+        {% if tarea.fecha_objetivo %}
+          <span>{{ tarea.fecha_objetivo|date:"d/m" }}</span>
+          <span class="c-fine">·</span>
+        {% endif %}
+        <span class="c-fine">{{ tarea.get_categoria_display }}</span>
+        {% if tarea.prioridad == 'urgente' and not tarea.completada %}
+          <span class="c-fine">·</span>
+          <span>● urgente</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <a href="{% url 'growlog:tarea_editar' tarea.pk %}"
+     style="color: var(--fine); font-size: 11px; text-decoration: none; padding: 4px;" title="Editar">
+    <i class="bi bi-pencil"></i>
+  </a>
+</div>

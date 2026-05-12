@@ -1,144 +1,221 @@
 {% extends "base.html" %}
 {% block title %}Timeline — {{ cultivo.nombre }}{% endblock %}
 
+{% block crumb %}
+<div class="nav-crumb d-none d-lg-flex">
+  <span class="nav-crumb__item">mis cultivos</span>
+  <span class="nav-crumb__sep">/</span>
+  <span class="nav-crumb__item">{{ cultivo.nombre }}</span>
+  <span class="nav-crumb__sep">/</span>
+  <span class="nav-crumb__item nav-crumb__item--last">historial</span>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .tl-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "Geist Mono", monospace; font-size: 11px;
+    color: var(--cream-soft); text-decoration: none;
+    margin-bottom: 14px; letter-spacing: .1em;
+  }
+  .tl-back:hover { color: var(--green); }
+
+  .tl-header {
+    display: grid; grid-template-columns: 1fr auto; gap: 28px;
+    align-items: flex-end; margin-bottom: 18px;
+    padding-bottom: 18px; border-bottom: 1px solid var(--rule);
+  }
+  .tl-title-row {
+    margin-top: 8px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  }
+  .tl-title {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 56px; font-weight: 700; letter-spacing: -.022em; line-height: .95;
+    margin: 0; color: var(--cream);
+  }
+  .tl-actions { display: flex; gap: 10px; align-items: center; }
+
+  /* FILTERS */
+  .tl-filters {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .tl-filter {
+    padding: 6px 12px;
+    border: 1px solid var(--rule);
+    background: transparent;
+    display: inline-flex; align-items: center; gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .tl-filter--active {
+    border-color: var(--cream);
+    background: rgba(255,255,255,.04);
+  }
+  .tl-filter--med.tl-filter--active    { border-color: var(--slate); background: rgba(121,164,212,.08); }
+  .tl-filter--riego.tl-filter--active  { border-color: var(--green); background: var(--green-wash); }
+  .tl-filter--evento.tl-filter--active { border-color: var(--honey); background: rgba(212,146,58,.08); }
+  .tl-filter__label {
+    font-family: "Geist Mono", monospace; font-size: 10px; font-weight: 700;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--cream-soft);
+  }
+  .tl-filter--active .tl-filter__label { color: var(--cream); }
+  .tl-filter__count {
+    font-family: "Geist Mono", monospace; font-size: 10px; color: var(--fine);
+  }
+
+  @media (max-width: 900px) {
+    .tl-header { grid-template-columns: 1fr; }
+    .tl-title { font-size: 40px; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+<a href="{% url 'growlog:cultivo_detail' cultivo.pk %}" class="tl-back">
+  <i class="bi bi-chevron-left"></i> {{ cultivo.nombre }}
+</a>
+
+<!-- HEADER -->
+<div class="tl-header">
   <div>
-    <h2 class="h4 mb-0 fw-bold">{{ cultivo.nombre }}</h2>
-    <div style="font-size:.78rem" class="mt-1">
-      {% if cultivo.estado == 'vegetativo' %}
-        <span class="c-green fw-semibold">● Vegetativo</span>
-      {% elif cultivo.estado == 'floracion' %}
-        <span class="c-purple fw-semibold">● Floración</span>
-      {% else %}
-        <span class="text-muted fw-semibold">● {{ cultivo.get_estado_display }}</span>
-      {% endif %}
-      <span class="text-muted ms-2">Día {{ cultivo.dias_desde_inicio }} · desde {{ cultivo.fecha_inicio }}</span>
+    <div class="label-eyebrow">// historial completo · log raw</div>
+    <div class="tl-title-row">
+      <h1 class="tl-title">{{ cultivo.nombre|upper }}</h1>
+      <span class="pill pill--{% if cultivo.estado == 'vegetativo' %}green{% elif cultivo.estado == 'floracion' %}plum{% else %}cream{% endif %}">
+        ● {{ cultivo.get_estado_display }}
+      </span>
+    </div>
+    <div class="mono c-soft" style="margin-top: 8px; font-size: 12px;">
+      día {{ cultivo.dias_desde_inicio }} · desde {{ cultivo.fecha_inicio|date:"d/m/Y" }} · {{ registros|length }} entradas
     </div>
   </div>
-  <a href="{% url 'growlog:quick' cultivo.pk %}" class="btn btn-brand">
-    <i class="bi bi-lightning-charge-fill me-1"></i>Anotar
+  <div class="tl-actions">
+    <a href="{% url 'growlog:quick' cultivo.pk %}" class="btn-brand">
+      <i class="bi bi-plus-lg"></i> anotar
+    </a>
+  </div>
+</div>
+
+<!-- FILTERS (visual — wire to query params if you want) -->
+<div class="tl-filters">
+  <span class="label-eyebrow">filtrar:</span>
+  <a href="?" class="tl-filter tl-filter--active">
+    <span class="tl-filter__label">todo</span>
+    <span class="tl-filter__count">{{ registros|length }}</span>
+  </a>
+  <a href="?tipo=medicion" class="tl-filter tl-filter--med">
+    <span class="tl-filter__label">med</span>
+  </a>
+  <a href="?tipo=riego" class="tl-filter tl-filter--riego">
+    <span class="tl-filter__label">riego</span>
+  </a>
+  <a href="?tipo=evento" class="tl-filter tl-filter--evento">
+    <span class="tl-filter__label">evento</span>
   </a>
 </div>
 
-<div class="card">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-table me-1"></i>Historial completo</span>
-    <span class="text-muted" style="font-size:.7rem">{{ registros|length }} registros</span>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <th style="width:90px">Fecha</th>
-          <th style="width:72px">Tipo</th>
-          <th style="width:200px">Dato principal</th>
-          <th>Detalle</th>
-          <th>Notas / Extra</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for reg in registros %}
-        <tr class="row-{{ reg.tipo }}">
-
-          <!-- Fecha -->
-          <td class="text-muted num" style="font-size:.78rem;white-space:nowrap">
-            {{ reg.ts|date:"d/m/y" }}<br>
-            <span style="font-size:.7rem">{{ reg.ts|date:"H:i" }}</span>
-          </td>
-
-          <!-- Tipo -->
-          <td>
-            {% if reg.tipo == 'medicion' %}
-              <span class="badge-tipo bt-med">MED</span>
-            {% elif reg.tipo == 'riego' %}
-              <span class="badge-tipo bt-riego">RIEGO</span>
-            {% else %}
-              <span class="badge-tipo bt-evento">EVENTO</span>
+<!-- TABLE -->
+<div class="panel">
+  <table class="table table-zebra">
+    <thead>
+      <tr>
+        <th style="width:110px;">Fecha · hora</th>
+        <th style="width:90px;">Tipo</th>
+        <th style="width:180px;">Dato principal</th>
+        <th style="width:280px;">Detalle</th>
+        <th>Notas / Extra</th>
+        <th style="width:40px; text-align:right;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for reg in registros %}
+      <tr>
+        <td class="c-soft" style="white-space:nowrap;">
+          {{ reg.ts|date:"d/m/y" }}<br>
+          <span class="c-fine" style="font-size:10px;">{{ reg.ts|date:"H:i" }}</span>
+        </td>
+        <td>
+          {% if reg.tipo == 'medicion' %}
+            <span class="tc tc--med">med</span>
+          {% elif reg.tipo == 'riego' %}
+            <span class="tc tc--riego">riego</span>
+          {% else %}
+            <span class="tc tc--evento">{{ reg.obj.tipo }}</span>
+          {% endif %}
+        </td>
+        <td class="c-cream" style="font-weight:600;">
+          {% if reg.tipo == 'medicion' %}
+            <span style="font-size:14px;">{{ reg.obj.temperatura_c }}°C <span class="c-fine" style="font-weight:400;">/</span> {{ reg.obj.humedad_relativa }}%HR</span>
+          {% elif reg.tipo == 'riego' %}
+            <span style="font-size:14px;">{{ reg.obj.volumen_total_ml }} ml</span>
+            {% if reg.obj.volumen_por_planta_ml %}
+              <span class="c-fine" style="font-weight:400; font-size:11px; margin-left:6px;">({{ reg.obj.volumen_por_planta_ml }}/planta)</span>
             {% endif %}
-          </td>
-
-          <!-- Dato principal -->
-          <td class="num fw-semibold">
-            {% if reg.tipo == 'medicion' %}
-              {{ reg.obj.temperatura_c }}°C
-              <span class="text-muted fw-normal"> / </span>
-              {{ reg.obj.humedad_relativa }}%HR
-            {% elif reg.tipo == 'riego' %}
-              {{ reg.obj.volumen_total_ml }}&nbsp;ml
-              {% if reg.obj.volumen_por_planta_ml %}
-                <span class="text-muted fw-normal small">({{ reg.obj.volumen_por_planta_ml }}ml/planta)</span>
-              {% endif %}
-            {% else %}
-              {{ reg.obj.get_tipo_display }}
+          {% else %}
+            <span class="c-honey">{{ reg.obj.get_tipo_display|upper }}</span>
+          {% endif %}
+        </td>
+        <td class="c-soft" style="font-size:11.5px;">
+          {% if reg.tipo == 'medicion' %}
+            <span class="vpd vpd--{{ reg.obj.vpd_estado }}">VPD {{ reg.obj.vpd }} kPa · {{ reg.obj.vpd_estado }}</span>
+          {% elif reg.tipo == 'riego' %}
+            {% if reg.obj.ph_agua %}<span>pH <span class="c-cream">{{ reg.obj.ph_agua }}</span></span>{% endif %}
+            {% if reg.obj.ec_solucion %}<span class="c-fine"> · </span><span>EC <span class="c-cream">{{ reg.obj.ec_solucion }}</span></span>{% endif %}
+            {% if reg.obj.runoff_observado %}<span class="c-fine"> · </span><span class="c-green">runoff ✓</span>{% endif %}
+          {% else %}
+            <span class="c-cream">{{ reg.obj.descripcion|truncatechars:70 }}</span>
+            {% if reg.obj.follow_up_fecha and not reg.obj.follow_up_resuelto %}
+            <div class="c-honey mono" style="margin-top:4px; font-size:10px;">
+              <i class="bi bi-alarm"></i> Follow-up: {{ reg.obj.follow_up_fecha|date:"d/m/Y" }} — {{ reg.obj.follow_up_descripcion }}
+            </div>
             {% endif %}
-          </td>
-
-          <!-- Detalle -->
-          <td class="small">
-            {% if reg.tipo == 'medicion' %}
-              <span class="badge-tipo num
-                {% if reg.obj.vpd_estado == 'ideal' %}bt-vpd-ideal
-                {% elif reg.obj.vpd_estado == 'alto' %}bt-vpd-alto
-                {% else %}bt-vpd-bajo{% endif %}">
-                VPD {{ reg.obj.vpd }} kPa
-              </span>
-            {% elif reg.tipo == 'riego' %}
-              <span class="text-muted">
-                {% if reg.obj.ph_agua %}pH <span class="num c-green">{{ reg.obj.ph_agua }}</span>{% endif %}
-                {% if reg.obj.ec_solucion %}&nbsp;·&nbsp;EC <span class="num">{{ reg.obj.ec_solucion }}</span>{% endif %}
-                {% if reg.obj.runoff_observado %}&nbsp;·&nbsp;<span class="c-green">Runoff ✓</span>{% endif %}
-              </span>
-              {% if reg.obj.nutrientes_aplicados.exists %}
-              <div class="mt-1">
+          {% endif %}
+        </td>
+        <td class="c-fine" style="font-size:11px;">
+          {% if reg.tipo == 'medicion' and reg.obj.notas %}
+            <span style="font-style:italic; color:var(--cream-soft);">"{{ reg.obj.notas }}"</span>
+          {% elif reg.tipo == 'riego' %}
+            {% if reg.obj.nutrientes_aplicados.exists %}
+              <span style="display:inline-flex; gap:5px; flex-wrap:wrap;">
                 {% for na in reg.obj.nutrientes_aplicados.all %}
-                <span class="badge-tipo bt-baja me-1" style="font-size:.6rem">
-                  {{ na.nutriente }} {{ na.dosis_g_por_litro }}g/L
-                </span>
+                  <span class="tc tc--riego" style="font-weight:600; letter-spacing:.05em;">{{ na.nutriente }} · {{ na.dosis_g_por_litro }}g/L</span>
                 {% endfor %}
-              </div>
-              {% endif %}
-            {% else %}
-              <div class="text-muted">{{ reg.obj.descripcion|truncatechars:70 }}</div>
-              {% if reg.obj.plantas_afectadas.exists %}
-              <div class="mt-1">
+              </span>
+            {% endif %}
+            {% if reg.obj.notas %}<div style="margin-top:4px; color:var(--cream-soft); font-style:italic;">{{ reg.obj.notas }}</div>{% endif %}
+          {% elif reg.tipo == 'evento' %}
+            {% if reg.obj.plantas_afectadas.exists %}
+              <span style="display:inline-flex; gap:5px; flex-wrap:wrap;">
                 {% for p in reg.obj.plantas_afectadas.all %}
-                <span class="badge-tipo bt-baja me-1" style="font-size:.6rem">{{ p.apodo }}</span>
+                  <span class="tc tc--baja" style="font-weight:600; letter-spacing:.05em;">{{ p.apodo }}</span>
                 {% endfor %}
-              </div>
-              {% endif %}
-              {% if reg.obj.follow_up_fecha and not reg.obj.follow_up_resuelto %}
-              <div class="mt-1 c-warn" style="font-size:.72rem">
-                <i class="bi bi-alarm me-1"></i>Follow-up: {{ reg.obj.follow_up_fecha|date:"d/m/Y" }}
-                — {{ reg.obj.follow_up_descripcion }}
-              </div>
-              {% endif %}
-            {% endif %}
-          </td>
-
-          <!-- Notas -->
-          <td class="text-muted small">
-            {% if reg.tipo == 'medicion' %}
-              {{ reg.obj.notas }}
-            {% elif reg.tipo == 'riego' %}
-              {{ reg.obj.notas }}
-            {% endif %}
-          </td>
-
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" class="text-center text-muted py-5">
-            <i class="bi bi-journal-x" style="font-size:2rem;display:block;margin-bottom:.5rem"></i>
-            Todavía no hay registros.
-            <a href="{% url 'growlog:quick' %}">Anotá el primero →</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+              </span>
+            {% else %}—{% endif %}
+          {% else %}—{% endif %}
+        </td>
+        <td style="text-align:right;">
+          {% if reg.tipo == 'riego' %}
+            <a href="{% url 'growlog:riego_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
+          {% elif reg.tipo == 'evento' %}
+            <a href="{% url 'growlog:evento_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" style="text-align:center; padding:60px 16px; color:var(--fine);">
+          <i class="bi bi-journal-x" style="font-size:24px; display:block; margin-bottom:10px; opacity:.5;"></i>
+          Todavía no hay registros.
+          <a href="{% url 'growlog:quick' cultivo.pk %}" class="c-green">Anotá el primero →</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
 {% endblock %}

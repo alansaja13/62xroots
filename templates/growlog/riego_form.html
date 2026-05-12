@@ -1,189 +1,292 @@
 {% extends "base.html" %}
-{% block title %}Riego{% endblock %}
+{% block title %}Riego — {{ riego }}{% endblock %}
+
+{% block crumb %}
+<div class="nav-crumb d-none d-lg-flex">
+  <span class="nav-crumb__item">mis cultivos</span>
+  <span class="nav-crumb__sep">/</span>
+  <span class="nav-crumb__item">{{ riego.cultivo.nombre }}</span>
+  <span class="nav-crumb__sep">/</span>
+  <span class="nav-crumb__item nav-crumb__item--last">riego</span>
+</div>
+{% endblock %}
 
 {% block extra_head %}
 <style>
-.rf-back {
-  font-size:.65rem;color:var(--c-muted);text-decoration:none;
-  letter-spacing:.04em;display:inline-flex;align-items:center;gap:.3rem;
-  transition:color .12s;margin-bottom:.5rem;
-}
-.rf-back:hover { color:var(--c-green); }
-.rf-eyebrow {
-  font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
-  color:var(--c-muted);font-family:ui-monospace,monospace;margin-bottom:.35rem;
-}
-.rf-title {
-  font-size:1.6rem;font-weight:900;margin:0 0 1.25rem;letter-spacing:-.025em;
-}
-.rf-card {
-  background:var(--c-s1);border:1px solid var(--c-border);
-  border-top:3px solid var(--c-green);border-radius:6px;padding:1.25rem;
-  margin-bottom:.85rem;
-}
-.rf-card-title {
-  font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--c-muted);font-family:ui-monospace,monospace;margin-bottom:1rem;
-  padding-bottom:.5rem;border-bottom:1px solid var(--c-border);
-}
-.rf-label {
-  display:block;font-size:.72rem;font-weight:700;letter-spacing:.08em;
-  text-transform:uppercase;color:var(--c-muted);margin-bottom:.4rem;
-  font-family:ui-monospace,monospace;
-}
-.rf-check-row {
-  display:flex;align-items:center;gap:.5rem;padding:.25rem 0;
-}
-.rf-check-row label { font-size:.85rem; }
-.rf-field-error { font-size:.72rem;color:var(--c-danger);margin-top:.3rem; }
-.rf-delete-link {
-  font-size:.72rem;color:var(--c-muted);text-decoration:none;
-  display:inline-flex;align-items:center;gap:.35rem;transition:color .12s;
-}
-.rf-delete-link:hover { color:var(--c-danger); }
+  .rf-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "Geist Mono", monospace; font-size: 11px;
+    color: var(--cream-soft); text-decoration: none;
+    margin-bottom: 14px; letter-spacing: .1em;
+  }
+  .rf-back:hover { color: var(--green); }
 
-/* Nutrientes table */
-.na-table td, .na-table th {
-  font-size:.8rem;padding:.45rem .75rem;vertical-align:middle;
-}
-.na-table th {
-  font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--c-muted);border-bottom:1px solid var(--c-border);
-}
-.na-empty {
-  padding:1.5rem;text-align:center;color:var(--c-muted);font-size:.8rem;
-}
+  .rf-header {
+    display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap;
+    margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid var(--rule);
+  }
+  .rf-title {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 64px; font-weight: 800; line-height: .95;
+    letter-spacing: -.022em; margin: 8px 0 0; color: var(--cream);
+  }
+  .rf-title__accent {
+    color: var(--green); font-style: italic; font-size: 36px; font-weight: 700;
+    padding-bottom: 4px;
+  }
+
+  /* Big number inputs */
+  .rf-num-input input[type=number],
+  .rf-num-input input[type=text] {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 90, "opsz" 96;
+    font-size: 36px; font-weight: 800; color: var(--green);
+    letter-spacing: -.02em; line-height: 1.1;
+    padding: 10px 16px;
+  }
+
+  .rf-na-row {
+    display: grid;
+    grid-template-columns: 44px 1fr 130px 40px;
+    gap: 12px; align-items: center;
+    padding: 12px 0; border-bottom: 1px solid var(--rule-soft);
+  }
+  .rf-na-row:last-child { border-bottom: none; }
+  .rf-na-row__badge {
+    width: 36px; height: 36px;
+    background: var(--green-wash); border: 1px solid var(--green-deep);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--green);
+    font-family: "Geist Mono", monospace; font-size: 11px; font-weight: 700;
+  }
+  .rf-na-row__name {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 16px; font-weight: 700; line-height: 1;
+  }
+  .rf-na-row__dosis {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 24px; font-weight: 700; color: var(--green);
+    text-align: right;
+  }
+  .rf-na-row__del {
+    background: transparent; border: none; color: var(--fine);
+    font-family: "Geist Mono", monospace; font-size: 14px;
+    cursor: pointer; padding: 4px;
+  }
+  .rf-na-row__del:hover { color: var(--rust); }
+  .rf-na-empty {
+    padding: 24px 16px; text-align: center; color: var(--fine);
+    font-family: "Geist Mono", monospace; font-size: 12px;
+  }
+
+  .rf-delete-link {
+    font-family: "Geist Mono", monospace; font-size: 11px;
+    color: var(--fine); text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+    letter-spacing: .1em;
+  }
+  .rf-delete-link:hover { color: var(--rust); }
+
+  @media (max-width: 900px) {
+    .rf-title { font-size: 44px; }
+    .rf-title__accent { font-size: 24px; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-12 col-md-8 col-lg-6">
 
-    <div class="mb-1">
-      <a href="{{ back_url }}" class="rf-back">
-        <i class="bi bi-chevron-left"></i> volver al cultivo
-      </a>
+<a href="{{ back_url }}" class="rf-back">
+  <i class="bi bi-chevron-left"></i> volver al cultivo
+</a>
+
+<!-- HEADER -->
+<div class="rf-header">
+  <div>
+    <div class="label-eyebrow">// log · riego</div>
+    <div style="display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap;">
+      <h1 class="rf-title">RIEGO</h1>
+      <span class="rf-title rf-title__accent">+ nutrientes</span>
     </div>
-    <div class="rf-eyebrow">◈ riego</div>
-    <h1 class="rf-title">{{ riego }}</h1>
+    <div style="display: flex; align-items: center; gap: 14px; margin-top: 12px; flex-wrap: wrap;">
+      <span class="mono c-soft" style="font-size: 12px;">en</span>
+      <span class="pill pill--green">● {{ riego.cultivo.nombre }}</span>
+      <span class="mono c-soft" style="font-size: 12px;">· día {{ riego.cultivo.dias_desde_inicio }}</span>
+    </div>
+  </div>
+</div>
 
+<div class="row g-3">
+  <div class="col-12 col-lg-8">
     <!-- Riego form -->
-    <div class="rf-card">
-      <div class="rf-card-title">Datos del riego</div>
-      <form method="post">
-        {% csrf_token %}
-        <div class="row g-2">
-          {% for field in form %}
-          {% with wclass=field.field.widget.attrs.class %}
-          {% if wclass == 'form-check-input' %}
-          <div class="col-12">
-            <div class="rf-check-row">
-              {{ field }}
-              <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-            </div>
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__head-left">
+          <span class="panel__sigil">§</span>
+          <span class="label-eyebrow panel__title">datos · riego</span>
+        </div>
+      </div>
+      <div class="panel__body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="row g-3">
+            {% for field in form %}
+              {% with wclass=field.field.widget.attrs.class %}
+              {% if wclass == 'form-check-input' %}
+                <div class="col-12">
+                  <label class="form-check-label d-flex align-items-center gap-2" style="cursor: pointer; padding: 4px 0;">
+                    {{ field }}
+                    <span style="font-size:13px; color: var(--cream); font-weight: 500;">{{ field.label }}</span>
+                  </label>
+                </div>
+              {% elif field.name == 'timestamp' or field.name == 'notas' %}
+                <div class="col-12">
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {{ field }}
+                  {% if field.errors %}<div class="field-error">{{ field.errors.0 }}</div>{% endif %}
+                </div>
+              {% else %}
+                <div class="col-12 col-sm-6 rf-num-input">
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {{ field }}
+                  {% if field.errors %}<div class="field-error">{{ field.errors.0 }}</div>{% endif %}
+                </div>
+              {% endif %}
+              {% endwith %}
+            {% endfor %}
           </div>
-          {% elif field.name == 'timestamp' or field.name == 'notas' %}
-          <div class="col-12">
-            <label class="rf-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}<div class="rf-field-error">{{ field.errors.0 }}</div>{% endif %}
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn-brand" style="flex: 1;">
+              <i class="bi bi-check-lg"></i> actualizar riego
+            </button>
+            <a href="{{ back_url }}" class="btn-ghost">cancelar</a>
           </div>
-          {% else %}
-          <div class="col-sm-6">
-            <label class="rf-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}<div class="rf-field-error">{{ field.errors.0 }}</div>{% endif %}
+          {% if delete_url %}
+          <div class="text-center mt-3">
+            <a href="{{ delete_url }}" class="rf-delete-link">
+              <i class="bi bi-trash3"></i> eliminar este riego
+            </a>
           </div>
           {% endif %}
-          {% endwith %}
-          {% endfor %}
-        </div>
-        <div class="d-flex gap-2 mt-4">
-          <button type="submit" class="btn btn-brand flex-fill" style="padding:.65rem">
-            <i class="bi bi-check-lg me-1"></i> Actualizar riego
-          </button>
-          <a href="{{ back_url }}" class="btn btn-outline-secondary" style="padding:.65rem .85rem;font-size:.85rem">
-            Cancelar
-          </a>
-        </div>
-        {% if delete_url %}
-        <div class="text-center mt-3">
-          <a href="{{ delete_url }}" class="rf-delete-link">
-            <i class="bi bi-trash3"></i> Eliminar este riego
-          </a>
-        </div>
-        {% endif %}
-      </form>
+        </form>
+      </div>
     </div>
 
     <!-- Nutrientes aplicados -->
-    <div style="background:var(--c-s1);border:1px solid var(--c-border);border-radius:6px;overflow:hidden;margin-bottom:.85rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;
-        padding:.6rem 1rem;border-bottom:1px solid var(--c-border);background:var(--c-s2)">
-        <span style="font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c-muted);font-family:ui-monospace,monospace">
-          ◂ nutrientes aplicados
-        </span>
-        <span style="font-size:.7rem;color:var(--c-muted)">{{ nutrientes|length }} productos</span>
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__head-left">
+          <span class="panel__sigil panel__sigil--honey">§</span>
+          <span class="label-eyebrow panel__title">nutrientes aplicados</span>
+          <span class="mono c-fine" style="font-size: 10px;">· {{ nutrientes|length }} productos</span>
+        </div>
       </div>
       {% if nutrientes %}
-      <div class="table-responsive">
-        <table class="table table-hover na-table mb-0">
-          <thead>
-            <tr>
-              <th>Nutriente</th>
-              <th>Dosis (g/L)</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for na in nutrientes %}
-            <tr>
-              <td class="fw-semibold">{{ na.nutriente }}</td>
-              <td class="num">{{ na.dosis_g_por_litro }}</td>
-              <td style="text-align:right">
-                <form method="post" action="{% url 'growlog:nutriente_aplicado_eliminar' na.pk %}"
-                      style="display:inline" onsubmit="return confirm('¿Eliminar {{ na.nutriente }}?')">
-                  {% csrf_token %}
-                  <button type="submit" class="btn btn-sm border-0 p-1"
-                          style="color:var(--c-muted);width:24px;height:24px;line-height:1" title="Eliminar">
-                    <i class="bi bi-x-lg" style="font-size:.7rem"></i>
-                  </button>
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+        <div class="panel__body" style="padding-top: 6px; padding-bottom: 8px;">
+        {% for na in nutrientes %}
+          <div class="rf-na-row">
+            <div class="rf-na-row__badge">{{ forloop.counter|stringformat:"02d" }}</div>
+            <div>
+              <div class="rf-na-row__name">{{ na.nutriente }}</div>
+              <div class="mono c-fine" style="font-size: 10px; margin-top: 2px;">
+                {% if na.nutriente.npk %}NPK {{ na.nutriente.npk }} · {% endif %}{{ na.nutriente.get_etapa_recomendada_display }}
+              </div>
+            </div>
+            <div class="rf-na-row__dosis">{{ na.dosis_g_por_litro }}<span class="mono c-soft" style="font-size: 11px; margin-left: 4px;">g/L</span></div>
+            <form method="post" action="{% url 'growlog:nutriente_aplicado_eliminar' na.pk %}"
+                  style="display: inline; text-align: right;"
+                  onsubmit="return confirm('¿Eliminar {{ na.nutriente }}?')">
+              {% csrf_token %}
+              <button type="submit" class="rf-na-row__del" title="Eliminar">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </form>
+          </div>
+        {% endfor %}
+        </div>
       {% else %}
-      <div class="na-empty">Sin nutrientes registrados aún.</div>
+        <div class="rf-na-empty">Sin nutrientes registrados aún.</div>
       {% endif %}
     </div>
 
     <!-- Agregar nutriente -->
-    <div class="rf-card">
-      <div class="rf-card-title">Agregar nutriente</div>
-      <form method="post" action="{% url 'growlog:nutriente_aplicado_crear' riego.pk %}">
-        {% csrf_token %}
-        <div class="row g-2 align-items-end">
-          <div class="col-sm-7">
-            <label class="rf-label" for="{{ na_form.nutriente.id_for_label }}">{{ na_form.nutriente.label }}</label>
-            {{ na_form.nutriente }}
-          </div>
-          <div class="col-sm-3">
-            <label class="rf-label" for="{{ na_form.dosis_g_por_litro.id_for_label }}">g/L</label>
-            {{ na_form.dosis_g_por_litro }}
-          </div>
-          <div class="col-sm-2">
-            <button type="submit" class="btn btn-brand w-100" style="padding:.55rem">
-              <i class="bi bi-plus-lg"></i>
-            </button>
-          </div>
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__head-left">
+          <span class="panel__sigil panel__sigil--slate">§</span>
+          <span class="label-eyebrow panel__title">agregar nutriente</span>
         </div>
-      </form>
+      </div>
+      <div class="panel__body">
+        <form method="post" action="{% url 'growlog:nutriente_aplicado_crear' riego.pk %}">
+          {% csrf_token %}
+          <div class="row g-3 align-items-end">
+            <div class="col-12 col-sm-7">
+              <label for="{{ na_form.nutriente.id_for_label }}">{{ na_form.nutriente.label }}</label>
+              {{ na_form.nutriente }}
+            </div>
+            <div class="col-7 col-sm-3 rf-num-input">
+              <label for="{{ na_form.dosis_g_por_litro.id_for_label }}">g/L</label>
+              {{ na_form.dosis_g_por_litro }}
+            </div>
+            <div class="col-5 col-sm-2">
+              <button type="submit" class="btn-brand" style="width: 100%; padding: 14px;">
+                <i class="bi bi-plus-lg"></i>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 
+  <!-- SIDEBAR -->
+  <div class="col-12 col-lg-4">
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__head-left">
+          <span class="panel__sigil">§</span>
+          <span class="label-eyebrow panel__title">resumen</span>
+        </div>
+      </div>
+      <div class="panel__body" style="padding-top: 8px;">
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
+          <span class="label-eyebrow">volumen</span>
+          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.volumen_total_ml }} ml</span>
+        </div>
+        {% if riego.volumen_por_planta_ml %}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
+          <span class="label-eyebrow">por planta</span>
+          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.volumen_por_planta_ml }} ml</span>
+        </div>
+        {% endif %}
+        {% if riego.ph_agua %}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
+          <span class="label-eyebrow">pH</span>
+          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.ph_agua }}</span>
+        </div>
+        {% endif %}
+        {% if riego.ec_solucion %}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
+          <span class="label-eyebrow">ec</span>
+          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.ec_solucion }} mS</span>
+        </div>
+        {% endif %}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
+          <span class="label-eyebrow">runoff</span>
+          <span class="mono {% if riego.runoff_observado %}c-green{% else %}c-fine{% endif %}" style="font-size: 11px; font-weight: 600;">
+            {% if riego.runoff_observado %}observado ✓{% else %}no{% endif %}
+          </span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+          <span class="label-eyebrow">nutrientes</span>
+          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ nutrientes|length }} productos</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

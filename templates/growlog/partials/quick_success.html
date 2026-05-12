@@ -1,13 +1,21 @@
-<div class="alert alert-success alert-dismissible fade show" role="alert">
-  <i class="bi bi-check-circle-fill me-1"></i>
-  <strong>Guardado</strong> —
-  {{ medicion.temperatura_c }}°C / {{ medicion.humedad_relativa }}%HR /
-  VPD <strong>{{ medicion.vpd }} kPa</strong>
-  <span class="badge
-    {% if medicion.vpd_estado == 'ideal' %}bg-success
-    {% elif medicion.vpd_estado == 'alto' %}bg-danger
-    {% else %}bg-warning text-dark{% endif %}
-    ms-1">{{ medicion.vpd_estado }}</span>
-  {% if rego %} · <i class="bi bi-droplet-fill text-info"></i> Riego registrado{% endif %}
-  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+<div class="alert alert-success alert-dismissible fade show" role="alert"
+     style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+  <span style="display: inline-flex; align-items: center; justify-content: center;
+               width: 22px; height: 22px; background: var(--green); color: var(--bg);
+               font-weight: 800; font-size: 12px;">✓</span>
+  <span class="mono c-green" style="font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;">
+    guardado
+  </span>
+  <span class="c-cream mono" style="font-size: 13px;">
+    {{ medicion.temperatura_c }}°C / {{ medicion.humedad_relativa }}%HR
+  </span>
+  <span class="c-fine">·</span>
+  <span class="vpd vpd--{{ medicion.vpd_estado }}">
+    VPD {{ medicion.vpd }} kPa · {{ medicion.vpd_estado }}
+  </span>
+  {% if rego %}
+  <span class="c-fine">·</span>
+  <span class="c-slate mono" style="font-size: 11px;"><i class="bi bi-droplet-fill"></i> riego registrado</span>
+  {% endif %}
+  <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>

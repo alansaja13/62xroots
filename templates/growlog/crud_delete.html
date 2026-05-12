@@ -3,43 +3,62 @@
 
 {% block extra_head %}
 <style>
-.del-wrap {
-  max-width:460px;margin:4rem auto;text-align:center;
-}
-.del-icon {
-  font-size:3rem;color:var(--c-danger);opacity:.7;margin-bottom:1.25rem;
-}
-.del-title {
-  font-size:1.4rem;font-weight:900;letter-spacing:-.025em;margin-bottom:.5rem;
-}
-.del-name {
-  font-size:.9rem;color:var(--c-muted);font-family:ui-monospace,monospace;
-  padding:.3rem .8rem;border:1px solid var(--c-border);border-radius:4px;
-  display:inline-block;margin-bottom:1.5rem;
-}
-.del-warn {
-  font-size:.8rem;color:var(--c-muted);margin-bottom:2rem;
-}
+  .del-wrap {
+    max-width: 540px; margin: 60px auto 40px;
+    text-align: center;
+  }
+  .del-glyph {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 88px; height: 88px;
+    border: 2px solid var(--rust);
+    color: var(--rust); font-size: 38px;
+    margin-bottom: 22px;
+  }
+  .del-title {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 42px; font-weight: 800; letter-spacing: -.022em;
+    margin: 0 0 12px; color: var(--cream);
+  }
+  .del-name {
+    display: inline-block;
+    font-family: "Geist Mono", monospace; font-size: 13px;
+    color: var(--cream); padding: 8px 14px;
+    background: var(--card); border: 1px solid var(--rule);
+    margin-bottom: 22px;
+  }
+  .del-warn {
+    font-family: "Geist Mono", monospace; font-size: 12px;
+    color: var(--rust); margin-bottom: 32px;
+    letter-spacing: .05em;
+  }
+  .btn-danger-brand {
+    background: var(--rust); color: var(--bg);
+    border: none; padding: 14px 28px;
+    font-family: "Geist Mono", monospace; font-size: 12px; font-weight: 700;
+    letter-spacing: .2em; text-transform: uppercase;
+    cursor: pointer; transition: opacity .15s;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .btn-danger-brand:hover { opacity: .85; color: var(--bg); }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="del-wrap">
-  <div class="del-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+  <div class="del-glyph"><i class="bi bi-exclamation-triangle-fill"></i></div>
   <h1 class="del-title">{{ title }}</h1>
   <div class="del-name">{{ object_name }}</div>
-  <p class="del-warn">Esta acción no se puede deshacer.</p>
+  <p class="del-warn">// esta acción no se puede deshacer</p>
 
-  <div class="d-flex gap-3 justify-content-center">
-    <form method="post">
+  <div class="d-flex gap-3 justify-content-center flex-wrap">
+    <form method="post" style="display: inline;">
       {% csrf_token %}
-      <button type="submit" class="btn" style="background:var(--c-danger);color:#fff;font-weight:700;padding:.65rem 1.6rem">
-        <i class="bi bi-trash3 me-1"></i> Confirmar eliminación
+      <button type="submit" class="btn-danger-brand">
+        <i class="bi bi-trash3"></i> confirmar eliminación
       </button>
     </form>
-    <a href="{{ back_url }}" class="btn btn-outline-secondary" style="padding:.65rem 1.2rem">
-      Cancelar
-    </a>
+    <a href="{{ back_url }}" class="btn-ghost">cancelar</a>
   </div>
 </div>
 {% endblock %}
