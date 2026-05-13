@@ -24,6 +24,16 @@ class Cultivo(models.Model):
     lampara_watts_reales = models.PositiveSmallIntegerField(null=True, blank=True)
     lampara_modelo = models.CharField(max_length=120, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default="vegetativo")
+    dias_veg_estimados = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        verbose_name="Días de vegetativo estimados",
+        help_text="Días totales esperados en etapa vegetativa (desde inicio).",
+    )
+    dias_flora_estimados = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        verbose_name="Días de floración estimados",
+        help_text="Días esperados en etapa de floración.",
+    )
     notas = models.TextField(blank=True)
     archivado = models.BooleanField(default=False)
     creado_en = models.DateTimeField(auto_now_add=True)

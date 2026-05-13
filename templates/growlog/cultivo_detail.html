@@ -215,13 +215,26 @@
     .cd-day-box__num { font-size: 56px; }
   }
 
-  /* ── NEON LUZ ── */
+  /* ── NEON LUZ + SETUP ROW ── */
+  .cd-luz-setup-row {
+    display: flex; align-items: stretch; margin-bottom: 20px;
+  }
   .luz-neon {
-    display: inline-flex; align-items: center; gap: 14px;
-    padding: 11px 28px; margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    width: 25%; flex-shrink: 0;
+    padding: 11px 20px;
     border: 2px solid;
     font-family: "Geist Mono", monospace; font-size: 12px;
     font-weight: 700; letter-spacing: .28em; text-transform: uppercase;
+  }
+  .cd-luz-setup-row .cd-setup-strip {
+    flex: 1; margin-bottom: 0;
+    border-left: none;
+  }
+  @media (max-width: 700px) {
+    .cd-luz-setup-row { flex-direction: column; }
+    .luz-neon { width: 100%; }
+    .cd-luz-setup-row .cd-setup-strip { border-left: 1px solid var(--rule); }
   }
   .luz-neon__dot {
     width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
@@ -259,6 +272,46 @@
     0%,100% { box-shadow: 0 0 6px 3px rgba(179,132,216,.8); }
     50%      { box-shadow: 0 0 14px 5px rgba(179,132,216,.45), 0 0 22px 8px rgba(179,132,216,.18); }
   }
+
+  /* ── PROGRESO ── */
+  .cd-progreso { margin-bottom: 20px; }
+  .cd-progreso__head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 7px;
+    font-family: "Geist Mono", monospace; font-size: 10px;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--fine);
+  }
+  .cd-progreso__pct {
+    font-size: 13px; font-weight: 700; color: var(--cream-soft);
+    letter-spacing: .05em;
+  }
+  .cd-progreso__wrap {
+    position: relative; height: 6px;
+  }
+  .cd-progreso__track {
+    display: flex; height: 100%;
+    border: 1px solid var(--rule); overflow: hidden;
+  }
+  .cd-progreso__bg-veg   { height: 100%; background: rgba(92,184,120,.1); }
+  .cd-progreso__bg-flora { flex: 1; height: 100%; background: rgba(179,132,216,.1); }
+  .cd-progreso__fill {
+    position: absolute; top: 0; left: 0; height: 100%;
+    transition: width .6s ease;
+  }
+  .cd-progreso__fill--veg   { background: var(--green); }
+  .cd-progreso__fill--flora { background: var(--plum); }
+  .cd-progreso__divider {
+    position: absolute; top: -2px; height: calc(100% + 4px);
+    width: 1px; background: var(--rule-soft);
+    transform: translateX(-50%);
+  }
+  .cd-progreso__footer {
+    display: flex; margin-top: 5px;
+    font-family: "Geist Mono", monospace; font-size: 9px;
+    letter-spacing: .14em; text-transform: uppercase;
+  }
+  .cd-progreso__phase-veg   { color: var(--green); opacity: .55; }
+  .cd-progreso__phase-flora { flex: 1; color: var(--plum); opacity: .55; text-align: right; }
 </style>
 {% endblock %}
 
@@ -335,48 +388,72 @@
   </div>
 </div>
 
-<!-- NEON LUZ -->
-{% if luz_estado_actual %}
-<div class="luz-neon luz-neon--{{ luz_estado_actual }}">
-  <span class="luz-neon__dot"></span>
-  {% if luz_estado_actual == "on" %}luz encendida{% else %}luz apagada{% endif %}
-  {% if fotoperiodo_activo %}
-  <span style="opacity:.45; font-weight:400; letter-spacing:.1em;">· {{ fotoperiodo_activo.fotoperiodo }}</span>
+{% if luz_estado_actual or cultivo.lampara_modelo or cultivo.sustrato or cultivo.carpa_dimensiones or fotoperiodo_activo %}
+<div class="cd-luz-setup-row">
+
+  <!-- 1/4 NEON LUZ -->
+  {% if luz_estado_actual %}
+  <div class="luz-neon luz-neon--{{ luz_estado_actual }}">
+    <span class="luz-neon__dot"></span>
+    {% if luz_estado_actual == "on" %}luz encendida{% else %}luz apagada{% endif %}
+  </div>
   {% endif %}
+
+  <!-- 3/4 SETUP STRIP -->
+  <div class="cd-setup-strip">
+    <span class="cd-setup-strip__sig">// setup</span>
+    {% if fotoperiodo_activo %}
+    <div class="cd-setup-strip__item">
+      <span class="cd-setup-strip__key">fotoperiodo</span>
+      <span class="cd-setup-strip__val">{{ fotoperiodo_activo.fotoperiodo }} · enc. {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }}</span>
+    </div>
+    {% endif %}
+    {% if cultivo.lampara_modelo %}
+    <div class="cd-setup-strip__item">
+      <span class="cd-setup-strip__key">lámpara</span>
+      <span class="cd-setup-strip__val">{{ cultivo.lampara_modelo }}{% if cultivo.lampara_watts_reales %} · {{ cultivo.lampara_watts_reales }}W{% endif %}</span>
+    </div>
+    {% endif %}
+    {% if cultivo.sustrato %}
+    <div class="cd-setup-strip__item">
+      <span class="cd-setup-strip__key">sustrato</span>
+      <span class="cd-setup-strip__val">{{ cultivo.sustrato }}</span>
+    </div>
+    {% endif %}
+    {% if cultivo.carpa_dimensiones %}
+    <div class="cd-setup-strip__item">
+      <span class="cd-setup-strip__key">carpa</span>
+      <span class="cd-setup-strip__val">{{ cultivo.carpa_dimensiones }}</span>
+    </div>
+    {% endif %}
+    {% if request.user.is_staff %}
+    <a href="{% url 'growlog:cultivo_editar' cultivo.slug %}" class="cd-setup-strip__edit">editar →</a>
+    {% endif %}
+  </div>
+
 </div>
 {% endif %}
 
-<!-- SETUP STRIP -->
-{% if cultivo.lampara_modelo or cultivo.sustrato or cultivo.carpa_dimensiones %}
-<div class="cd-setup-strip">
-  <span class="cd-setup-strip__sig">// setup</span>
-  {% if fotoperiodo_activo %}
-  <div class="cd-setup-strip__item">
-    <span class="cd-setup-strip__key">fotoperiodo</span>
-    <span class="cd-setup-strip__val">{{ fotoperiodo_activo.fotoperiodo }} · enc. {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }}</span>
+<!-- PROGRESO -->
+{% if progreso %}
+<div class="cd-progreso">
+  <div class="cd-progreso__head">
+    <span>// progreso · día {{ progreso.dias }} de {{ progreso.total }}</span>
+    <span class="cd-progreso__pct">{{ progreso.pct }}%</span>
   </div>
-  {% endif %}
-  {% if cultivo.lampara_modelo %}
-  <div class="cd-setup-strip__item">
-    <span class="cd-setup-strip__key">lámpara</span>
-    <span class="cd-setup-strip__val">{{ cultivo.lampara_modelo }}{% if cultivo.lampara_watts_reales %} · {{ cultivo.lampara_watts_reales }}W{% endif %}</span>
+  <div class="cd-progreso__wrap">
+    <div class="cd-progreso__track">
+      <div class="cd-progreso__bg-veg"   style="width:{{ progreso.veg_pct }}%"></div>
+      <div class="cd-progreso__bg-flora"></div>
+    </div>
+    <div class="cd-progreso__fill cd-progreso__fill--{% if progreso.en_flora %}flora{% else %}veg{% endif %}"
+         style="width:{{ progreso.pct }}%"></div>
+    <div class="cd-progreso__divider" style="left:{{ progreso.veg_pct }}%"></div>
   </div>
-  {% endif %}
-  {% if cultivo.sustrato %}
-  <div class="cd-setup-strip__item">
-    <span class="cd-setup-strip__key">sustrato</span>
-    <span class="cd-setup-strip__val">{{ cultivo.sustrato }}</span>
+  <div class="cd-progreso__footer">
+    <span class="cd-progreso__phase-veg"   style="width:{{ progreso.veg_pct }}%">veg · {{ progreso.dias_veg }}d</span>
+    <span class="cd-progreso__phase-flora">flora · {{ progreso.dias_flora }}d</span>
   </div>
-  {% endif %}
-  {% if cultivo.carpa_dimensiones %}
-  <div class="cd-setup-strip__item">
-    <span class="cd-setup-strip__key">carpa</span>
-    <span class="cd-setup-strip__val">{{ cultivo.carpa_dimensiones }}</span>
-  </div>
-  {% endif %}
-  {% if request.user.is_staff %}
-  <a href="{% url 'growlog:cultivo_editar' cultivo.slug %}" class="cd-setup-strip__edit">editar →</a>
-  {% endif %}
 </div>
 {% endif %}
 

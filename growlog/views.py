@@ -121,7 +121,8 @@ class NuevoCultivoForm(forms.ModelForm):
     class Meta:
         model = Cultivo
         fields = ["nombre", "fecha_inicio", "estado", "sustrato", "carpa_dimensiones",
-                  "lampara_modelo", "lampara_watts_reales", "notas"]
+                  "lampara_modelo", "lampara_watts_reales",
+                  "dias_veg_estimados", "dias_flora_estimados", "notas"]
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Gorilla #3", "autofocus": True}),
             "fecha_inicio": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
@@ -130,6 +131,8 @@ class NuevoCultivoForm(forms.ModelForm):
             "carpa_dimensiones": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: 80x80x180"}),
             "lampara_modelo": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Spider Farmer SF2000"}),
             "lampara_watts_reales": forms.NumberInput(attrs={"class": "form-control", "placeholder": "200"}),
+            "dias_veg_estimados": forms.NumberInput(attrs={"class": "form-control", "placeholder": "Ej: 30"}),
+            "dias_flora_estimados": forms.NumberInput(attrs={"class": "form-control", "placeholder": "Ej: 60"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Notas iniciales..."}),
         }
 
@@ -322,6 +325,21 @@ def cultivo_detail(request, slug):
         luz_estado_actual = calcular_luz_estado(
             timezone.now(), fotoperiodo_activo.hora_lights_on, fotoperiodo_activo.fotoperiodo
         )
+    progreso = None
+    if cultivo.dias_veg_estimados and cultivo.dias_flora_estimados:
+        total = cultivo.dias_veg_estimados + cultivo.dias_flora_estimados
+        dias = cultivo.dias_desde_inicio
+        pct = min(100, round(dias / total * 100))
+        veg_pct = round(cultivo.dias_veg_estimados / total * 100, 2)
+        progreso = {
+            "pct": pct,
+            "total": total,
+            "dias": dias,
+            "veg_pct": veg_pct,
+            "en_flora": dias >= cultivo.dias_veg_estimados,
+            "dias_veg": cultivo.dias_veg_estimados,
+            "dias_flora": cultivo.dias_flora_estimados,
+        }
     return render(request, "growlog/cultivo_detail.html", {
         "cultivo": cultivo, "ultima_medicion": ultima_medicion,
         "tareas_pendientes": tareas_pendientes, "tareas_completadas": tareas_completadas,
@@ -330,6 +348,7 @@ def cultivo_detail(request, slug):
         "tarea_categorias": Tarea.CATEGORIA_CHOICES,
         "fotoperiodo_activo": fotoperiodo_activo,
         "luz_estado_actual": luz_estado_actual,
+        "progreso": progreso,
     })
 
 
