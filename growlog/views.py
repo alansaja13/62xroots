@@ -523,9 +523,11 @@ def planta_eliminar(request, pk):
 @login_required
 def planta_detail(request, pk):
     planta = get_object_or_404(Planta, pk=pk)
-    mediciones = planta.mediciones.all()
+    mediciones = list(planta.mediciones.all())
+    fotos = [m for m in mediciones if m.foto]
     return render(request, "growlog/planta_detail.html", {
         "planta": planta, "mediciones": mediciones,
+        "fotos": fotos,
         "cultivo": planta.cultivo,
     })
 

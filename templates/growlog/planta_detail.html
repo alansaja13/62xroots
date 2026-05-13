@@ -97,6 +97,50 @@
     .pd-strain { font-size: 22px; }
     .pd-title-row { flex-direction: column; align-items: flex-start; gap: 8px; }
   }
+
+  /* ── GALERÍA ── */
+  .pd-galeria {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; padding: 3px;
+  }
+  @media (max-width: 640px) { .pd-galeria { grid-template-columns: repeat(2, 1fr); } }
+  .pd-foto-tile {
+    position: relative; aspect-ratio: 1; overflow: hidden;
+    display: block; cursor: zoom-in; background: var(--bg-alt);
+  }
+  .pd-foto-tile img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform .35s ease, opacity .2s;
+    display: block;
+  }
+  .pd-foto-tile:hover img { transform: scale(1.05); opacity: .82; }
+  .pd-foto-tile__date {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 18px 10px 7px;
+    background: linear-gradient(transparent, rgba(0,0,0,.72));
+    font-family: "Geist Mono", monospace; font-size: 10px;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: rgba(255,255,255,.75);
+  }
+
+  /* ── MODAL FOTO ── */
+  #modal-foto .modal-content {
+    background: var(--bg); border: 1px solid var(--rule); border-radius: 0;
+  }
+  #modal-foto .modal-body { padding: 0; position: relative; }
+  #modal-foto-img { width: 100%; display: block; max-height: 85vh; object-fit: contain; }
+  #modal-foto-fecha {
+    padding: 10px 16px;
+    font-family: "Geist Mono", monospace; font-size: 10px;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--fine);
+  }
+  #modal-close-btn {
+    position: absolute; top: 10px; right: 10px; z-index: 10;
+    background: rgba(0,0,0,.55); border: 1px solid var(--rule);
+    color: var(--cream-soft); width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px;
+  }
+  #modal-close-btn:hover { background: rgba(0,0,0,.8); color: var(--cream); }
 </style>
 {% endblock %}
 
@@ -178,6 +222,30 @@
 </div>
 {% endif %}
 
+<!-- GALERÍA DE FOTOS -->
+{% if fotos %}
+<div class="panel">
+  <div class="panel__head">
+    <div class="panel__head-left">
+      <span class="panel__sigil">§</span>
+      <span class="label-eyebrow panel__title">galería · fotos</span>
+      <span class="mono c-fine" style="font-size:10px;">· {{ fotos|length }}</span>
+    </div>
+  </div>
+  <div class="pd-galeria">
+    {% for med in fotos %}
+    <a class="pd-foto-tile"
+       data-bs-toggle="modal" data-bs-target="#modal-foto"
+       data-src="{{ med.foto.url }}"
+       data-fecha="{{ med.fecha|date:'d/m/Y' }}{% if med.altura_cm %} · {{ med.altura_cm }}cm{% endif %}">
+      <img src="{{ med.foto.url }}" alt="Foto {{ med.fecha }}" loading="lazy">
+      <div class="pd-foto-tile__date">{{ med.fecha|date:"d/m/y" }}</div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <!-- MEDICIONES TABLE -->
 <div class="panel">
   <div class="panel__head">
@@ -221,7 +289,15 @@
         <td class="c-soft" style="{% if med.sintomas %}font-style:italic;{% endif %}">
           {{ med.sintomas|default:"—" }}
         </td>
-        <td style="text-align:right;">
+        <td style="text-align:right; white-space:nowrap;">
+          {% if med.foto %}
+          <a class="c-fine" style="margin-right:8px;" title="Ver foto"
+             data-bs-toggle="modal" data-bs-target="#modal-foto"
+             data-src="{{ med.foto.url }}"
+             data-fecha="{{ med.fecha|date:'d/m/Y' }}{% if med.altura_cm %} · {{ med.altura_cm }}cm{% endif %}">
+            <i class="bi bi-camera"></i>
+          </a>
+          {% endif %}
           <a href="{% url 'growlog:medicion_planta_editar' med.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
         </td>
       </tr>
@@ -238,4 +314,29 @@
   </table>
 </div>
 
+<!-- MODAL LIGHTBOX -->
+<div class="modal fade" id="modal-foto" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-body">
+        <button id="modal-close-btn" data-bs-dismiss="modal" aria-label="Cerrar">
+          <i class="bi bi-x"></i>
+        </button>
+        <img id="modal-foto-img" src="" alt="">
+        <div id="modal-foto-fecha"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('modal-foto').addEventListener('show.bs.modal', function(e) {
+  var trigger = e.relatedTarget;
+  document.getElementById('modal-foto-img').src = trigger.dataset.src;
+  document.getElementById('modal-foto-fecha').textContent = trigger.dataset.fecha;
+});
+</script>
 {% endblock %}
