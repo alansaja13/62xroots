@@ -132,8 +132,8 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
 # H-5: Rate limiting via cache (implementado manualmente en views.py)
-LOGIN_MAX_ATTEMPTS = 5
-LOGIN_LOCKOUT_SECONDS = 3600  # 1 hora
+LOGIN_MAX_ATTEMPTS = 10
+LOGIN_LOCKOUT_SECONDS = 1800  # 30 minutos
 
 # M-4: Headers de seguridad para producción
 if not DEBUG:

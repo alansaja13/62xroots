@@ -1,16 +1,24 @@
 import hashlib
+import json
+from decimal import Decimal, InvalidOperation
 from functools import wraps
 
+from django.core.cache import cache
 from django.http import JsonResponse
-from django.views.decorators.http import require_GET
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_POST
 
-from .models import APIToken, Cultivo, Planta
+from .models import APIToken, Cultivo, Evento, MedicionAmbiente, Planta, Tarea
 
+EVENTO_TIPOS = {c[0] for c in Evento.TIPO_CHOICES}
+TAREA_PRIORIDADES = {c[0] for c in Tarea.PRIORIDAD_CHOICES}
+TAREA_CATEGORIAS = {c[0] for c in Tarea.CATEGORIA_CHOICES}
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def api_ok(data):
-    return JsonResponse({'ok': True, 'data': data})
+def api_ok(data, status=200):
+    return JsonResponse({'ok': True, 'data': data}, status=status)
 
 
 def api_error(message, status=400):
@@ -26,7 +34,6 @@ def require_token(view_func):
         token_str = auth[7:].strip()
         if not token_str:
             return api_error('Authentication required', 401)
-        # H-1: comparar hash, nunca el token en claro
         token_hash = hashlib.sha256(token_str.encode()).hexdigest()
         try:
             token = APIToken.objects.select_related('user').get(token_hash=token_hash)
@@ -35,6 +42,35 @@ def require_token(view_func):
         request.api_user = token.user
         return view_func(request, *args, **kwargs)
     return wrapper
+
+
+def _parse_json_body(request):
+    """Parsea el body JSON y devuelve (data, error_response)."""
+    try:
+        return json.loads(request.body or '{}'), None
+    except json.JSONDecodeError:
+        return None, api_error('Invalid JSON body', 400)
+
+
+def _get_cultivo(slug, user):
+    """Devuelve (cultivo, error_response) — scoped al usuario."""
+    try:
+        return Cultivo.objects.get(slug=slug, creado_por=user), None
+    except Cultivo.DoesNotExist:
+        return None, api_error('Cultivo no encontrado', 404)
+
+
+def _write_rate_limit(request):
+    """60 writes por hora por token. Devuelve error_response o None."""
+    token_hash = hashlib.sha256(
+        request.META.get('HTTP_AUTHORIZATION', '')[7:].strip().encode()
+    ).hexdigest()
+    key = f"api_writes_{token_hash}"
+    count = cache.get(key, 0)
+    if count >= 60:
+        return api_error('Rate limit exceeded — 60 writes/hour', 429)
+    cache.set(key, count + 1, timeout=3600)
+    return None
 
 
 # ── Serializers ───────────────────────────────────────────────────────────────
@@ -126,12 +162,11 @@ def _medicion_planta(m):
     }
 
 
-# ── Views ─────────────────────────────────────────────────────────────────────
+# ── Read endpoints ────────────────────────────────────────────────────────────
 
 @require_GET
 @require_token
 def cultivos_list(request):
-    # H-2: solo los cultivos del usuario autenticado
     cultivos = Cultivo.objects.filter(archivado=False, creado_por=request.api_user)
     return api_ok([_cultivo_base(c) for c in cultivos])
 
@@ -139,12 +174,9 @@ def cultivos_list(request):
 @require_GET
 @require_token
 def cultivo_detail(request, slug):
-    # H-2: scoped al usuario + M-1: lookup por slug
-    try:
-        c = Cultivo.objects.get(slug=slug, creado_por=request.api_user)
-    except Cultivo.DoesNotExist:
-        return api_error('Cultivo no encontrado', 404)
-
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
     data = _cultivo_base(c)
     data['notas'] = c.notas
     data['plantas'] = [_planta(p) for p in c.plantas.filter(archivado=False)]
@@ -160,60 +192,168 @@ def cultivo_detail(request, slug):
 @require_GET
 @require_token
 def cultivo_riegos(request, slug):
-    try:
-        c = Cultivo.objects.get(slug=slug, creado_por=request.api_user)
-    except Cultivo.DoesNotExist:
-        return api_error('Cultivo no encontrado', 404)
-
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
     riegos = c.riegos.prefetch_related('nutrientes_aplicados__nutriente').all()
     return api_ok([_riego(r) for r in riegos])
 
 
-@require_GET
+@csrf_exempt
 @require_token
 def cultivo_mediciones(request, slug):
-    try:
-        c = Cultivo.objects.get(slug=slug, creado_por=request.api_user)
-    except Cultivo.DoesNotExist:
-        return api_error('Cultivo no encontrado', 404)
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
 
-    return api_ok([_medicion(m) for m in c.mediciones.all()])
+    if request.method == 'GET':
+        return api_ok([_medicion(m) for m in c.mediciones.all()])
+
+    if request.method == 'POST':
+        rl = _write_rate_limit(request)
+        if rl:
+            return rl
+        body, err = _parse_json_body(request)
+        if err:
+            return err
+
+        # Validación
+        try:
+            temp = Decimal(str(body.get('temperatura_c', '')))
+            hr = Decimal(str(body.get('humedad_relativa', '')))
+        except (InvalidOperation, TypeError):
+            return api_error('temperatura_c y humedad_relativa son requeridos y deben ser números')
+
+        if not (0 <= float(temp) <= 60):
+            return api_error('temperatura_c fuera de rango (0–60°C)')
+        if not (0 <= float(hr) <= 100):
+            return api_error('humedad_relativa fuera de rango (0–100%)')
+
+        m = MedicionAmbiente.objects.create(
+            cultivo=c,
+            temperatura_c=temp,
+            humedad_relativa=hr,
+            notas=str(body.get('notas', ''))[:500],
+            creado_por=request.api_user,
+        )
+        return api_ok(_medicion(m), status=201)
+
+    return api_error('Method not allowed', 405)
 
 
-@require_GET
+@csrf_exempt
 @require_token
 def cultivo_eventos(request, slug):
-    try:
-        c = Cultivo.objects.get(slug=slug, creado_por=request.api_user)
-    except Cultivo.DoesNotExist:
-        return api_error('Cultivo no encontrado', 404)
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
 
-    eventos = c.eventos.prefetch_related('plantas_afectadas').all()
-    return api_ok([_evento(e) for e in eventos])
+    if request.method == 'GET':
+        eventos = c.eventos.prefetch_related('plantas_afectadas').all()
+        return api_ok([_evento(e) for e in eventos])
+
+    if request.method == 'POST':
+        rl = _write_rate_limit(request)
+        if rl:
+            return rl
+        body, err = _parse_json_body(request)
+        if err:
+            return err
+
+        tipo = body.get('tipo', '')
+        descripcion = str(body.get('descripcion', '')).strip()
+
+        if tipo not in EVENTO_TIPOS:
+            return api_error(f'tipo inválido. Opciones: {sorted(EVENTO_TIPOS)}')
+        if not descripcion:
+            return api_error('descripcion es requerida')
+        if len(descripcion) > 2000:
+            return api_error('descripcion demasiado larga (máx 2000 caracteres)')
+
+        follow_up_fecha = None
+        if body.get('follow_up_fecha'):
+            try:
+                from datetime import date
+                follow_up_fecha = date.fromisoformat(body['follow_up_fecha'])
+            except ValueError:
+                return api_error('follow_up_fecha debe ser YYYY-MM-DD')
+
+        e = Evento.objects.create(
+            cultivo=c,
+            tipo=tipo,
+            descripcion=descripcion,
+            follow_up_fecha=follow_up_fecha,
+            follow_up_descripcion=str(body.get('follow_up_descripcion', ''))[:500],
+            creado_por=request.api_user,
+        )
+        return api_ok(_evento(e), status=201)
+
+    return api_error('Method not allowed', 405)
 
 
-@require_GET
+@csrf_exempt
 @require_token
 def cultivo_tareas(request, slug):
-    try:
-        c = Cultivo.objects.get(slug=slug, creado_por=request.api_user)
-    except Cultivo.DoesNotExist:
-        return api_error('Cultivo no encontrado', 404)
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
 
-    qs = c.tareas.all()
-    completada_param = request.GET.get('completada')
-    if completada_param == 'false':
-        qs = qs.filter(completada=False)
-    elif completada_param == 'true':
-        qs = qs.filter(completada=True)
+    if request.method == 'GET':
+        qs = c.tareas.all()
+        completada_param = request.GET.get('completada')
+        if completada_param == 'false':
+            qs = qs.filter(completada=False)
+        elif completada_param == 'true':
+            qs = qs.filter(completada=True)
+        return api_ok([_tarea(t) for t in qs])
 
-    return api_ok([_tarea(t) for t in qs])
+    if request.method == 'POST':
+        rl = _write_rate_limit(request)
+        if rl:
+            return rl
+        body, err = _parse_json_body(request)
+        if err:
+            return err
+
+        titulo = str(body.get('titulo', '')).strip()
+        if not titulo:
+            return api_error('titulo es requerido')
+        if len(titulo) > 200:
+            return api_error('titulo demasiado largo (máx 200 caracteres)')
+
+        prioridad = body.get('prioridad', 'normal')
+        if prioridad not in TAREA_PRIORIDADES:
+            return api_error(f'prioridad inválida. Opciones: {sorted(TAREA_PRIORIDADES)}')
+
+        categoria = body.get('categoria', 'observacion')
+        if categoria not in TAREA_CATEGORIAS:
+            return api_error(f'categoria inválida. Opciones: {sorted(TAREA_CATEGORIAS)}')
+
+        fecha_objetivo = None
+        if body.get('fecha_objetivo'):
+            try:
+                from datetime import date
+                fecha_objetivo = date.fromisoformat(body['fecha_objetivo'])
+            except ValueError:
+                return api_error('fecha_objetivo debe ser YYYY-MM-DD')
+
+        t = Tarea.objects.create(
+            cultivo=c,
+            titulo=titulo,
+            descripcion=str(body.get('descripcion', ''))[:1000],
+            prioridad=prioridad,
+            categoria=categoria,
+            fecha_objetivo=fecha_objetivo,
+            creado_por=request.api_user,
+        )
+        return api_ok(_tarea(t), status=201)
+
+    return api_error('Method not allowed', 405)
 
 
 @require_GET
 @require_token
 def planta_detail(request, planta_uuid):
-    # H-2: scoped via cultivo del usuario + M-1: lookup por UUID
     try:
         p = Planta.objects.select_related('cultivo').get(
             uuid=planta_uuid,
