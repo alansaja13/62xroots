@@ -25,6 +25,7 @@ class Cultivo(models.Model):
     notas = models.TextField(blank=True)
     archivado = models.BooleanField(default=False)
     creado_en = models.DateTimeField(auto_now_add=True)
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='cultivos_creados')
 
     class Meta:
         ordering = ["-fecha_inicio"]
@@ -65,6 +66,7 @@ class Planta(models.Model):
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default="activa")
     notas_genetica = models.TextField(blank=True)
     archivado = models.BooleanField(default=False)
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='plantas_creadas')
 
     class Meta:
         ordering = ["apodo"]
@@ -81,6 +83,7 @@ class MedicionAmbiente(models.Model):
     temperatura_c = models.DecimalField(max_digits=5, decimal_places=2)
     humedad_relativa = models.DecimalField(max_digits=5, decimal_places=2)
     notas = models.TextField(blank=True)
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='mediciones_creadas')
 
     class Meta:
         ordering = ["-timestamp"]
@@ -145,6 +148,7 @@ class Riego(models.Model):
     buscar_runoff = models.BooleanField(default=False)
     runoff_observado = models.BooleanField(default=False)
     notas = models.TextField(blank=True)
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='riegos_creados')
 
     class Meta:
         ordering = ["-timestamp"]
@@ -189,6 +193,7 @@ class Evento(models.Model):
     follow_up_fecha = models.DateField(null=True, blank=True)
     follow_up_descripcion = models.TextField(blank=True)
     follow_up_resuelto = models.BooleanField(default=False)
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='eventos_creados')
 
     class Meta:
         ordering = ["-timestamp"]
@@ -214,6 +219,7 @@ class MedicionPlanta(models.Model):
     aspecto_general = models.CharField(max_length=10, choices=ASPECTO_CHOICES, default="bueno")
     sintomas = models.TextField(blank=True)
     foto = models.ImageField(upload_to="plantas/%Y/%m/", null=True, blank=True)
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='mediciones_planta_creadas')
 
     class Meta:
         ordering = ["-fecha"]
@@ -246,6 +252,7 @@ class Tarea(models.Model):
     categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES, default="observacion")
     completada = models.BooleanField(default=False)
     completada_en = models.DateTimeField(null=True, blank=True)
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='tareas_creadas')
 
     class Meta:
         ordering = ["completada", "fecha_objetivo", "-prioridad"]

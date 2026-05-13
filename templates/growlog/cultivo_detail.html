@@ -272,7 +272,10 @@
         <tbody>
           {% for reg in ultimos_registros %}
           <tr>
-            <td class="c-soft">{{ reg.ts|date:"d/m H:i" }}</td>
+            <td class="c-soft" style="white-space:nowrap;">
+              {{ reg.ts|date:"d/m H:i" }}
+              {% if reg.obj.creado_por %}<br><span class="c-fine" style="font-size:9px;">@{{ reg.obj.creado_por.username }}</span>{% endif %}
+            </td>
             <td>
               {% if reg.tipo == 'medicion' %}
                 <span class="tc tc--med">med</span>

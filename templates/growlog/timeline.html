@@ -137,6 +137,7 @@
         <td class="c-soft" style="white-space:nowrap;">
           {{ reg.ts|date:"d/m/y" }}<br>
           <span class="c-fine" style="font-size:10px;">{{ reg.ts|date:"H:i" }}</span>
+          {% if reg.obj.creado_por %}<br><span class="c-fine" style="font-size:9px; letter-spacing:.05em;">@{{ reg.obj.creado_por.username }}</span>{% endif %}
         </td>
         <td>
           {% if reg.tipo == 'medicion' %}

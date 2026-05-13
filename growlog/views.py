@@ -288,9 +288,11 @@ def quick_entry(request, pk):
         medicion = MedicionAmbiente.objects.create(
             cultivo=cultivo, temperatura_c=d["temperatura_c"],
             humedad_relativa=d["humedad_relativa"], notas=d.get("notas", ""),
+            creado_por=request.user,
         )
         if d["rego"] and d.get("volumen_total_ml"):
-            Riego.objects.create(cultivo=cultivo, volumen_total_ml=d["volumen_total_ml"], ph_agua=d.get("ph_agua"))
+            Riego.objects.create(cultivo=cultivo, volumen_total_ml=d["volumen_total_ml"],
+                                 ph_agua=d.get("ph_agua"), creado_por=request.user)
         if request.htmx:
             return render(request, "growlog/partials/quick_success.html", {"medicion": medicion, "rego": d["rego"]})
         messages.success(request, f"✓ Guardado — {medicion.temperatura_c}°C / {medicion.humedad_relativa}%HR / VPD {medicion.vpd} kPa")
@@ -312,6 +314,7 @@ def quick_evento(request, pk):
         d = form.cleaned_data
         evento = Evento.objects.create(
             cultivo=cultivo, tipo=d["tipo"], descripcion=d["descripcion"],
+            creado_por=request.user,
         )
         if request.htmx:
             return render(request, "growlog/partials/quick_evento_success.html", {"evento": evento})
@@ -329,6 +332,7 @@ def quick_tarea(request, pk):
         tarea = Tarea.objects.create(
             cultivo=cultivo, titulo=d["titulo"], categoria=d["categoria"],
             prioridad=d["prioridad"], fecha_objetivo=d.get("fecha_objetivo"),
+            creado_por=request.user,
         )
         if request.htmx:
             return render(request, "growlog/partials/quick_tarea_success.html", {"tarea": tarea})
@@ -348,7 +352,9 @@ def timeline(request, pk):
 def nuevo_cultivo(request):
     form = NuevoCultivoForm(request.POST or None, initial={"fecha_inicio": timezone.localdate()})
     if request.method == "POST" and form.is_valid():
-        cultivo = form.save()
+        cultivo = form.save(commit=False)
+        cultivo.creado_por = request.user
+        cultivo.save()
         messages.success(request, f"Cultivo «{cultivo.nombre}» creado. ¡A cultivar!")
         return redirect("growlog:cultivo_detail", pk=cultivo.pk)
     return render(request, "growlog/nuevo_cultivo.html", {"form": form})
@@ -382,6 +388,7 @@ def planta_crear(request, cultivo_pk):
     if request.method == "POST" and form.is_valid():
         p = form.save(commit=False)
         p.cultivo = cultivo
+        p.creado_por = request.user
         p.save()
         messages.success(request, f"Planta «{p.apodo}» creada.")
         return redirect("growlog:cultivo_detail", pk=cultivo_pk)
@@ -447,6 +454,7 @@ def tarea_crear(request, cultivo_pk):
     if request.method == "POST" and form.is_valid():
         t = form.save(commit=False)
         t.cultivo = cultivo
+        t.creado_por = request.user
         t.save()
         messages.success(request, f"Tarea «{t.titulo}» creada.")
         return redirect("growlog:cultivo_detail", pk=cultivo_pk)
@@ -516,6 +524,7 @@ def evento_crear(request, cultivo_pk):
     if request.method == "POST" and form.is_valid():
         e = form.save(commit=False)
         e.cultivo = cultivo
+        e.creado_por = request.user
         e.save()
         form.save_m2m()
         messages.success(request, "Evento registrado.")
@@ -573,6 +582,7 @@ def riego_crear(request, cultivo_pk):
     if request.method == "POST" and form.is_valid():
         r = form.save(commit=False)
         r.cultivo = cultivo
+        r.creado_por = request.user
         r.save()
         messages.success(request, "Riego registrado.")
         return redirect("growlog:riego_editar", pk=r.pk)
@@ -663,6 +673,7 @@ def medicion_planta_crear(request, planta_pk):
     if request.method == "POST" and form.is_valid():
         m = form.save(commit=False)
         m.planta = planta
+        m.creado_por = request.user
         m.save()
         messages.success(request, "Medición registrada.")
         return redirect("growlog:planta_detail", pk=planta_pk)
