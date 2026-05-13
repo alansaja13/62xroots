@@ -30,9 +30,10 @@ def staff_required(view_func):
     return _wrapped
 
 from .models import (
-    Cultivo, Planta, MedicionAmbiente, Riego, NutrienteAplicado,
+    CambioFotoperiodo, Cultivo, Planta, MedicionAmbiente, Riego, NutrienteAplicado,
     Evento, MedicionPlanta, Tarea, ParametroIdeal, Nutriente,
 )
+from .utils import get_cambio_fotoperiodo_activo, calcular_luz_estado
 
 _DT_FMT = "%Y-%m-%dT%H:%M"
 
@@ -315,12 +316,20 @@ def cultivo_detail(request, slug):
             semaforo = _evaluar_ambiente(ultima_medicion, param)
         except ParametroIdeal.DoesNotExist:
             pass
+    fotoperiodo_activo = get_cambio_fotoperiodo_activo(cultivo, timezone.now())
+    luz_estado_actual = None
+    if fotoperiodo_activo:
+        luz_estado_actual = calcular_luz_estado(
+            timezone.now(), fotoperiodo_activo.hora_lights_on, fotoperiodo_activo.fotoperiodo
+        )
     return render(request, "growlog/cultivo_detail.html", {
         "cultivo": cultivo, "ultima_medicion": ultima_medicion,
         "tareas_pendientes": tareas_pendientes, "tareas_completadas": tareas_completadas,
         "ultimos_registros": ultimos_registros,
         "semaforo": semaforo, "plantas_count": plantas_count, "plantas": plantas,
         "tarea_categorias": Tarea.CATEGORIA_CHOICES,
+        "fotoperiodo_activo": fotoperiodo_activo,
+        "luz_estado_actual": luz_estado_actual,
     })
 
 

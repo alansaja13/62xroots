@@ -214,6 +214,51 @@
     .cd-day-box { min-width: 0; flex: 1; padding: 10px 20px; }
     .cd-day-box__num { font-size: 56px; }
   }
+
+  /* ── NEON LUZ ── */
+  .luz-neon {
+    display: inline-flex; align-items: center; gap: 14px;
+    padding: 11px 28px; margin-bottom: 20px;
+    border: 2px solid;
+    font-family: "Geist Mono", monospace; font-size: 12px;
+    font-weight: 700; letter-spacing: .28em; text-transform: uppercase;
+  }
+  .luz-neon__dot {
+    width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  }
+  .luz-neon--on {
+    color: #d9b0ff;
+    border-color: rgba(179,132,216,.7);
+    background: rgba(179,132,216,.06);
+    text-shadow: 0 0 8px rgba(179,132,216,.95), 0 0 18px rgba(179,132,216,.5);
+    box-shadow: 0 0 10px rgba(179,132,216,.25), 0 0 26px rgba(179,132,216,.1),
+                inset 0 0 12px rgba(179,132,216,.05);
+    animation: neon-flicker 4s ease-in-out infinite;
+  }
+  .luz-neon--on .luz-neon__dot {
+    background: #d9b0ff;
+    box-shadow: 0 0 6px 3px rgba(179,132,216,.8);
+    animation: dot-pulse 1.8s ease-in-out infinite;
+  }
+  .luz-neon--off {
+    color: rgba(255,255,255,.18);
+    border-color: rgba(255,255,255,.08);
+    background: transparent;
+  }
+  .luz-neon--off .luz-neon__dot {
+    background: rgba(255,255,255,.12);
+  }
+  @keyframes neon-flicker {
+    0%,92%,96%,100% {
+      text-shadow: 0 0 8px rgba(179,132,216,.95), 0 0 18px rgba(179,132,216,.5);
+      box-shadow: 0 0 10px rgba(179,132,216,.25), 0 0 26px rgba(179,132,216,.1), inset 0 0 12px rgba(179,132,216,.05);
+    }
+    93%,95% { text-shadow: none; box-shadow: none; opacity:.7; }
+  }
+  @keyframes dot-pulse {
+    0%,100% { box-shadow: 0 0 6px 3px rgba(179,132,216,.8); }
+    50%      { box-shadow: 0 0 14px 5px rgba(179,132,216,.45), 0 0 22px 8px rgba(179,132,216,.18); }
+  }
 </style>
 {% endblock %}
 
@@ -290,10 +335,27 @@
   </div>
 </div>
 
+<!-- NEON LUZ -->
+{% if luz_estado_actual %}
+<div class="luz-neon luz-neon--{{ luz_estado_actual }}">
+  <span class="luz-neon__dot"></span>
+  {% if luz_estado_actual == "on" %}luz encendida{% else %}luz apagada{% endif %}
+  {% if fotoperiodo_activo %}
+  <span style="opacity:.45; font-weight:400; letter-spacing:.1em;">· {{ fotoperiodo_activo.fotoperiodo }}</span>
+  {% endif %}
+</div>
+{% endif %}
+
 <!-- SETUP STRIP -->
-{% if cultivo.lampara_modelo or cultivo.sustrato or cultivo.carpa_dimensiones or cultivo.notas %}
+{% if cultivo.lampara_modelo or cultivo.sustrato or cultivo.carpa_dimensiones %}
 <div class="cd-setup-strip">
   <span class="cd-setup-strip__sig">// setup</span>
+  {% if fotoperiodo_activo %}
+  <div class="cd-setup-strip__item">
+    <span class="cd-setup-strip__key">fotoperiodo</span>
+    <span class="cd-setup-strip__val">{{ fotoperiodo_activo.fotoperiodo }} · enc. {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }}</span>
+  </div>
+  {% endif %}
   {% if cultivo.lampara_modelo %}
   <div class="cd-setup-strip__item">
     <span class="cd-setup-strip__key">lámpara</span>
@@ -311,9 +373,6 @@
     <span class="cd-setup-strip__key">carpa</span>
     <span class="cd-setup-strip__val">{{ cultivo.carpa_dimensiones }}</span>
   </div>
-  {% endif %}
-  {% if cultivo.notas %}
-  <span class="cd-setup-strip__notas">"{{ cultivo.notas|truncatechars:80 }}"</span>
   {% endif %}
   {% if request.user.is_staff %}
   <a href="{% url 'growlog:cultivo_editar' cultivo.slug %}" class="cd-setup-strip__edit">editar →</a>
