@@ -547,9 +547,103 @@
 <script>
   document.body.addEventListener('htmx:configRequest', function(evt) {
     evt.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+    // Sanitizar comas en parámetros numéricos antes de enviar via HTMX
+    var params = evt.detail.parameters;
+    Object.keys(params).forEach(function(k) {
+      if (typeof params[k] === 'string') params[k] = params[k].replace(',', '.');
+    });
   });
 </script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  function patchDecimalInputs(root) {
+    (root || document).querySelectorAll('input[type="number"]').forEach(function (el) {
+      el.setAttribute('type', 'text');
+      el.setAttribute('inputmode', 'decimal');
+      el.setAttribute('data-decimal', '1');
+
+      // Interceptar tecla coma → insertar punto
+      el.addEventListener('keydown', function (e) {
+        if (e.key === ',') {
+          e.preventDefault();
+          var s = this.selectionStart;
+          this.value = this.value.slice(0, s) + '.' + this.value.slice(this.selectionEnd);
+          this.selectionStart = this.selectionEnd = s + 1;
+        }
+      });
+
+      // Sanitizar al salir del campo (cubre paste y autocompletar)
+      el.addEventListener('blur', function () {
+        this.value = this.value.replace(',', '.');
+        validateDecimalField(this);
+      });
+
+      el.addEventListener('focus', function () {
+        clearFieldError(this);
+      });
+    });
+  }
+
+  function sanitizeForm(form) {
+    form.querySelectorAll('[data-decimal]').forEach(function (el) {
+      el.value = el.value.replace(',', '.');
+    });
+  }
+
+  function validateDecimalField(el) {
+    var v = el.value.trim();
+    if (v === '') { clearFieldError(el); return true; }
+    var ok = !isNaN(parseFloat(v)) && isFinite(v);
+    if (!ok) {
+      showFieldError(el, 'Número inválido — usá punto: 26.5');
+    } else {
+      clearFieldError(el);
+    }
+    return ok;
+  }
+
+  function validateDecimalForm(form) {
+    var valid = true;
+    form.querySelectorAll('[data-decimal]').forEach(function (el) {
+      if (!validateDecimalField(el)) valid = false;
+    });
+    return valid;
+  }
+
+  function showFieldError(el, msg) {
+    clearFieldError(el);
+    var err = document.createElement('div');
+    err.className = 'field-error js-decimal-err';
+    err.textContent = msg;
+    var container = el.closest('.qe-vital-input') || el.parentNode;
+    container.insertAdjacentElement('afterend', err);
+    el.style.borderColor = 'var(--rust)';
+    el.style.boxShadow = '0 0 0 3px rgba(217,106,61,.15)';
+  }
+
+  function clearFieldError(el) {
+    var container = el.closest('.qe-vital-input') || el.parentNode;
+    var err = container.parentNode && container.parentNode.querySelector('.js-decimal-err');
+    if (err) err.remove();
+    el.style.borderColor = '';
+    el.style.boxShadow = '';
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    patchDecimalInputs();
+
+    // Submit en forms normales
+    document.addEventListener('submit', function (e) {
+      sanitizeForm(e.target);
+      if (!validateDecimalForm(e.target)) e.preventDefault();
+    });
+  });
+})();
+</script>
 
 {% block extra_js %}{% endblock %}
 

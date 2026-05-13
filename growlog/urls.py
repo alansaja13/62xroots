@@ -1,9 +1,19 @@
 from django.urls import path
 from . import views
+from . import api_views
 
 app_name = "growlog"
 
 urlpatterns = [
+    # ── API v1 ────────────────────────────────────────────────────────────────
+    path("api/v1/cultivos/", api_views.cultivos_list),
+    path("api/v1/cultivos/<int:pk>/", api_views.cultivo_detail),
+    path("api/v1/cultivos/<int:pk>/riegos/", api_views.cultivo_riegos),
+    path("api/v1/cultivos/<int:pk>/mediciones/", api_views.cultivo_mediciones),
+    path("api/v1/cultivos/<int:pk>/eventos/", api_views.cultivo_eventos),
+    path("api/v1/cultivos/<int:pk>/tareas/", api_views.cultivo_tareas),
+    path("api/v1/plantas/<int:pk>/", api_views.planta_detail),
+
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
     path("", views.dashboard, name="dashboard"),
