@@ -303,7 +303,7 @@ def dashboard(request):
 def cultivo_detail(request, slug):
     cultivo = get_object_or_404(Cultivo, slug=slug)
     ultima_medicion = cultivo.mediciones.first()
-    tareas_pendientes = cultivo.tareas.filter(completada=False).order_by("fecha_objetivo", "-prioridad")
+    tareas_pendientes = cultivo.tareas.filter(completada=False).order_by("fecha_objetivo", "-prioridad")[:10]
     tareas_completadas = cultivo.tareas.filter(completada=True).order_by("-completada_en")[:5]
     ultimos_registros = _build_timeline(cultivo, limit=8)
     plantas_count = cultivo.plantas.filter(estado="activa").count()

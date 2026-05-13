@@ -171,17 +171,40 @@
   }
   .tarea-quick-form .tarea-add-btn:hover { opacity: .8; }
 
-  /* ── SETUP ── */
-  .cd-setup-row {
-    display: flex; justify-content: space-between; gap: 12px;
-    padding: 10px 0; border-bottom: 1px solid var(--rule-soft);
-    align-items: flex-start;
+  /* ── SETUP STRIP ── */
+  .cd-setup-strip {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    background: var(--card); border: 1px solid var(--rule);
+    padding: 9px 18px; margin-bottom: 20px;
+    font-family: "Geist Mono", monospace;
   }
-  .cd-setup-row:last-child { border-bottom: none; }
-  .cd-setup-row__val {
-    font-family: "Geist Mono", monospace; font-size: 11px; color: var(--cream);
-    text-align: right; max-width: 200px; font-variant-numeric: tabular-nums;
+  .cd-setup-strip__sig {
+    font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--fine); margin-right: 14px; flex-shrink: 0;
   }
+  .cd-setup-strip__item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 2px 14px; border-left: 1px solid var(--rule);
+  }
+  .cd-setup-strip__key {
+    font-size: 9px; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--fine); flex-shrink: 0;
+  }
+  .cd-setup-strip__val {
+    font-size: 11px; color: var(--cream); font-variant-numeric: tabular-nums;
+  }
+  .cd-setup-strip__notas {
+    font-size: 11px; color: var(--fine); font-style: italic;
+    font-family: "Geist", sans-serif; padding: 2px 14px;
+    border-left: 1px solid var(--rule); flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .cd-setup-strip__edit {
+    margin-left: auto; padding-left: 14px;
+    font-size: 9px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--fine); text-decoration: none; flex-shrink: 0;
+  }
+  .cd-setup-strip__edit:hover { color: var(--green); }
 
   @media (max-width: 900px) {
     .cd-header { grid-template-columns: 1fr; }
@@ -266,6 +289,37 @@
     <div class="cd-vital__status c-fine">· en cultivo</div>
   </div>
 </div>
+
+<!-- SETUP STRIP -->
+{% if cultivo.lampara_modelo or cultivo.sustrato or cultivo.carpa_dimensiones or cultivo.notas %}
+<div class="cd-setup-strip">
+  <span class="cd-setup-strip__sig">// setup</span>
+  {% if cultivo.lampara_modelo %}
+  <div class="cd-setup-strip__item">
+    <span class="cd-setup-strip__key">lámpara</span>
+    <span class="cd-setup-strip__val">{{ cultivo.lampara_modelo }}{% if cultivo.lampara_watts_reales %} · {{ cultivo.lampara_watts_reales }}W{% endif %}</span>
+  </div>
+  {% endif %}
+  {% if cultivo.sustrato %}
+  <div class="cd-setup-strip__item">
+    <span class="cd-setup-strip__key">sustrato</span>
+    <span class="cd-setup-strip__val">{{ cultivo.sustrato }}</span>
+  </div>
+  {% endif %}
+  {% if cultivo.carpa_dimensiones %}
+  <div class="cd-setup-strip__item">
+    <span class="cd-setup-strip__key">carpa</span>
+    <span class="cd-setup-strip__val">{{ cultivo.carpa_dimensiones }}</span>
+  </div>
+  {% endif %}
+  {% if cultivo.notas %}
+  <span class="cd-setup-strip__notas">"{{ cultivo.notas|truncatechars:80 }}"</span>
+  {% endif %}
+  {% if request.user.is_staff %}
+  <a href="{% url 'growlog:cultivo_editar' cultivo.slug %}" class="cd-setup-strip__edit">editar →</a>
+  {% endif %}
+</div>
+{% endif %}
 
 <!-- MAIN -->
 <div class="cd-main">
@@ -477,52 +531,6 @@
       </div>
     </div>
 
-    <!-- Setup -->
-    <div class="panel">
-      <div class="panel__head">
-        <div class="panel__head-left">
-          <span class="panel__sigil panel__sigil--slate">§</span>
-          <span class="label-eyebrow panel__title">setup</span>
-        </div>
-        {% if request.user.is_staff %}<a href="{% url 'growlog:cultivo_editar' cultivo.slug %}" class="panel__action">editar</a>{% endif %}
-      </div>
-      <div class="panel__body" style="padding-top:8px; padding-bottom:12px;">
-        {% if cultivo.lampara_modelo %}
-        <div class="cd-setup-row">
-          <span class="label-eyebrow">lámpara</span>
-          <span class="cd-setup-row__val">{{ cultivo.lampara_modelo }}{% if cultivo.lampara_watts_reales %} · {{ cultivo.lampara_watts_reales }}W{% endif %}</span>
-        </div>
-        {% endif %}
-        {% if cultivo.sustrato %}
-        <div class="cd-setup-row">
-          <span class="label-eyebrow">sustrato</span>
-          <span class="cd-setup-row__val">{{ cultivo.sustrato }}</span>
-        </div>
-        {% endif %}
-        {% if cultivo.carpa_dimensiones %}
-        <div class="cd-setup-row">
-          <span class="label-eyebrow">carpa</span>
-          <span class="cd-setup-row__val">{{ cultivo.carpa_dimensiones }}</span>
-        </div>
-        {% endif %}
-        <div class="cd-setup-row">
-          <span class="label-eyebrow">plantas</span>
-          <span class="cd-setup-row__val">{{ plantas_count }} activas</span>
-        </div>
-        {% if ultima_medicion %}
-        <div class="cd-setup-row">
-          <span class="label-eyebrow">última med.</span>
-          <span class="cd-setup-row__val c-fine">{{ ultima_medicion.timestamp|date:"d/m/Y H:i" }}</span>
-        </div>
-        {% endif %}
-        {% if cultivo.notas %}
-        <div class="cd-setup-row" style="align-items:flex-start;">
-          <span class="label-eyebrow">notas</span>
-          <span class="cd-setup-row__val c-soft" style="font-style:italic; font-family:'Geist', sans-serif; font-size:12px; line-height:1.5; text-align:right;">"{{ cultivo.notas }}"</span>
-        </div>
-        {% endif %}
-      </div>
-    </div>
   </div>
 </div>
 {% endblock %}
