@@ -70,6 +70,13 @@
     <form method="post">
       {% csrf_token %}
 
+      {% if form.non_field_errors %}
+      <div class="form-errors">
+        <div class="form-errors__title">⚠ Errores en el formulario</div>
+        {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+      </div>
+      {% endif %}
+
       <!-- IDENTIDAD -->
       <div class="panel">
         <div class="panel__head">
@@ -80,18 +87,18 @@
         </div>
         <div class="panel__body">
           <div class="row g-3">
-            <div class="col-12 col-md-8">
+            <div class="col-12 col-md-8 {% if form.nombre.errors %}has-error{% endif %}">
               <label for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }} *</label>
               {{ form.nombre }}
               {% if form.nombre.errors %}<div class="field-error">{{ form.nombre.errors.0 }}</div>{% endif %}
               <div class="field-hint">Ej: Lemon Haze Run #3, Auto-flower invierno</div>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4 {% if form.fecha_inicio.errors %}has-error{% endif %}">
               <label for="{{ form.fecha_inicio.id_for_label }}">{{ form.fecha_inicio.label }} *</label>
               {{ form.fecha_inicio }}
               {% if form.fecha_inicio.errors %}<div class="field-error">{{ form.fecha_inicio.errors.0 }}</div>{% endif %}
             </div>
-            <div class="col-12">
+            <div class="col-12 {% if form.estado.errors %}has-error{% endif %}">
               <label for="{{ form.estado.id_for_label }}">{{ form.estado.label }}</label>
               {{ form.estado }}
               {% if form.estado.errors %}<div class="field-error">{{ form.estado.errors.0 }}</div>{% endif %}

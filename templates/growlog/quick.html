@@ -235,13 +235,20 @@
                   hx-on::after-request="if(event.detail.successful){ this.reset(); }">
               {% csrf_token %}
 
-              <div class="mb-3">
+              {% if evento_form.non_field_errors %}
+              <div class="form-errors" style="margin-bottom: 14px;">
+                {% for error in evento_form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+              </div>
+              {% endif %}
+              <div class="mb-3 {% if evento_form.tipo.errors %}has-error{% endif %}">
                 <label>tipo de evento</label>
                 {{ evento_form.tipo }}
+                {% if evento_form.tipo.errors %}<div class="field-error">{{ evento_form.tipo.errors.0 }}</div>{% endif %}
               </div>
-              <div class="mb-3">
+              <div class="mb-3 {% if evento_form.descripcion.errors %}has-error{% endif %}">
                 <label>descripción</label>
                 {{ evento_form.descripcion }}
+                {% if evento_form.descripcion.errors %}<div class="field-error">{{ evento_form.descripcion.errors.0 }}</div>{% endif %}
               </div>
 
               <div class="d-flex justify-content-end mt-4" style="gap:10px;">
@@ -273,23 +280,32 @@
                   hx-on::after-request="if(event.detail.successful){ this.reset(); }">
               {% csrf_token %}
 
-              <div class="mb-3">
+              {% if tarea_form.non_field_errors %}
+              <div class="form-errors" style="margin-bottom: 14px;">
+                {% for error in tarea_form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+              </div>
+              {% endif %}
+              <div class="mb-3 {% if tarea_form.titulo.errors %}has-error{% endif %}">
                 <label>título de la tarea</label>
                 {{ tarea_form.titulo }}
+                {% if tarea_form.titulo.errors %}<div class="field-error">{{ tarea_form.titulo.errors.0 }}</div>{% endif %}
               </div>
               <div class="row g-3 mb-3">
-                <div class="col-6">
+                <div class="col-6 {% if tarea_form.categoria.errors %}has-error{% endif %}">
                   <label>categoría</label>
                   {{ tarea_form.categoria }}
+                  {% if tarea_form.categoria.errors %}<div class="field-error">{{ tarea_form.categoria.errors.0 }}</div>{% endif %}
                 </div>
-                <div class="col-6">
+                <div class="col-6 {% if tarea_form.prioridad.errors %}has-error{% endif %}">
                   <label>prioridad</label>
                   {{ tarea_form.prioridad }}
+                  {% if tarea_form.prioridad.errors %}<div class="field-error">{{ tarea_form.prioridad.errors.0 }}</div>{% endif %}
                 </div>
               </div>
-              <div class="mb-3">
+              <div class="mb-3 {% if tarea_form.fecha_objetivo.errors %}has-error{% endif %}">
                 <label>fecha objetivo (opcional)</label>
                 {{ tarea_form.fecha_objetivo }}
+                {% if tarea_form.fecha_objetivo.errors %}<div class="field-error">{{ tarea_form.fecha_objetivo.errors.0 }}</div>{% endif %}
               </div>
 
               <div class="d-flex justify-content-end mt-4" style="gap:10px;">

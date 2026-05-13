@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>500 — Error del servidor — 62xROOTS</title>
+  <style>
+    :root {
+      --bg: #16110b; --card: #221c14; --rule: #3a2f1f;
+      --cream: #f3e9d1; --cream-soft: #bfb091; --fine: #7a6c52;
+      --green: #b1d160; --rust: #d96a3d;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--cream);
+      font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
+    .wrap {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 40px 20px; text-align: center;
+    }
+    .eyebrow {
+      font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: .3em;
+      text-transform: uppercase; color: var(--fine); margin-bottom: 18px;
+    }
+    .code {
+      font-family: ui-monospace, monospace;
+      font-size: 140px; font-weight: 800; line-height: .85; letter-spacing: -.03em;
+      color: var(--rust); opacity: .18; user-select: none; margin-bottom: -16px;
+    }
+    h1 {
+      font-size: 32px; font-weight: 800; color: var(--cream);
+      margin-bottom: 12px; letter-spacing: -.02em;
+    }
+    p {
+      font-family: ui-monospace, monospace; font-size: 12px;
+      color: var(--cream-soft); line-height: 1.6; margin-bottom: 32px; letter-spacing: .03em;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--green); color: #16110b;
+      font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700;
+      letter-spacing: .2em; text-transform: uppercase;
+      padding: 12px 24px; text-decoration: none; border: none; cursor: pointer;
+    }
+    .brand {
+      font-family: ui-monospace, monospace; font-size: 11px; color: var(--fine);
+      margin-bottom: 40px; letter-spacing: .2em; text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">62×ROOTS · grower's terminal</div>
+    <div class="eyebrow">// error · 500</div>
+    <div class="code">500</div>
+    <h1>Error interno del servidor</h1>
+    <p>
+      Algo falló de nuestro lado.<br>
+      El problema fue registrado. Intentá de nuevo en unos segundos.
+    </p>
+    <a href="/" class="btn">↩ volver al inicio</a>
+  </div>
+</body>
+</html>

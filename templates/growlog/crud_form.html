@@ -83,6 +83,13 @@
         <form method="post"{% if multipart %} enctype="multipart/form-data"{% endif %}>
           {% csrf_token %}
 
+          {% if form.non_field_errors %}
+          <div class="form-errors">
+            <div class="form-errors__title">⚠ Errores en el formulario</div>
+            {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+          </div>
+          {% endif %}
+
           {% for field in form %}
             {% with wclass=field.field.widget.attrs.class %}
 
@@ -97,11 +104,11 @@
             {% elif not wclass %}
               <div class="mb-3">
                 <label>{{ field.label }}</label>
-                <div class="m2m-group">{{ field }}</div>
+                <div class="m2m-group {% if field.errors %}has-error{% endif %}">{{ field }}</div>
               </div>
 
             {% else %}
-              <div class="mb-3">
+              <div class="mb-3 {% if field.errors %}has-error{% endif %}">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
               </div>

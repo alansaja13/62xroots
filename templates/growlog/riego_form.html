@@ -132,6 +132,12 @@
       <div class="panel__body">
         <form method="post">
           {% csrf_token %}
+          {% if form.non_field_errors %}
+          <div class="form-errors" style="margin-bottom: 16px;">
+            <div class="form-errors__title">⚠ Errores</div>
+            {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+          </div>
+          {% endif %}
           <div class="row g-3">
             {% for field in form %}
               {% with wclass=field.field.widget.attrs.class %}
@@ -143,13 +149,13 @@
                   </label>
                 </div>
               {% elif field.name == 'timestamp' or field.name == 'notas' %}
-                <div class="col-12">
+                <div class="col-12 {% if field.errors %}has-error{% endif %}">
                   <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                   {{ field }}
                   {% if field.errors %}<div class="field-error">{{ field.errors.0 }}</div>{% endif %}
                 </div>
               {% else %}
-                <div class="col-12 col-sm-6 rf-num-input">
+                <div class="col-12 col-sm-6 rf-num-input {% if field.errors %}has-error{% endif %}">
                   <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                   {{ field }}
                   {% if field.errors %}<div class="field-error">{{ field.errors.0 }}</div>{% endif %}
@@ -223,14 +229,21 @@
       <div class="panel__body">
         <form method="post" action="{% url 'growlog:nutriente_aplicado_crear' riego.pk %}">
           {% csrf_token %}
+          {% if na_form.non_field_errors %}
+          <div class="form-errors" style="margin-bottom: 12px;">
+            {% for error in na_form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+          </div>
+          {% endif %}
           <div class="row g-3 align-items-end">
-            <div class="col-12 col-sm-7">
+            <div class="col-12 col-sm-7 {% if na_form.nutriente.errors %}has-error{% endif %}">
               <label for="{{ na_form.nutriente.id_for_label }}">{{ na_form.nutriente.label }}</label>
               {{ na_form.nutriente }}
+              {% if na_form.nutriente.errors %}<div class="field-error">{{ na_form.nutriente.errors.0 }}</div>{% endif %}
             </div>
-            <div class="col-7 col-sm-3 rf-num-input">
+            <div class="col-7 col-sm-3 rf-num-input {% if na_form.dosis_g_por_litro.errors %}has-error{% endif %}">
               <label for="{{ na_form.dosis_g_por_litro.id_for_label }}">g/L</label>
               {{ na_form.dosis_g_por_litro }}
+              {% if na_form.dosis_g_por_litro.errors %}<div class="field-error">{{ na_form.dosis_g_por_litro.errors.0 }}</div>{% endif %}
             </div>
             <div class="col-5 col-sm-2">
               <button type="submit" class="btn-brand" style="width: 100%; padding: 14px;">
