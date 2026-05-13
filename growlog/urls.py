@@ -12,6 +12,7 @@ urlpatterns = [
     path("api/v1/cultivos/<slug:slug>/mediciones/", api_views.cultivo_mediciones),
     path("api/v1/cultivos/<slug:slug>/eventos/", api_views.cultivo_eventos),
     path("api/v1/cultivos/<slug:slug>/tareas/", api_views.cultivo_tareas),
+    path("api/v1/cultivos/<slug:slug>/cambios-fotoperiodo/", api_views.cultivo_cambios_fotoperiodo),
     path("api/v1/plantas/<uuid:planta_uuid>/", api_views.planta_detail),
 
     path("login/", views.login_view, name="login"),

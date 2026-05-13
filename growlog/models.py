@@ -90,11 +90,62 @@ class Planta(models.Model):
         return f"{self.apodo} ({self.strain or 'sin strain'})"
 
 
+class CambioFotoperiodo(models.Model):
+    cultivo = models.ForeignKey(Cultivo, on_delete=models.CASCADE, related_name="cambios_fotoperiodo")
+    fotoperiodo = models.CharField(
+        max_length=5,
+        verbose_name="Fotoperiodo",
+        help_text="Formato N/M donde N+M=24. Ej: 18/6, 12/12",
+    )
+    hora_lights_on = models.TimeField(
+        verbose_name="Hora de encendido",
+        help_text="Hora local (Argentina) en que se enciende la luz",
+    )
+    fecha_inicio = models.DateField(
+        verbose_name="Fecha de inicio",
+        help_text="Fecha desde la cual rige este fotoperiodo",
+    )
+    notas = models.TextField(blank=True, verbose_name="Notas")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-fecha_inicio"]
+        unique_together = [("cultivo", "fecha_inicio")]
+        verbose_name = "Cambio de fotoperiodo"
+        verbose_name_plural = "Cambios de fotoperiodo"
+
+    def __str__(self):
+        return f"{self.cultivo} — {self.fotoperiodo} desde {self.fecha_inicio:%d/%m/%Y}"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.fotoperiodo:
+            parts = self.fotoperiodo.split("/")
+            if len(parts) != 2:
+                raise ValidationError({"fotoperiodo": "Formato inválido. Use N/M donde N+M=24 (ej: 18/6)."})
+            try:
+                n, m = int(parts[0]), int(parts[1])
+            except ValueError:
+                raise ValidationError({"fotoperiodo": "Formato inválido. Use N/M con números enteros."})
+            if n + m != 24 or n <= 0 or m <= 0:
+                raise ValidationError({"fotoperiodo": "N+M debe sumar exactamente 24."})
+
+
 class MedicionAmbiente(models.Model):
+    LUZ_ESTADO_CHOICES = [("on", "Luz prendida"), ("off", "Luz apagada")]
+
     cultivo = models.ForeignKey(Cultivo, on_delete=models.CASCADE, related_name="mediciones")
     timestamp = models.DateTimeField(default=timezone.now)
     temperatura_c = models.DecimalField(max_digits=5, decimal_places=2)
     humedad_relativa = models.DecimalField(max_digits=5, decimal_places=2)
+    luz_estado = models.CharField(
+        max_length=10,
+        choices=LUZ_ESTADO_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Estado de la luz",
+        help_text="Calculado automáticamente según el fotoperiodo activo al momento de la medición.",
+    )
     notas = models.TextField(blank=True)
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='mediciones_creadas')
 
@@ -105,6 +156,12 @@ class MedicionAmbiente(models.Model):
 
     def __str__(self):
         return f"{self.cultivo} — {self.timestamp:%d/%m %H:%M} | {self.temperatura_c}°C {self.humedad_relativa}%HR"
+
+    def save(self, *args, **kwargs):
+        if self.luz_estado is None:
+            from .utils import resolver_luz_estado_para_medicion
+            self.luz_estado = resolver_luz_estado_para_medicion(self.cultivo, self.timestamp)
+        super().save(*args, **kwargs)
 
     @property
     def vpd(self):

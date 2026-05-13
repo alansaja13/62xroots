@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    Cultivo, Planta, MedicionAmbiente, Nutriente, Riego,
+    CambioFotoperiodo, Cultivo, Planta, MedicionAmbiente, Nutriente, Riego,
     NutrienteAplicado, Evento, MedicionPlanta, Tarea, ParametroIdeal,
 )
 
@@ -66,11 +66,17 @@ class RiegoAdmin(admin.ModelAdmin):
     inlines = [NutrienteAplicadoInline]
 
 
+@admin.register(CambioFotoperiodo)
+class CambioFotoperiodoAdmin(admin.ModelAdmin):
+    list_display = ("cultivo", "fotoperiodo", "hora_lights_on", "fecha_inicio")
+    list_filter = ("cultivo", "fotoperiodo")
+
+
 @admin.register(MedicionAmbiente)
 class MedicionAmbienteAdmin(admin.ModelAdmin):
-    list_display = ["cultivo", "timestamp", "temperatura_c", "humedad_relativa", "vpd_display"]
-    list_filter = ["cultivo"]
-    readonly_fields = ["vpd_display"]
+    list_display = ["cultivo", "timestamp", "temperatura_c", "humedad_relativa", "vpd_display", "luz_estado"]
+    list_filter = ["cultivo", "luz_estado"]
+    readonly_fields = ["vpd_display", "luz_estado"]
 
     @admin.display(description="VPD (kPa)")
     def vpd_display(self, obj):

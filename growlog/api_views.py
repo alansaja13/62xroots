@@ -4,12 +4,13 @@ from decimal import Decimal, InvalidOperation
 from functools import wraps
 
 from django.core.cache import cache
+from django.db import IntegrityError
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
-from .models import APIToken, Cultivo, Evento, MedicionAmbiente, Planta, Tarea
+from .models import APIToken, CambioFotoperiodo, Cultivo, Evento, MedicionAmbiente, Planta, Tarea
 
 EVENTO_TIPOS = {c[0] for c in Evento.TIPO_CHOICES}
 TAREA_PRIORIDADES = {c[0] for c in Tarea.PRIORIDAD_CHOICES}
@@ -112,6 +113,16 @@ def _riego(r, include_nutrientes=True):
     return d
 
 
+def _cambio_fotoperiodo(cf):
+    return {
+        'id': cf.id,
+        'fotoperiodo': cf.fotoperiodo,
+        'hora_lights_on': cf.hora_lights_on.isoformat(),
+        'fecha_inicio': cf.fecha_inicio.isoformat(),
+        'notas': cf.notas,
+    }
+
+
 def _medicion(m):
     return {
         'id': m.id,
@@ -120,6 +131,8 @@ def _medicion(m):
         'humedad_relativa': str(m.humedad_relativa),
         'vpd': m.vpd,
         'vpd_estado': m.vpd_estado,
+        'luz_estado': m.luz_estado,
+        'luz_estado_display': m.get_luz_estado_display() if m.luz_estado else None,
         'notas': m.notas,
     }
 
@@ -186,6 +199,7 @@ def cultivo_detail(request, slug):
         _evento(e) for e in c.eventos.prefetch_related('plantas_afectadas').all()[:10]
     ]
     data['tareas_pendientes'] = [_tarea(t) for t in c.tareas.filter(completada=False)]
+    data['cambios_fotoperiodo'] = [_cambio_fotoperiodo(cf) for cf in c.cambios_fotoperiodo.all()]
     return api_ok(data)
 
 
@@ -347,6 +361,65 @@ def cultivo_tareas(request, slug):
             creado_por=request.api_user,
         )
         return api_ok(_tarea(t), status=201)
+
+    return api_error('Method not allowed', 405)
+
+
+@csrf_exempt
+@require_token
+def cultivo_cambios_fotoperiodo(request, slug):
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
+
+    if request.method == 'GET':
+        return api_ok([_cambio_fotoperiodo(cf) for cf in c.cambios_fotoperiodo.all()])
+
+    if request.method == 'POST':
+        rl = _write_rate_limit(request)
+        if rl:
+            return rl
+        body, err = _parse_json_body(request)
+        if err:
+            return err
+
+        fotoperiodo = str(body.get('fotoperiodo', '')).strip()
+        parts = fotoperiodo.split('/')
+        if len(parts) != 2:
+            return api_error('fotoperiodo debe tener formato N/M (ej: 18/6)')
+        try:
+            n, m = int(parts[0]), int(parts[1])
+        except ValueError:
+            return api_error('fotoperiodo debe tener formato N/M con valores numéricos')
+        if n + m != 24 or n <= 0 or m <= 0:
+            return api_error('N+M del fotoperiodo debe ser igual a 24')
+
+        hora_str = str(body.get('hora_lights_on', '')).strip()
+        try:
+            from datetime import time
+            hora_lights_on = time.fromisoformat(hora_str)
+        except (ValueError, TypeError):
+            return api_error('hora_lights_on debe ser HH:MM o HH:MM:SS')
+
+        fecha_str = str(body.get('fecha_inicio', '')).strip()
+        try:
+            from datetime import date
+            fecha_inicio = date.fromisoformat(fecha_str)
+        except (ValueError, TypeError):
+            return api_error('fecha_inicio debe ser YYYY-MM-DD')
+
+        try:
+            cf = CambioFotoperiodo.objects.create(
+                cultivo=c,
+                fotoperiodo=fotoperiodo,
+                hora_lights_on=hora_lights_on,
+                fecha_inicio=fecha_inicio,
+                notas=str(body.get('notas', ''))[:500],
+            )
+        except IntegrityError:
+            return api_error('Ya existe un cambio de fotoperiodo para esa fecha en este cultivo')
+
+        return api_ok(_cambio_fotoperiodo(cf), status=201)
 
     return api_error('Method not allowed', 405)
 

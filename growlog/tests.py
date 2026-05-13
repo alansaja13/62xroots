@@ -1,11 +1,16 @@
 import hashlib
 import secrets
+import zoneinfo
+from datetime import datetime, time, date
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.utils import timezone
 
-from .models import APIToken, Cultivo, Planta
+from .models import APIToken, CambioFotoperiodo, Cultivo, Planta
+from .utils import calcular_luz_estado, get_cambio_fotoperiodo_activo
+
+ART = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
 
 
 class APIAuthTests(TestCase):
@@ -130,3 +135,63 @@ class APIAuthTests(TestCase):
         )
         r = self.client.get(f'/api/v1/plantas/{planta_ajena.uuid}/', **self._auth())
         self.assertEqual(r.status_code, 404)
+
+
+class CalcularLuzEstadoTests(TestCase):
+    """Tests for calcular_luz_estado: lights-on 17:00, fotoperiodo 18/6 (off at 11:00)."""
+
+    def _ts(self, hour, minute=0):
+        return datetime(2026, 5, 13, hour, minute, tzinfo=ART)
+
+    def test_during_on_window(self):
+        self.assertEqual(calcular_luz_estado(self._ts(18), time(17, 0), "18/6"), "on")
+
+    def test_during_off_window(self):
+        self.assertEqual(calcular_luz_estado(self._ts(12), time(17, 0), "18/6"), "off")
+
+    def test_past_midnight_on_window(self):
+        self.assertEqual(calcular_luz_estado(self._ts(2), time(17, 0), "18/6"), "on")
+
+    def test_boundary_lights_off(self):
+        # 11:00 is exactly when lights turn off — should be "off"
+        self.assertEqual(calcular_luz_estado(self._ts(11), time(17, 0), "18/6"), "off")
+
+    def test_boundary_lights_on(self):
+        # 17:00 is exactly when lights turn on — should be "on"
+        self.assertEqual(calcular_luz_estado(self._ts(17), time(17, 0), "18/6"), "on")
+
+
+class GetCambioFotoperiodoActivoTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('fotouser', password='pass')
+        self.cultivo = Cultivo.objects.create(
+            nombre='Foto Test', fecha_inicio=date(2026, 1, 1),
+            estado='vegetativo', creado_por=self.user,
+        )
+        self.veg = CambioFotoperiodo.objects.create(
+            cultivo=self.cultivo,
+            fotoperiodo='18/6',
+            hora_lights_on=time(17, 0),
+            fecha_inicio=date(2026, 1, 1),
+        )
+        self.flora = CambioFotoperiodo.objects.create(
+            cultivo=self.cultivo,
+            fotoperiodo='12/12',
+            hora_lights_on=time(18, 0),
+            fecha_inicio=date(2026, 3, 1),
+        )
+
+    def test_before_flip_returns_veg(self):
+        ts = datetime(2026, 2, 15, 12, 0, tzinfo=ART)
+        result = get_cambio_fotoperiodo_activo(self.cultivo, ts)
+        self.assertEqual(result, self.veg)
+
+    def test_after_flip_returns_flora(self):
+        ts = datetime(2026, 4, 1, 12, 0, tzinfo=ART)
+        result = get_cambio_fotoperiodo_activo(self.cultivo, ts)
+        self.assertEqual(result, self.flora)
+
+    def test_on_flip_date_returns_flora(self):
+        ts = datetime(2026, 3, 1, 0, 0, tzinfo=ART)
+        result = get_cambio_fotoperiodo_activo(self.cultivo, ts)
+        self.assertEqual(result, self.flora)
