@@ -68,6 +68,7 @@ class Planta(models.Model):
     ]
 
     cultivo = models.ForeignKey(Cultivo, on_delete=models.CASCADE, related_name="plantas")
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     apodo = models.CharField(max_length=60)
     strain = models.CharField(max_length=120, blank=True)
     posicion_tent = models.CharField(max_length=20, choices=POSICION_CHOICES, default="otro")
@@ -277,7 +278,7 @@ class Tarea(models.Model):
 
 class APIToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='api_tokens')
-    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    token_hash = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -285,7 +286,7 @@ class APIToken(models.Model):
         verbose_name_plural = "API Tokens"
 
     def __str__(self):
-        return f"{self.user.username} — {self.token}"
+        return f"{self.user.username} — {self.created_at:%d/%m/%Y}"
 
 
 class ParametroIdeal(models.Model):

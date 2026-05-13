@@ -541,9 +541,13 @@
         {% if not user.is_staff %}
           <span class="nav-user__guest-tag">solo lectura</span>
         {% endif %}
-        <a href="{% url 'growlog:logout' %}" class="nav-user__logout" title="Cerrar sesión">
-          <i class="bi bi-box-arrow-right"></i>
-        </a>
+        <form method="post" action="{% url 'growlog:logout' %}" style="display:inline;margin:0;">
+          {% csrf_token %}
+          <button type="submit" class="nav-user__logout" title="Cerrar sesión"
+                  style="background:none;border:none;padding:0;cursor:pointer;">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </form>
       </div>
       {% endif %}
     </div>

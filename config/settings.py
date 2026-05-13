@@ -6,11 +6,19 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-only-change-me")
+# H-6: DEBUG se carga primero para que el guard de SECRET_KEY pueda usarlo
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-DEBUG = os.environ.get("DEBUG", "True") == "True"
+# H-6: Nunca arrancar producción sin SECRET_KEY explícita
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise RuntimeError(
+            "SECRET_KEY debe estar configurada como variable de entorno en producción."
+        )
+    SECRET_KEY = "django-insecure-local-dev-only-no-usar-en-produccion"
 
-# Local: localhost. Production: Railway domain via env var
+# Local: localhost. Producción: dominio Railway via env var
 _allowed = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [h.strip() for h in _allowed.split(",") if h.strip()]
 
@@ -27,7 +35,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",   # sirve archivos estáticos en producción
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -73,7 +81,19 @@ else:
         }
     }
 
-AUTH_PASSWORD_VALIDATORS = []
+# H-4: Validadores de contraseña restaurados
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 8},
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+]
 
 LANGUAGE_CODE = "es-ar"
 TIME_ZONE = "America/Argentina/Buenos_Aires"
@@ -106,3 +126,20 @@ LOGOUT_REDIRECT_URL = "/login/"
 _csrf = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [x.strip() for x in _csrf.split(",") if x.strip()]
 CSRF_TRUSTED_ORIGINS += ["https://62xroots.up.railway.app"]
+
+# M-2: Límite de tamaño de uploads (5 MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+
+# H-5: Rate limiting via cache (implementado manualmente en views.py)
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_LOCKOUT_SECONDS = 3600  # 1 hora
+
+# M-4: Headers de seguridad para producción
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True

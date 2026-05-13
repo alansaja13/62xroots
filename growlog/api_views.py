@@ -1,4 +1,4 @@
-import uuid
+import hashlib
 from functools import wraps
 
 from django.http import JsonResponse
@@ -24,10 +24,13 @@ def require_token(view_func):
         if not auth.startswith('Bearer '):
             return api_error('Authentication required', 401)
         token_str = auth[7:].strip()
+        if not token_str:
+            return api_error('Authentication required', 401)
+        # H-1: comparar hash, nunca el token en claro
+        token_hash = hashlib.sha256(token_str.encode()).hexdigest()
         try:
-            token_uuid = uuid.UUID(token_str)
-            token = APIToken.objects.select_related('user').get(token=token_uuid)
-        except (ValueError, APIToken.DoesNotExist):
+            token = APIToken.objects.select_related('user').get(token_hash=token_hash)
+        except APIToken.DoesNotExist:
             return api_error('Invalid token', 401)
         request.api_user = token.user
         return view_func(request, *args, **kwargs)
@@ -39,6 +42,7 @@ def require_token(view_func):
 def _cultivo_base(c):
     return {
         'id': c.id,
+        'slug': c.slug,
         'nombre': c.nombre,
         'estado': c.estado,
         'fecha_inicio': c.fecha_inicio.isoformat(),
@@ -50,7 +54,7 @@ def _cultivo_base(c):
 
 
 def _planta(p):
-    return {'id': p.id, 'apodo': p.apodo, 'strain': p.strain, 'estado': p.estado}
+    return {'id': p.id, 'uuid': str(p.uuid), 'apodo': p.apodo, 'strain': p.strain, 'estado': p.estado}
 
 
 def _riego(r, include_nutrientes=True):
@@ -127,15 +131,17 @@ def _medicion_planta(m):
 @require_GET
 @require_token
 def cultivos_list(request):
-    cultivos = Cultivo.objects.filter(archivado=False)
+    # H-2: solo los cultivos del usuario autenticado
+    cultivos = Cultivo.objects.filter(archivado=False, creado_por=request.api_user)
     return api_ok([_cultivo_base(c) for c in cultivos])
 
 
 @require_GET
 @require_token
-def cultivo_detail(request, pk):
+def cultivo_detail(request, slug):
+    # H-2: scoped al usuario + M-1: lookup por slug
     try:
-        c = Cultivo.objects.get(pk=pk)
+        c = Cultivo.objects.get(slug=slug, creado_por=request.api_user)
     except Cultivo.DoesNotExist:
         return api_error('Cultivo no encontrado', 404)
 
@@ -153,9 +159,9 @@ def cultivo_detail(request, pk):
 
 @require_GET
 @require_token
-def cultivo_riegos(request, pk):
+def cultivo_riegos(request, slug):
     try:
-        c = Cultivo.objects.get(pk=pk)
+        c = Cultivo.objects.get(slug=slug, creado_por=request.api_user)
     except Cultivo.DoesNotExist:
         return api_error('Cultivo no encontrado', 404)
 
@@ -165,9 +171,9 @@ def cultivo_riegos(request, pk):
 
 @require_GET
 @require_token
-def cultivo_mediciones(request, pk):
+def cultivo_mediciones(request, slug):
     try:
-        c = Cultivo.objects.get(pk=pk)
+        c = Cultivo.objects.get(slug=slug, creado_por=request.api_user)
     except Cultivo.DoesNotExist:
         return api_error('Cultivo no encontrado', 404)
 
@@ -176,9 +182,9 @@ def cultivo_mediciones(request, pk):
 
 @require_GET
 @require_token
-def cultivo_eventos(request, pk):
+def cultivo_eventos(request, slug):
     try:
-        c = Cultivo.objects.get(pk=pk)
+        c = Cultivo.objects.get(slug=slug, creado_por=request.api_user)
     except Cultivo.DoesNotExist:
         return api_error('Cultivo no encontrado', 404)
 
@@ -188,9 +194,9 @@ def cultivo_eventos(request, pk):
 
 @require_GET
 @require_token
-def cultivo_tareas(request, pk):
+def cultivo_tareas(request, slug):
     try:
-        c = Cultivo.objects.get(pk=pk)
+        c = Cultivo.objects.get(slug=slug, creado_por=request.api_user)
     except Cultivo.DoesNotExist:
         return api_error('Cultivo no encontrado', 404)
 
@@ -206,14 +212,19 @@ def cultivo_tareas(request, pk):
 
 @require_GET
 @require_token
-def planta_detail(request, pk):
+def planta_detail(request, planta_uuid):
+    # H-2: scoped via cultivo del usuario + M-1: lookup por UUID
     try:
-        p = Planta.objects.select_related('cultivo').get(pk=pk)
+        p = Planta.objects.select_related('cultivo').get(
+            uuid=planta_uuid,
+            cultivo__creado_por=request.api_user,
+        )
     except Planta.DoesNotExist:
         return api_error('Planta no encontrada', 404)
 
     data = {
         'id': p.id,
+        'uuid': str(p.uuid),
         'apodo': p.apodo,
         'strain': p.strain,
         'estado': p.estado,
@@ -223,7 +234,7 @@ def planta_detail(request, pk):
         'thc_estimado': str(p.thc_estimado) if p.thc_estimado is not None else None,
         'yield_estimado_g': p.yield_estimado_g,
         'notas_genetica': p.notas_genetica,
-        'cultivo': {'id': p.cultivo.id, 'nombre': p.cultivo.nombre},
+        'cultivo': {'id': p.cultivo.id, 'slug': p.cultivo.slug, 'nombre': p.cultivo.nombre},
         'mediciones': [_medicion_planta(m) for m in p.mediciones.all()],
     }
     return api_ok(data)

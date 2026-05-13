@@ -6,12 +6,16 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.cache import cache
+from django.core.files.uploadedfile import UploadedFile
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.templatetags.static import static as static_url
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django import forms
+from django.conf import settings
 
 
 def staff_required(view_func):
@@ -36,20 +40,54 @@ _DT_FMT = "%Y-%m-%dT%H:%M"
 # Auth
 # ---------------------------------------------------------------------------
 
+def _get_client_ip(request):
+    x_forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded:
+        return x_forwarded.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "")
+
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect("growlog:dashboard")
     error = None
     if request.method == "POST":
-        user = authenticate(request, username=request.POST.get("username"), password=request.POST.get("password"))
-        if user:
-            login(request, user)
-            return redirect(request.GET.get("next") or "growlog:dashboard")
-        error = "Usuario o contraseña incorrectos."
+        ip = _get_client_ip(request)
+        cache_key = f"login_failures_{ip}"
+        failures = cache.get(cache_key, 0)
+        max_attempts = getattr(settings, "LOGIN_MAX_ATTEMPTS", 5)
+        lockout_secs = getattr(settings, "LOGIN_LOCKOUT_SECONDS", 3600)
+
+        if failures >= max_attempts:
+            error = "Demasiados intentos fallidos. Esperá 1 hora antes de reintentar."
+        else:
+            user = authenticate(
+                request,
+                username=request.POST.get("username"),
+                password=request.POST.get("password"),
+            )
+            if user:
+                cache.delete(cache_key)
+                login(request, user)
+                # L-3: "recordar sesión" funcional
+                if not request.POST.get("remember"):
+                    request.session.set_expiry(0)
+                # H-3: validar next para evitar open redirect
+                next_url = request.GET.get("next", "")
+                if next_url and url_has_allowed_host_and_scheme(
+                    next_url, allowed_hosts={request.get_host()}
+                ):
+                    return redirect(next_url)
+                return redirect("growlog:dashboard")
+            else:
+                cache.set(cache_key, failures + 1, timeout=lockout_secs)
+                error = "Usuario o contraseña incorrectos."
     return render(request, "growlog/login.html", {"error": error})
 
 
+@require_POST
 def logout_view(request):
+    # M-3: solo POST para evitar logout forzado via GET
     logout(request)
     return redirect("growlog:login")
 
@@ -175,6 +213,12 @@ class MedicionPlantaForm(forms.ModelForm):
             "sintomas": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             "foto": forms.FileInput(attrs={"class": "form-control"}),
         }
+
+    def clean_foto(self):
+        foto = self.cleaned_data.get("foto")
+        if isinstance(foto, UploadedFile) and foto.size > 5 * 1024 * 1024:
+            raise forms.ValidationError("La foto no puede superar los 5 MB.")
+        return foto
 
 
 class NutrienteAplicadoForm(forms.ModelForm):
@@ -621,7 +665,7 @@ def riego_editar(request, pk):
     return render(request, "growlog/riego_form.html", {
         "form": form, "riego": riego, "nutrientes": nutrientes,
         "na_form": na_form,
-        "back_url": reverse("growlog:cultivo_detail", args=[riego.cultivo_id]),
+        "back_url": reverse("growlog:cultivo_detail", args=[riego.cultivo.slug]),
         "delete_url": reverse("growlog:riego_eliminar", args=[pk]),
     })
 
@@ -746,21 +790,24 @@ _SUSTANTIVOS = ["arbol", "hoja", "raiz", "flor", "tallo", "brote", "fruto", "cam
 @staff_required
 def invitados_panel(request):
     invitados = User.objects.filter(is_staff=False, is_superuser=False).order_by("date_joined")
-    nuevo = request.session.pop("nuevo_invitado", None)
-    return render(request, "growlog/invitados.html", {"invitados": invitados, "nuevo": nuevo})
+    return render(request, "growlog/invitados.html", {"invitados": invitados})
 
 
 @login_required
 @staff_required
 @require_POST
 def invitado_crear(request):
+    # M-5: renderizar directo para no persistir la contraseña en la sesión
     username = f"{secrets.choice(_ADJETIVOS)}{secrets.choice(_SUSTANTIVOS)}{secrets.randbelow(90) + 10}"
     while User.objects.filter(username=username).exists():
         username = f"{secrets.choice(_ADJETIVOS)}{secrets.choice(_SUSTANTIVOS)}{secrets.randbelow(90) + 10}"
     password = secrets.token_urlsafe(10)
     User.objects.create_user(username=username, password=password, is_staff=False)
-    request.session["nuevo_invitado"] = {"username": username, "password": password}
-    return redirect("growlog:invitados_panel")
+    invitados = User.objects.filter(is_staff=False, is_superuser=False).order_by("date_joined")
+    return render(request, "growlog/invitados.html", {
+        "invitados": invitados,
+        "nuevo": {"username": username, "password": password},
+    })
 
 
 @login_required
