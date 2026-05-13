@@ -102,7 +102,7 @@
 
 {% block content %}
 
-<a href="{% url 'growlog:cultivo_detail' cultivo.pk %}" class="pd-back">
+<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="pd-back">
   <i class="bi bi-chevron-left"></i> {{ cultivo.nombre }}
 </a>
 

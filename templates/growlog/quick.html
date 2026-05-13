@@ -104,7 +104,7 @@
 
 {% block content %}
 
-<a href="{% url 'growlog:cultivo_detail' cultivo.pk %}" class="qe-back">
+<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="qe-back">
   <i class="bi bi-chevron-left"></i> {{ cultivo.nombre }}
 </a>
 
@@ -157,7 +157,7 @@
           </div>
           <div class="panel__body">
             <form id="quick-form" method="post"
-                  hx-post="{% url 'growlog:quick' cultivo.pk %}"
+                  hx-post="{% url 'growlog:quick' cultivo.slug %}"
                   hx-target="#result-medicion"
                   hx-swap="innerHTML"
                   x-data="{ rego: false }"
@@ -208,7 +208,7 @@
               <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap" style="gap:10px;">
                 <span class="qe-shortcut"><kbd>esc</kbd> cancelar · <kbd>⌘+enter</kbd> guardar</span>
                 <div style="display:flex; gap:10px;">
-                  <a href="{% url 'growlog:cultivo_detail' cultivo.pk %}" class="btn-ghost">cancelar</a>
+                  <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="btn-ghost">cancelar</a>
                   <button type="submit" class="btn-brand">+ anotar medición</button>
                 </div>
               </div>
@@ -229,7 +229,7 @@
           </div>
           <div class="panel__body">
             <form method="post"
-                  hx-post="{% url 'growlog:quick_evento' cultivo.pk %}"
+                  hx-post="{% url 'growlog:quick_evento' cultivo.slug %}"
                   hx-target="#result-evento"
                   hx-swap="innerHTML"
                   hx-on::after-request="if(event.detail.successful){ this.reset(); }">
@@ -252,7 +252,7 @@
               </div>
 
               <div class="d-flex justify-content-end mt-4" style="gap:10px;">
-                <a href="{% url 'growlog:cultivo_detail' cultivo.pk %}" class="btn-ghost">cancelar</a>
+                <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="btn-ghost">cancelar</a>
                 <button type="submit" class="btn-brand" style="background: var(--honey);">
                   <i class="bi bi-calendar-event"></i> registrar evento
                 </button>
@@ -274,7 +274,7 @@
           </div>
           <div class="panel__body">
             <form method="post"
-                  hx-post="{% url 'growlog:quick_tarea' cultivo.pk %}"
+                  hx-post="{% url 'growlog:quick_tarea' cultivo.slug %}"
                   hx-target="#result-tarea"
                   hx-swap="innerHTML"
                   hx-on::after-request="if(event.detail.successful){ this.reset(); }">
@@ -309,7 +309,7 @@
               </div>
 
               <div class="d-flex justify-content-end mt-4" style="gap:10px;">
-                <a href="{% url 'growlog:cultivo_detail' cultivo.pk %}" class="btn-ghost">cancelar</a>
+                <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="btn-ghost">cancelar</a>
                 <button type="submit" class="btn-brand" style="background: var(--plum);">
                   <i class="bi bi-check2-square"></i> agregar tarea
                 </button>

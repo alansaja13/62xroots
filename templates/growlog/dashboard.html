@@ -212,7 +212,7 @@
 <div class="cultivo-grid">
   {% for item in activos %}
     {% with c=item.cultivo m=item.ultima_medicion s=item.semaforo %}
-    <a href="{% url 'growlog:cultivo_detail' c.pk %}" class="cultivo-card">
+    <a href="{% url 'growlog:cultivo_detail' c.slug %}" class="cultivo-card">
       <div class="cultivo-card__head">
         <span class="cultivo-card__id">#{{ c.pk|stringformat:"03d" }}</span>
         <span class="pill pill--{% if c.estado == 'vegetativo' %}green{% elif c.estado == 'floracion' %}plum{% elif c.estado == 'secado' or c.estado == 'curado' %}honey{% else %}cream{% endif %}">
@@ -281,7 +281,7 @@
 <div class="finalizados-grid">
   {% for item in finalizados %}
     {% with c=item.cultivo %}
-    <a href="{% url 'growlog:cultivo_detail' c.pk %}" class="finalizado-row">
+    <a href="{% url 'growlog:cultivo_detail' c.slug %}" class="finalizado-row">
       <div>
         <div class="finalizado-row__name">{{ c.nombre }}</div>
         <span class="finalizado-row__dates">{{ c.fecha_inicio|date:"d/m/y" }} → {{ c.fecha_fin|date:"d/m/y"|default:"en curso" }}</span>
@@ -303,7 +303,7 @@
 <div class="finalizados-grid">
   {% for item in archivados %}
     {% with c=item.cultivo %}
-    <a href="{% url 'growlog:cultivo_detail' c.pk %}" class="finalizado-row">
+    <a href="{% url 'growlog:cultivo_detail' c.slug %}" class="finalizado-row">
       <div>
         <div class="finalizado-row__name">{{ c.nombre }}</div>
         <span class="finalizado-row__dates">desde {{ c.fecha_inicio|date:"d/m/y" }} · {{ c.get_estado_display }}</span>

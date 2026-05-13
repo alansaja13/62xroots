@@ -3,6 +3,7 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.utils.text import slugify
 
 
 class Cultivo(models.Model):
@@ -15,6 +16,7 @@ class Cultivo(models.Model):
     ]
 
     nombre = models.CharField(max_length=120)
+    slug = models.SlugField(max_length=140, unique=True, blank=True)
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField(null=True, blank=True)
     carpa_dimensiones = models.CharField(max_length=80, blank=True)
@@ -34,6 +36,16 @@ class Cultivo(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.nombre)
+            slug, n = base, 2
+            while Cultivo.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{n}"
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
 
     @property
     def dias_desde_inicio(self):

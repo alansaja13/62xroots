@@ -255,8 +255,8 @@ def dashboard(request):
 
 
 @login_required
-def cultivo_detail(request, pk):
-    cultivo = get_object_or_404(Cultivo, pk=pk)
+def cultivo_detail(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
     ultima_medicion = cultivo.mediciones.first()
     tareas_pendientes = cultivo.tareas.filter(completada=False).order_by("fecha_objetivo", "-prioridad")[:5]
     tareas_completadas = cultivo.tareas.filter(completada=True).order_by("-completada_en")[:10]
@@ -280,8 +280,8 @@ def cultivo_detail(request, pk):
 
 @login_required
 @staff_required
-def quick_entry(request, pk):
-    cultivo = get_object_or_404(Cultivo, pk=pk)
+def quick_entry(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
     form = QuickEntryForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
@@ -296,7 +296,7 @@ def quick_entry(request, pk):
         if request.htmx:
             return render(request, "growlog/partials/quick_success.html", {"medicion": medicion, "rego": d["rego"]})
         messages.success(request, f"✓ Guardado — {medicion.temperatura_c}°C / {medicion.humedad_relativa}%HR / VPD {medicion.vpd} kPa")
-        return redirect("growlog:quick", pk=cultivo.pk)
+        return redirect("growlog:quick", cultivo.slug)
     return render(request, "growlog/quick.html", {
         "form": form,
         "evento_form": QuickEventoForm(),
@@ -307,8 +307,8 @@ def quick_entry(request, pk):
 
 @login_required
 @staff_required
-def quick_evento(request, pk):
-    cultivo = get_object_or_404(Cultivo, pk=pk)
+def quick_evento(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
     form = QuickEventoForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
@@ -319,13 +319,13 @@ def quick_evento(request, pk):
         if request.htmx:
             return render(request, "growlog/partials/quick_evento_success.html", {"evento": evento})
         messages.success(request, f"Evento «{evento.get_tipo_display()}» registrado.")
-    return redirect("growlog:quick", pk=pk)
+    return redirect("growlog:quick", cultivo.slug)
 
 
 @login_required
 @staff_required
-def quick_tarea(request, pk):
-    cultivo = get_object_or_404(Cultivo, pk=pk)
+def quick_tarea(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
     form = QuickTareaForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
@@ -337,12 +337,12 @@ def quick_tarea(request, pk):
         if request.htmx:
             return render(request, "growlog/partials/quick_tarea_success.html", {"tarea": tarea})
         messages.success(request, f"Tarea «{tarea.titulo}» creada.")
-    return redirect("growlog:quick", pk=pk)
+    return redirect("growlog:quick", cultivo.slug)
 
 
 @login_required
-def timeline(request, pk):
-    cultivo = get_object_or_404(Cultivo, pk=pk)
+def timeline(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
     tipo = request.GET.get("tipo", "")
     todos = _build_timeline(cultivo, limit=200)
     VALID_TIPOS = {"medicion", "riego", "evento"}
@@ -370,23 +370,23 @@ def nuevo_cultivo(request):
         cultivo.creado_por = request.user
         cultivo.save()
         messages.success(request, f"Cultivo «{cultivo.nombre}» creado. ¡A cultivar!")
-        return redirect("growlog:cultivo_detail", pk=cultivo.pk)
+        return redirect("growlog:cultivo_detail", cultivo.slug)
     return render(request, "growlog/nuevo_cultivo.html", {"form": form})
 
 
 @login_required
 @staff_required
-def cultivo_editar(request, pk):
-    cultivo = get_object_or_404(Cultivo, pk=pk)
+def cultivo_editar(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
     form = NuevoCultivoForm(request.POST or None, instance=cultivo)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Cultivo actualizado.")
-        return redirect("growlog:cultivo_detail", pk=pk)
+        return redirect("growlog:cultivo_detail", cultivo.slug)
     return render(request, "growlog/crud_form.html", {
         "form": form, "title": f"Editar — {cultivo.nombre}",
         "subtitle": f"Día {cultivo.dias_desde_inicio}",
-        "back_url": reverse("growlog:cultivo_detail", args=[pk]),
+        "back_url": reverse("growlog:cultivo_detail", args=[cultivo.slug]),
     })
 
 
@@ -396,8 +396,8 @@ def cultivo_editar(request, pk):
 
 @login_required
 @staff_required
-def planta_crear(request, cultivo_pk):
-    cultivo = get_object_or_404(Cultivo, pk=cultivo_pk)
+def planta_crear(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
     form = PlantaForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         p = form.save(commit=False)
@@ -405,11 +405,11 @@ def planta_crear(request, cultivo_pk):
         p.creado_por = request.user
         p.save()
         messages.success(request, f"Planta «{p.apodo}» creada.")
-        return redirect("growlog:cultivo_detail", pk=cultivo_pk)
+        return redirect("growlog:cultivo_detail", cultivo.slug)
     return render(request, "growlog/crud_form.html", {
         "form": form, "title": "Nueva planta",
         "subtitle": cultivo.nombre,
-        "back_url": reverse("growlog:cultivo_detail", args=[cultivo_pk]),
+        "back_url": reverse("growlog:cultivo_detail", args=[cultivo.slug]),
     })
 
 
@@ -434,12 +434,12 @@ def planta_editar(request, pk):
 @staff_required
 def planta_eliminar(request, pk):
     planta = get_object_or_404(Planta, pk=pk)
-    cultivo_pk = planta.cultivo_id
+    cultivo = planta.cultivo
     if request.method == "POST":
         nombre = planta.apodo
         planta.delete()
         messages.success(request, f"Planta «{nombre}» eliminada.")
-        return redirect("growlog:cultivo_detail", pk=cultivo_pk)
+        return redirect("growlog:cultivo_detail", cultivo.slug)
     return render(request, "growlog/crud_delete.html", {
         "title": "Eliminar planta", "object_name": planta.apodo,
         "back_url": reverse("growlog:planta_detail", args=[pk]),
@@ -462,8 +462,8 @@ def planta_detail(request, pk):
 
 @login_required
 @staff_required
-def tarea_crear(request, cultivo_pk):
-    cultivo = get_object_or_404(Cultivo, pk=cultivo_pk)
+def tarea_crear(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
     form = TareaForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         t = form.save(commit=False)
@@ -471,11 +471,11 @@ def tarea_crear(request, cultivo_pk):
         t.creado_por = request.user
         t.save()
         messages.success(request, f"Tarea «{t.titulo}» creada.")
-        return redirect("growlog:cultivo_detail", pk=cultivo_pk)
+        return redirect("growlog:cultivo_detail", cultivo.slug)
     return render(request, "growlog/crud_form.html", {
         "form": form, "title": "Nueva tarea",
         "subtitle": cultivo.nombre,
-        "back_url": reverse("growlog:cultivo_detail", args=[cultivo_pk]),
+        "back_url": reverse("growlog:cultivo_detail", args=[cultivo.slug]),
     })
 
 
@@ -487,11 +487,11 @@ def tarea_editar(request, pk):
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Tarea actualizada.")
-        return redirect("growlog:cultivo_detail", pk=tarea.cultivo_id)
+        return redirect("growlog:cultivo_detail", tarea.cultivo.slug)
     return render(request, "growlog/crud_form.html", {
         "form": form, "title": f"Editar tarea",
         "subtitle": tarea.cultivo.nombre,
-        "back_url": reverse("growlog:cultivo_detail", args=[tarea.cultivo_id]),
+        "back_url": reverse("growlog:cultivo_detail", args=[tarea.cultivo.slug]),
         "delete_url": reverse("growlog:tarea_eliminar", args=[pk]),
     })
 
@@ -500,11 +500,11 @@ def tarea_editar(request, pk):
 @staff_required
 def tarea_eliminar(request, pk):
     tarea = get_object_or_404(Tarea, pk=pk)
-    cultivo_pk = tarea.cultivo_id
+    cultivo = tarea.cultivo
     if request.method == "POST":
         tarea.delete()
         messages.success(request, "Tarea eliminada.")
-        return redirect("growlog:cultivo_detail", pk=cultivo_pk)
+        return redirect("growlog:cultivo_detail", cultivo.slug)
     return render(request, "growlog/crud_delete.html", {
         "title": "Eliminar tarea", "object_name": tarea.titulo,
         "back_url": reverse("growlog:tarea_editar", args=[pk]),
@@ -521,7 +521,7 @@ def tarea_completar(request, pk):
     tarea.save()
     if request.htmx:
         return render(request, "growlog/partials/tarea_row.html", {"tarea": tarea})
-    return redirect("growlog:cultivo_detail", pk=tarea.cultivo_id)
+    return redirect("growlog:cultivo_detail", tarea.cultivo.slug)
 
 
 # ---------------------------------------------------------------------------
@@ -530,8 +530,8 @@ def tarea_completar(request, pk):
 
 @login_required
 @staff_required
-def evento_crear(request, cultivo_pk):
-    cultivo = get_object_or_404(Cultivo, pk=cultivo_pk)
+def evento_crear(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
     initial = {"timestamp": timezone.localtime().strftime(_DT_FMT)}
     form = EventoForm(request.POST or None, initial=initial)
     form.fields["plantas_afectadas"].queryset = cultivo.plantas.all()
@@ -542,11 +542,11 @@ def evento_crear(request, cultivo_pk):
         e.save()
         form.save_m2m()
         messages.success(request, "Evento registrado.")
-        return redirect("growlog:cultivo_detail", pk=cultivo_pk)
+        return redirect("growlog:cultivo_detail", cultivo.slug)
     return render(request, "growlog/crud_form.html", {
         "form": form, "title": "Nuevo evento",
         "subtitle": cultivo.nombre,
-        "back_url": reverse("growlog:cultivo_detail", args=[cultivo_pk]),
+        "back_url": reverse("growlog:cultivo_detail", args=[cultivo.slug]),
     })
 
 
@@ -559,11 +559,11 @@ def evento_editar(request, pk):
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Evento actualizado.")
-        return redirect("growlog:cultivo_detail", pk=evento.cultivo_id)
+        return redirect("growlog:cultivo_detail", evento.cultivo.slug)
     return render(request, "growlog/crud_form.html", {
         "form": form, "title": "Editar evento",
         "subtitle": evento.cultivo.nombre,
-        "back_url": reverse("growlog:cultivo_detail", args=[evento.cultivo_id]),
+        "back_url": reverse("growlog:cultivo_detail", args=[evento.cultivo.slug]),
         "delete_url": reverse("growlog:evento_eliminar", args=[pk]),
     })
 
@@ -572,11 +572,11 @@ def evento_editar(request, pk):
 @staff_required
 def evento_eliminar(request, pk):
     evento = get_object_or_404(Evento, pk=pk)
-    cultivo_pk = evento.cultivo_id
+    cultivo = evento.cultivo
     if request.method == "POST":
         evento.delete()
         messages.success(request, "Evento eliminado.")
-        return redirect("growlog:cultivo_detail", pk=cultivo_pk)
+        return redirect("growlog:cultivo_detail", cultivo.slug)
     return render(request, "growlog/crud_delete.html", {
         "title": "Eliminar evento", "object_name": str(evento),
         "back_url": reverse("growlog:evento_editar", args=[pk]),
@@ -589,8 +589,8 @@ def evento_eliminar(request, pk):
 
 @login_required
 @staff_required
-def riego_crear(request, cultivo_pk):
-    cultivo = get_object_or_404(Cultivo, pk=cultivo_pk)
+def riego_crear(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
     initial = {"timestamp": timezone.localtime().strftime(_DT_FMT)}
     form = RiegoForm(request.POST or None, initial=initial)
     if request.method == "POST" and form.is_valid():
@@ -603,7 +603,7 @@ def riego_crear(request, cultivo_pk):
     return render(request, "growlog/crud_form.html", {
         "form": form, "title": "Nuevo riego",
         "subtitle": cultivo.nombre,
-        "back_url": reverse("growlog:cultivo_detail", args=[cultivo_pk]),
+        "back_url": reverse("growlog:cultivo_detail", args=[cultivo.slug]),
     })
 
 
@@ -630,11 +630,11 @@ def riego_editar(request, pk):
 @staff_required
 def riego_eliminar(request, pk):
     riego = get_object_or_404(Riego, pk=pk)
-    cultivo_pk = riego.cultivo_id
+    cultivo = riego.cultivo
     if request.method == "POST":
         riego.delete()
         messages.success(request, "Riego eliminado.")
-        return redirect("growlog:cultivo_detail", pk=cultivo_pk)
+        return redirect("growlog:cultivo_detail", cultivo.slug)
     return render(request, "growlog/crud_delete.html", {
         "title": "Eliminar riego", "object_name": str(riego),
         "back_url": reverse("growlog:riego_editar", args=[pk]),

@@ -25,32 +25,32 @@ urlpatterns = [
 
     # Cultivo
     path("cultivo/nuevo/", views.nuevo_cultivo, name="nuevo_cultivo"),
-    path("cultivo/<int:pk>/", views.cultivo_detail, name="cultivo_detail"),
-    path("cultivo/<int:pk>/editar/", views.cultivo_editar, name="cultivo_editar"),
-    path("cultivo/<int:pk>/quick/", views.quick_entry, name="quick"),
-    path("cultivo/<int:pk>/quick/evento/", views.quick_evento, name="quick_evento"),
-    path("cultivo/<int:pk>/quick/tarea/", views.quick_tarea, name="quick_tarea"),
-    path("cultivo/<int:pk>/timeline/", views.timeline, name="timeline"),
+    path("cultivo/<slug:slug>/", views.cultivo_detail, name="cultivo_detail"),
+    path("cultivo/<slug:slug>/editar/", views.cultivo_editar, name="cultivo_editar"),
+    path("cultivo/<slug:slug>/quick/", views.quick_entry, name="quick"),
+    path("cultivo/<slug:slug>/quick/evento/", views.quick_evento, name="quick_evento"),
+    path("cultivo/<slug:slug>/quick/tarea/", views.quick_tarea, name="quick_tarea"),
+    path("cultivo/<slug:slug>/timeline/", views.timeline, name="timeline"),
 
     # Planta
-    path("cultivo/<int:cultivo_pk>/planta/nueva/", views.planta_crear, name="planta_crear"),
+    path("cultivo/<slug:slug>/planta/nueva/", views.planta_crear, name="planta_crear"),
     path("planta/<int:pk>/", views.planta_detail, name="planta_detail"),
     path("planta/<int:pk>/editar/", views.planta_editar, name="planta_editar"),
     path("planta/<int:pk>/eliminar/", views.planta_eliminar, name="planta_eliminar"),
 
     # Tarea
-    path("cultivo/<int:cultivo_pk>/tarea/nueva/", views.tarea_crear, name="tarea_crear"),
+    path("cultivo/<slug:slug>/tarea/nueva/", views.tarea_crear, name="tarea_crear"),
     path("tarea/<int:pk>/editar/", views.tarea_editar, name="tarea_editar"),
     path("tarea/<int:pk>/eliminar/", views.tarea_eliminar, name="tarea_eliminar"),
     path("tarea/<int:pk>/completar/", views.tarea_completar, name="tarea_completar"),
 
     # Evento
-    path("cultivo/<int:cultivo_pk>/evento/nuevo/", views.evento_crear, name="evento_crear"),
+    path("cultivo/<slug:slug>/evento/nuevo/", views.evento_crear, name="evento_crear"),
     path("evento/<int:pk>/editar/", views.evento_editar, name="evento_editar"),
     path("evento/<int:pk>/eliminar/", views.evento_eliminar, name="evento_eliminar"),
 
     # Riego
-    path("cultivo/<int:cultivo_pk>/riego/nuevo/", views.riego_crear, name="riego_crear"),
+    path("cultivo/<slug:slug>/riego/nuevo/", views.riego_crear, name="riego_crear"),
     path("riego/<int:pk>/editar/", views.riego_editar, name="riego_editar"),
     path("riego/<int:pk>/eliminar/", views.riego_eliminar, name="riego_eliminar"),
 

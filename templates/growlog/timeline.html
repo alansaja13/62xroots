@@ -75,7 +75,7 @@
 
 {% block content %}
 
-<a href="{% url 'growlog:cultivo_detail' cultivo.pk %}" class="tl-back">
+<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="tl-back">
   <i class="bi bi-chevron-left"></i> {{ cultivo.nombre }}
 </a>
 
@@ -94,7 +94,7 @@
     </div>
   </div>
   <div class="tl-actions">
-    <a href="{% url 'growlog:quick' cultivo.pk %}" class="btn-brand">
+    <a href="{% url 'growlog:quick' cultivo.slug %}" class="btn-brand">
       <i class="bi bi-plus-lg"></i> anotar
     </a>
   </div>
@@ -214,7 +214,7 @@
         <td colspan="6" style="text-align:center; padding:60px 16px; color:var(--fine);">
           <i class="bi bi-journal-x" style="font-size:24px; display:block; margin-bottom:10px; opacity:.5;"></i>
           Todavía no hay registros.
-          <a href="{% url 'growlog:quick' cultivo.pk %}" class="c-green">Anotá el primero →</a>
+          <a href="{% url 'growlog:quick' cultivo.slug %}" class="c-green">Anotá el primero →</a>
         </td>
       </tr>
       {% endfor %}

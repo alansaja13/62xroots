@@ -193,7 +193,7 @@
       <span class="cd-day-box__num">{{ cultivo.dias_desde_inicio }}</span>
     </div>
     {% if request.user.is_staff %}
-    <a href="{% url 'growlog:quick' cultivo.pk %}" class="btn-brand btn-brand--lg">
+    <a href="{% url 'growlog:quick' cultivo.slug %}" class="btn-brand btn-brand--lg">
       <i class="bi bi-plus-lg"></i> anotar
     </a>
     {% endif %}
@@ -253,10 +253,10 @@
         </div>
         <div style="display:flex; gap:14px; align-items:center;">
           {% if request.user.is_staff %}
-          <a href="{% url 'growlog:evento_crear' cultivo.pk %}" class="panel__action">+ evento</a>
-          <a href="{% url 'growlog:riego_crear' cultivo.pk %}" class="panel__action">+ riego</a>
+          <a href="{% url 'growlog:evento_crear' cultivo.slug %}" class="panel__action">+ evento</a>
+          <a href="{% url 'growlog:riego_crear' cultivo.slug %}" class="panel__action">+ riego</a>
           {% endif %}
-          <a href="{% url 'growlog:timeline' cultivo.pk %}" class="panel__action panel__action--green">historial →</a>
+          <a href="{% url 'growlog:timeline' cultivo.slug %}" class="panel__action panel__action--green">historial →</a>
         </div>
       </div>
       <table class="table">
@@ -325,7 +325,7 @@
           <tr>
             <td colspan="5" style="text-align:center; padding:36px 16px; color:var(--fine);">
               <i class="bi bi-journal-x" style="font-size:22px; display:block; margin-bottom:8px; opacity:.5;"></i>
-              Sin registros. <a href="{% url 'growlog:quick' cultivo.pk %}" class="c-green">Anotá el primero →</a>
+              Sin registros. <a href="{% url 'growlog:quick' cultivo.slug %}" class="c-green">Anotá el primero →</a>
             </td>
           </tr>
           {% endfor %}
@@ -340,7 +340,7 @@
           <span class="panel__sigil">§</span>
           <span class="label-eyebrow panel__title">plantas · {{ plantas|length }}</span>
         </div>
-        {% if request.user.is_staff %}<a href="{% url 'growlog:planta_crear' cultivo.pk %}" class="panel__action">+ agregar</a>{% endif %}
+        {% if request.user.is_staff %}<a href="{% url 'growlog:planta_crear' cultivo.slug %}" class="panel__action">+ agregar</a>{% endif %}
       </div>
       {% if plantas %}
       <div class="cd-plantas-grid">
@@ -361,7 +361,7 @@
       <div style="padding:36px 16px; text-align:center;">
         <i class="bi bi-flower1" style="font-size:22px; color:var(--fine); opacity:.4; display:block; margin-bottom:10px;"></i>
         <div class="c-fine" style="font-size:13px; margin-bottom:14px;">Sin plantas registradas aún.</div>
-        <a href="{% url 'growlog:planta_crear' cultivo.pk %}" class="btn-brand">
+        <a href="{% url 'growlog:planta_crear' cultivo.slug %}" class="btn-brand">
           <i class="bi bi-plus-lg"></i> agregar planta
         </a>
       </div>
@@ -378,7 +378,7 @@
           <span class="panel__sigil panel__sigil--honey">§</span>
           <span class="label-eyebrow panel__title">tareas · pendientes</span>
         </div>
-        {% if request.user.is_staff %}<a href="{% url 'growlog:tarea_crear' cultivo.pk %}" class="panel__action">+ nueva</a>{% endif %}
+        {% if request.user.is_staff %}<a href="{% url 'growlog:tarea_crear' cultivo.slug %}" class="panel__action">+ nueva</a>{% endif %}
       </div>
       <div id="tareas-lista">
         {% for tarea in tareas_pendientes %}
@@ -430,7 +430,7 @@
           <span class="panel__sigil panel__sigil--slate">§</span>
           <span class="label-eyebrow panel__title">setup</span>
         </div>
-        {% if request.user.is_staff %}<a href="{% url 'growlog:cultivo_editar' cultivo.pk %}" class="panel__action">editar</a>{% endif %}
+        {% if request.user.is_staff %}<a href="{% url 'growlog:cultivo_editar' cultivo.slug %}" class="panel__action">editar</a>{% endif %}
       </div>
       <div class="panel__body" style="padding-top:8px; padding-bottom:12px;">
         {% if cultivo.lampara_modelo %}
