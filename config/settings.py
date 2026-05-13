@@ -137,6 +137,8 @@ LOGIN_LOCKOUT_SECONDS = 3600  # 1 hora
 
 # M-4: Headers de seguridad para producción
 if not DEBUG:
+    # Railway termina SSL en su proxy; sin este header Django ve HTTP y entra en loop de redirect
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
