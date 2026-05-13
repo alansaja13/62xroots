@@ -7,7 +7,7 @@
       style="background: transparent; cursor: pointer; width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0;"
       hx-post="{% url 'growlog:tarea_completar' tarea.pk %}"
       hx-target="#tarea-{{ tarea.pk }}"
-      hx-swap="outerHTML"
+      hx-swap="delete"
       title="Completar">
       <span style="display: inline-block; width: 16px; height: 16px; border: 1.5px solid var(--fine); transition: border-color .12s, background .12s;"></span>
     </button>

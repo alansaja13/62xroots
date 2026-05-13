@@ -143,6 +143,34 @@
   }
   .cd-tarea__meta--urg { color: var(--rust); }
 
+  /* Estado vacío de tareas: se muestra sólo si no hay ningún .cd-tarea en la lista */
+  .tareas-empty { display: none; }
+  #tareas-lista:not(:has(.cd-tarea)) .tareas-empty { display: block; }
+
+  /* Formulario inline de nueva tarea */
+  .tarea-quick-form {
+    display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+    padding: 10px 14px; border-bottom: 1px solid var(--rule-soft);
+    background: var(--bg-alt);
+  }
+  .tarea-quick-form input[type=text] {
+    flex: 1; min-width: 120px; padding: 7px 10px;
+    font-size: 12px; background: var(--card); border: 1px solid var(--rule);
+    color: var(--cream);
+  }
+  .tarea-quick-form select {
+    padding: 7px 28px 7px 10px; font-size: 11px;
+    background: var(--card); border: 1px solid var(--rule);
+    color: var(--fine); width: auto;
+  }
+  .tarea-quick-form .tarea-add-btn {
+    padding: 7px 14px; background: var(--green); border: none;
+    color: var(--bg); font-family: "Geist Mono", monospace;
+    font-size: 13px; font-weight: 800; cursor: pointer; flex-shrink: 0;
+    transition: opacity .12s;
+  }
+  .tarea-quick-form .tarea-add-btn:hover { opacity: .8; }
+
   /* ── SETUP ── */
   .cd-setup-row {
     display: flex; justify-content: space-between; gap: 12px;
@@ -371,33 +399,54 @@
 
   <!-- RIGHT SIDEBAR -->
   <div>
-    <!-- Tareas -->
+    <!-- Tareas pendientes -->
     <div class="panel">
       <div class="panel__head">
         <div class="panel__head-left">
           <span class="panel__sigil panel__sigil--honey">§</span>
           <span class="label-eyebrow panel__title">tareas · pendientes</span>
+          <span class="mono c-fine" style="font-size:10px;">· {{ tareas_pendientes|length }}</span>
         </div>
-        {% if request.user.is_staff %}<a href="{% url 'growlog:tarea_crear' cultivo.slug %}" class="panel__action">+ nueva</a>{% endif %}
+        <div style="display:flex; gap:12px; align-items:center;">
+          <a href="{% url 'growlog:tareas_list' cultivo.slug %}" class="panel__action">ver todas →</a>
+          {% if request.user.is_staff %}
+          <a href="{% url 'growlog:tarea_crear' cultivo.slug %}" class="panel__action">+ nueva</a>
+          {% endif %}
+        </div>
       </div>
+
+      {% if request.user.is_staff %}
+      <form class="tarea-quick-form"
+            hx-post="{% url 'growlog:quick_tarea' cultivo.slug %}"
+            hx-target="#tarea-inline-result"
+            hx-swap="innerHTML"
+            hx-on::after-request="if(event.detail.successful) this.querySelector('input').value=''">
+        {% csrf_token %}
+        <input type="text" name="titulo" placeholder="Nueva tarea rápida..." required>
+        <select name="categoria">
+          {% for val, label in tarea_categorias %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+        </select>
+        <button type="submit" class="tarea-add-btn">+</button>
+      </form>
+      <div id="tarea-inline-result"></div>
+      {% endif %}
+
       <div id="tareas-lista">
         {% for tarea in tareas_pendientes %}
           {% include "growlog/partials/tarea_row.html" %}
-        {% empty %}
-        <div style="padding:28px 16px; text-align:center; color:var(--fine); font-size:13px;">
-          Sin tareas pendientes
-        </div>
         {% endfor %}
+        <div class="tareas-empty" style="padding:28px 16px; text-align:center; color:var(--fine); font-size:13px;">
+          Sin tareas pendientes ✓
+        </div>
       </div>
     </div>
 
-    <!-- Tareas completadas -->
-    {% if tareas_completadas %}
-    <div class="panel">
+    <!-- Tareas completadas — siempre en DOM para OOB -->
+    <div class="panel" id="tareas-done-panel" {% if not tareas_completadas %}style="display:none"{% endif %}>
       <div class="panel__head" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#tareas-done">
         <div class="panel__head-left">
           <span class="panel__sigil c-fine">§</span>
-          <span class="label-eyebrow panel__title c-fine">completadas · {{ tareas_completadas|length }}</span>
+          <span class="label-eyebrow panel__title c-fine">completadas</span>
         </div>
         <span class="mono c-fine" style="font-size:10px;">▾</span>
       </div>
@@ -417,11 +466,16 @@
               <span class="c-fine">{{ tarea.get_categoria_display }}</span>
             </div>
           </div>
+          {% if request.user.is_staff %}
+          <a href="{% url 'growlog:tarea_editar' tarea.pk %}"
+             style="color: var(--fine); font-size: 11px; text-decoration: none; padding: 4px;" title="Editar">
+            <i class="bi bi-pencil"></i>
+          </a>
+          {% endif %}
         </div>
         {% endfor %}
       </div>
     </div>
-    {% endif %}
 
     <!-- Setup -->
     <div class="panel">
@@ -471,4 +525,16 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.body.addEventListener('htmx:afterSettle', function() {
+  var done = document.getElementById('tareas-done');
+  var panel = document.getElementById('tareas-done-panel');
+  if (done && panel && done.children.length > 0) {
+    panel.style.removeProperty('display');
+  }
+});
+</script>
 {% endblock %}

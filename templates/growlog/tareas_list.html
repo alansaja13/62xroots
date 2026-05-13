@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+{% block title %}Tareas · {{ cultivo.nombre }}{% endblock %}
+
+{% block crumb %}
+<div class="nav-crumb d-none d-lg-flex">
+  <span class="nav-crumb__item">mis cultivos</span>
+  <span class="nav-crumb__sep">/</span>
+  <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="nav-crumb__item" style="text-decoration:none;">{{ cultivo.nombre }}</a>
+  <span class="nav-crumb__sep">/</span>
+  <span class="nav-crumb__item nav-crumb__item--last">tareas</span>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .tl-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "Geist Mono", monospace; font-size: 11px;
+    letter-spacing: .1em; color: var(--cream-soft);
+    text-decoration: none; margin-bottom: 20px;
+  }
+  .tl-back:hover { color: var(--green); }
+
+  .tl-header {
+    display: flex; align-items: baseline; gap: 18px;
+    margin-bottom: 22px; padding-bottom: 18px;
+    border-bottom: 1px solid var(--rule);
+    flex-wrap: wrap;
+  }
+  .tl-title {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 48px; font-weight: 700; letter-spacing: -.022em;
+    line-height: .95; color: var(--cream); margin: 0;
+  }
+  .tl-title__accent { color: var(--honey); font-style: italic; }
+
+  /* Filtros */
+  .tl-filters {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .tl-filter-btn {
+    font-family: "Geist Mono", monospace; font-size: 10px;
+    letter-spacing: .18em; text-transform: uppercase;
+    padding: 6px 14px; border: 1px solid var(--rule);
+    background: transparent; color: var(--fine);
+    text-decoration: none; cursor: pointer;
+    transition: border-color .12s, color .12s;
+  }
+  .tl-filter-btn:hover, .tl-filter-btn--active {
+    border-color: var(--honey); color: var(--honey);
+  }
+  .tl-filter-btn--green:hover, .tl-filter-btn--green.tl-filter-btn--active {
+    border-color: var(--green); color: var(--green);
+  }
+  .tl-filter-sep { color: var(--fine); font-size: 11px; }
+  .tl-filter-select {
+    font-family: "Geist Mono", monospace; font-size: 10px;
+    letter-spacing: .1em; text-transform: uppercase;
+    padding: 6px 32px 6px 12px; border: 1px solid var(--rule);
+    background: var(--bg-alt); color: var(--fine); width: auto;
+  }
+
+  /* Tabla */
+  .tl-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .tl-table thead th {
+    font-family: "Geist Mono", monospace; font-size: 9.5px;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--fine); font-weight: 600;
+    background: var(--card-alt); border-bottom: 1px solid var(--rule);
+    padding: 10px 16px; text-align: left; white-space: nowrap;
+  }
+  .tl-table tbody td {
+    padding: 12px 16px; border-bottom: 1px solid var(--rule-soft);
+    vertical-align: middle; color: var(--cream);
+  }
+  .tl-table tbody tr:last-child td { border-bottom: none; }
+  .tl-table tbody tr:hover td { background: rgba(255,255,255,.012); }
+
+  .tl-prioridad {
+    display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; flex-shrink: 0;
+  }
+  .tl-prioridad--urgente { background: var(--rust); box-shadow: 0 0 6px var(--rust); }
+  .tl-prioridad--normal  { background: var(--fine); }
+  .tl-prioridad--baja    { background: var(--fine); opacity: .4; }
+
+  .tl-titulo { font-size: 13px; font-weight: 500; line-height: 1.3; }
+  .tl-titulo--done { text-decoration: line-through; color: var(--fine); }
+  .tl-desc { font-size: 11px; color: var(--fine); margin-top: 3px; }
+
+  .tl-cat {
+    font-family: "Geist Mono", monospace; font-size: 9.5px;
+    letter-spacing: .12em; text-transform: uppercase;
+    color: var(--fine); white-space: nowrap;
+  }
+  .tl-fecha {
+    font-family: "Geist Mono", monospace; font-size: 10.5px;
+    color: var(--fine); white-space: nowrap;
+  }
+  .tl-fecha--vencida { color: var(--rust); }
+
+  .tl-complete-btn {
+    background: transparent; border: 1.5px solid var(--fine); padding: 0;
+    width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;
+    transition: border-color .12s, background .12s;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .tl-complete-btn:hover { border-color: var(--green); background: var(--green-wash); }
+
+  .tl-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* Paginación */
+  .tl-pag {
+    display: flex; gap: 4px; justify-content: center;
+    margin-top: 22px;
+  }
+  .tl-pag__btn {
+    font-family: "Geist Mono", monospace; font-size: 11px;
+    padding: 7px 14px; border: 1px solid var(--rule);
+    background: transparent; color: var(--fine);
+    text-decoration: none; transition: border-color .12s, color .12s;
+  }
+  .tl-pag__btn:hover { border-color: var(--honey); color: var(--honey); }
+  .tl-pag__btn--active { border-color: var(--honey); color: var(--honey); }
+  .tl-pag__btn--disabled { opacity: .3; pointer-events: none; }
+
+  /* Estado vacío */
+  .tl-empty {
+    text-align: center; padding: 60px 24px;
+    color: var(--fine); font-family: "Geist Mono", monospace; font-size: 12px;
+  }
+  .tl-empty__icon { font-size: 28px; opacity: .3; display: block; margin-bottom: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="tl-back">
+  <i class="bi bi-chevron-left"></i> {{ cultivo.nombre }}
+</a>
+
+<div class="tl-header">
+  <h1 class="tl-title">tareas <span class="tl-title__accent">// {{ cultivo.nombre }}</span></h1>
+  {% if request.user.is_staff %}
+  <a href="{% url 'growlog:tarea_crear' cultivo.slug %}" class="btn-brand" style="margin-left:auto;">
+    <i class="bi bi-plus-lg"></i> nueva tarea
+  </a>
+  {% endif %}
+</div>
+
+<!-- Filtros -->
+<div class="tl-filters">
+  {# Estado #}
+  <a href="?estado=pendiente{% if categoria_filter %}&categoria={{ categoria_filter }}{% endif %}"
+     class="tl-filter-btn {% if estado_filter == 'pendiente' %}tl-filter-btn--active{% endif %}">
+    pendientes
+  </a>
+  <a href="?estado=completada{% if categoria_filter %}&categoria={{ categoria_filter }}{% endif %}"
+     class="tl-filter-btn tl-filter-btn--green {% if estado_filter == 'completada' %}tl-filter-btn--active{% endif %}">
+    completadas
+  </a>
+  <a href="?estado=todas{% if categoria_filter %}&categoria={{ categoria_filter }}{% endif %}"
+     class="tl-filter-btn {% if estado_filter == 'todas' %}tl-filter-btn--active{% endif %}">
+    todas
+  </a>
+
+  <span class="tl-filter-sep">·</span>
+
+  {# Categoría #}
+  <select class="tl-filter-select" onchange="
+    var params = new URLSearchParams(window.location.search);
+    if(this.value) params.set('categoria', this.value); else params.delete('categoria');
+    params.delete('page');
+    window.location = '?' + params.toString();
+  ">
+    <option value="" {% if not categoria_filter %}selected{% endif %}>todas las categorías</option>
+    {% for val, label in categorias %}
+    <option value="{{ val }}" {% if categoria_filter == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+
+  {% if categoria_filter or estado_filter != 'pendiente' %}
+  <a href="{% url 'growlog:tareas_list' cultivo.slug %}" class="tl-filter-btn" style="color:var(--rust); border-color:var(--rust);">
+    <i class="bi bi-x"></i> limpiar
+  </a>
+  {% endif %}
+
+  <span class="c-fine mono" style="font-size:10px; margin-left:auto;">
+    {{ page_obj.paginator.count }} tarea{{ page_obj.paginator.count|pluralize:"s" }}
+  </span>
+</div>
+
+<!-- Tabla -->
+<div class="panel" style="overflow:hidden;">
+  {% if page_obj.object_list %}
+  <table class="tl-table">
+    <thead>
+      <tr>
+        {% if request.user.is_staff and estado_filter != 'completada' %}<th style="width:32px;"></th>{% endif %}
+        <th>tarea</th>
+        <th>categoría</th>
+        <th>fecha objetivo</th>
+        <th>prioridad</th>
+        {% if estado_filter == 'completada' or estado_filter == 'todas' %}<th>completada</th>{% endif %}
+        {% if request.user.is_staff %}<th style="width:80px;"></th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for tarea in page_obj %}
+      <tr id="row-{{ tarea.pk }}">
+        {% if request.user.is_staff and estado_filter != 'completada' %}
+        <td style="text-align:center;">
+          {% if not tarea.completada %}
+          <button class="tl-complete-btn"
+                  hx-post="{% url 'growlog:tarea_completar' tarea.pk %}"
+                  hx-target="#row-{{ tarea.pk }}"
+                  hx-swap="delete"
+                  title="Marcar como hecha">
+          </button>
+          {% else %}
+          <span style="color:var(--green); font-size:11px; font-weight:800;">✓</span>
+          {% endif %}
+        </td>
+        {% endif %}
+
+        <td>
+          <div class="tl-titulo {% if tarea.completada %}tl-titulo--done{% endif %}">{{ tarea.titulo }}</div>
+          {% if tarea.descripcion %}
+          <div class="tl-desc">{{ tarea.descripcion|truncatechars:80 }}</div>
+          {% endif %}
+        </td>
+
+        <td><span class="tl-cat">{{ tarea.get_categoria_display }}</span></td>
+
+        <td>
+          {% if tarea.fecha_objetivo %}
+          <span class="tl-fecha {% if not tarea.completada and tarea.fecha_objetivo < today %}tl-fecha--vencida{% endif %}">
+            {{ tarea.fecha_objetivo|date:"d/m/Y" }}
+          </span>
+          {% else %}
+          <span class="c-fine" style="font-size:10px;">—</span>
+          {% endif %}
+        </td>
+
+        <td>
+          {% if tarea.prioridad == 'urgente' %}
+            <span class="tc tc--urge">urgente</span>
+          {% elif tarea.prioridad == 'baja' %}
+            <span class="tc tc--baja">baja</span>
+          {% else %}
+            <span class="c-fine" style="font-family:'Geist Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase;">normal</span>
+          {% endif %}
+        </td>
+
+        {% if estado_filter == 'completada' or estado_filter == 'todas' %}
+        <td>
+          {% if tarea.completada and tarea.completada_en %}
+            <span class="tl-fecha">{{ tarea.completada_en|date:"d/m/Y" }}</span>
+          {% elif not tarea.completada %}
+            <span class="c-fine" style="font-size:10px;">pendiente</span>
+          {% endif %}
+        </td>
+        {% endif %}
+
+        {% if request.user.is_staff %}
+        <td>
+          <div class="tl-actions">
+            <a href="{% url 'growlog:tarea_editar' tarea.pk %}" class="c-fine" style="font-size:12px;" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <a href="{% url 'growlog:tarea_eliminar' tarea.pk %}" class="c-fine" style="font-size:12px;" title="Eliminar">
+              <i class="bi bi-trash"></i>
+            </a>
+          </div>
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% else %}
+  <div class="tl-empty">
+    <i class="bi bi-check2-all tl-empty__icon"></i>
+    {% if estado_filter == 'completada' %}
+      Ninguna tarea completada todavía.
+    {% else %}
+      Sin tareas pendientes. <a href="{% url 'growlog:tarea_crear' cultivo.slug %}" class="c-green">Crear una →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Paginación -->
+{% if page_obj.has_other_pages %}
+<div class="tl-pag">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}{% if estado_filter %}&estado={{ estado_filter }}{% endif %}{% if categoria_filter %}&categoria={{ categoria_filter }}{% endif %}"
+     class="tl-pag__btn">← ant</a>
+  {% else %}
+  <span class="tl-pag__btn tl-pag__btn--disabled">← ant</span>
+  {% endif %}
+
+  {% for num in page_obj.paginator.page_range %}
+    {% if page_obj.number == num %}
+    <span class="tl-pag__btn tl-pag__btn--active">{{ num }}</span>
+    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+    <a href="?page={{ num }}{% if estado_filter %}&estado={{ estado_filter }}{% endif %}{% if categoria_filter %}&categoria={{ categoria_filter }}{% endif %}"
+       class="tl-pag__btn">{{ num }}</a>
+    {% endif %}
+  {% endfor %}
+
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}{% if estado_filter %}&estado={{ estado_filter }}{% endif %}{% if categoria_filter %}&categoria={{ categoria_filter }}{% endif %}"
+     class="tl-pag__btn">sig →</a>
+  {% else %}
+  <span class="tl-pag__btn tl-pag__btn--disabled">sig →</span>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% endblock %}

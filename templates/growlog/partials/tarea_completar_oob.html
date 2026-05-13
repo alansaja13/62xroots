@@ -1,0 +1,24 @@
+{# El elemento #tarea-{pk} se borra con hx-swap="delete". Este OOB lo mueve a completadas. #}
+<div hx-swap-oob="afterbegin:#tareas-done">
+<div class="cd-tarea opacity-50" style="border-left-color: var(--fine);">
+  <span style="display:inline-flex; align-items:center; justify-content:center;
+               width:16px; height:16px; background:var(--green); color:var(--bg);
+               margin-top:2px; flex-shrink:0; font-size:10px; font-weight:800;">✓</span>
+  <div style="flex:1; min-width:0;">
+    <div class="cd-tarea__title text-decoration-line-through c-fine">{{ tarea.titulo }}</div>
+    <div class="cd-tarea__meta">
+      {% if tarea.completada_en %}
+        <span>{{ tarea.completada_en|date:"d/m" }}</span>
+        <span class="c-fine">·</span>
+      {% endif %}
+      <span class="c-fine">{{ tarea.get_categoria_display }}</span>
+    </div>
+  </div>
+  {% if request.user.is_staff %}
+  <a href="{% url 'growlog:tarea_editar' tarea.pk %}"
+     style="color: var(--fine); font-size: 11px; text-decoration: none; padding: 4px;" title="Editar">
+    <i class="bi bi-pencil"></i>
+  </a>
+  {% endif %}
+</div>
+</div>

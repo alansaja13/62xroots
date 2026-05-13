@@ -39,6 +39,7 @@ urlpatterns = [
     path("planta/<int:pk>/eliminar/", views.planta_eliminar, name="planta_eliminar"),
 
     # Tarea
+    path("cultivo/<slug:slug>/tareas/", views.tareas_list, name="tareas_list"),
     path("cultivo/<slug:slug>/tarea/nueva/", views.tarea_crear, name="tarea_crear"),
     path("tarea/<int:pk>/editar/", views.tarea_editar, name="tarea_editar"),
     path("tarea/<int:pk>/eliminar/", views.tarea_eliminar, name="tarea_eliminar"),

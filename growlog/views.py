@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.files.uploadedfile import UploadedFile
+from django.core.paginator import Paginator
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.templatetags.static import static as static_url
 from django.utils import timezone
@@ -302,8 +303,8 @@ def dashboard(request):
 def cultivo_detail(request, slug):
     cultivo = get_object_or_404(Cultivo, slug=slug)
     ultima_medicion = cultivo.mediciones.first()
-    tareas_pendientes = cultivo.tareas.filter(completada=False).order_by("fecha_objetivo", "-prioridad")[:5]
-    tareas_completadas = cultivo.tareas.filter(completada=True).order_by("-completada_en")[:10]
+    tareas_pendientes = cultivo.tareas.filter(completada=False).order_by("fecha_objetivo", "-prioridad")
+    tareas_completadas = cultivo.tareas.filter(completada=True).order_by("-completada_en")[:5]
     ultimos_registros = _build_timeline(cultivo, limit=8)
     plantas_count = cultivo.plantas.filter(estado="activa").count()
     plantas = cultivo.plantas.all()
@@ -319,6 +320,7 @@ def cultivo_detail(request, slug):
         "tareas_pendientes": tareas_pendientes, "tareas_completadas": tareas_completadas,
         "ultimos_registros": ultimos_registros,
         "semaforo": semaforo, "plantas_count": plantas_count, "plantas": plantas,
+        "tarea_categorias": Tarea.CATEGORIA_CHOICES,
     })
 
 
@@ -564,8 +566,33 @@ def tarea_completar(request, pk):
     tarea.completada_en = timezone.now()
     tarea.save()
     if request.htmx:
-        return render(request, "growlog/partials/tarea_row.html", {"tarea": tarea})
+        return render(request, "growlog/partials/tarea_completar_oob.html", {"tarea": tarea})
     return redirect("growlog:cultivo_detail", tarea.cultivo.slug)
+
+
+@login_required
+def tareas_list(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
+    qs = cultivo.tareas.all()
+    categoria = request.GET.get("categoria", "")
+    estado = request.GET.get("estado", "pendiente")
+    if categoria:
+        qs = qs.filter(categoria=categoria)
+    if estado == "completada":
+        qs = qs.filter(completada=True).order_by("-completada_en")
+    elif estado == "todas":
+        qs = qs.order_by("completada", "fecha_objetivo", "-prioridad")
+    else:
+        qs = qs.filter(completada=False).order_by("fecha_objetivo", "-prioridad")
+    page_obj = Paginator(qs, 20).get_page(request.GET.get("page"))
+    return render(request, "growlog/tareas_list.html", {
+        "cultivo": cultivo,
+        "page_obj": page_obj,
+        "categoria_filter": categoria,
+        "estado_filter": estado,
+        "categorias": Tarea.CATEGORIA_CHOICES,
+        "today": timezone.localdate(),
+    })
 
 
 # ---------------------------------------------------------------------------
