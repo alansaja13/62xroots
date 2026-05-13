@@ -343,8 +343,22 @@ def quick_tarea(request, pk):
 @login_required
 def timeline(request, pk):
     cultivo = get_object_or_404(Cultivo, pk=pk)
-    registros = _build_timeline(cultivo, limit=100)
-    return render(request, "growlog/timeline.html", {"cultivo": cultivo, "registros": registros})
+    tipo = request.GET.get("tipo", "")
+    todos = _build_timeline(cultivo, limit=200)
+    VALID_TIPOS = {"medicion", "riego", "evento"}
+    if tipo in VALID_TIPOS:
+        registros = [r for r in todos if r["tipo"] == tipo]
+    else:
+        tipo = ""
+        registros = todos
+    counts = {t: sum(1 for r in todos if r["tipo"] == t) for t in VALID_TIPOS}
+    return render(request, "growlog/timeline.html", {
+        "cultivo": cultivo,
+        "registros": registros,
+        "tipo_activo": tipo,
+        "counts": counts,
+        "total": len(todos),
+    })
 
 
 @login_required

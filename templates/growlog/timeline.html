@@ -90,7 +90,7 @@
       </span>
     </div>
     <div class="mono c-soft" style="margin-top: 8px; font-size: 12px;">
-      día {{ cultivo.dias_desde_inicio }} · desde {{ cultivo.fecha_inicio|date:"d/m/Y" }} · {{ registros|length }} entradas
+      día {{ cultivo.dias_desde_inicio }} · desde {{ cultivo.fecha_inicio|date:"d/m/Y" }} · {{ total }} entradas
     </div>
   </div>
   <div class="tl-actions">
@@ -100,21 +100,24 @@
   </div>
 </div>
 
-<!-- FILTERS (visual — wire to query params if you want) -->
+<!-- FILTERS -->
 <div class="tl-filters">
   <span class="label-eyebrow">filtrar:</span>
-  <a href="?" class="tl-filter tl-filter--active">
+  <a href="?" class="tl-filter {% if not tipo_activo %}tl-filter--active{% endif %}">
     <span class="tl-filter__label">todo</span>
-    <span class="tl-filter__count">{{ registros|length }}</span>
+    <span class="tl-filter__count">{{ total }}</span>
   </a>
-  <a href="?tipo=medicion" class="tl-filter tl-filter--med">
+  <a href="?tipo=medicion" class="tl-filter tl-filter--med {% if tipo_activo == 'medicion' %}tl-filter--active{% endif %}">
     <span class="tl-filter__label">med</span>
+    <span class="tl-filter__count">{{ counts.medicion }}</span>
   </a>
-  <a href="?tipo=riego" class="tl-filter tl-filter--riego">
+  <a href="?tipo=riego" class="tl-filter tl-filter--riego {% if tipo_activo == 'riego' %}tl-filter--active{% endif %}">
     <span class="tl-filter__label">riego</span>
+    <span class="tl-filter__count">{{ counts.riego }}</span>
   </a>
-  <a href="?tipo=evento" class="tl-filter tl-filter--evento">
+  <a href="?tipo=evento" class="tl-filter tl-filter--evento {% if tipo_activo == 'evento' %}tl-filter--active{% endif %}">
     <span class="tl-filter__label">evento</span>
+    <span class="tl-filter__count">{{ counts.evento }}</span>
   </a>
 </div>
 
