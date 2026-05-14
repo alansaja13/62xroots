@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     CambioFotoperiodo, Cultivo, Planta, MedicionAmbiente, Nutriente, Riego,
-    NutrienteAplicado, Evento, MedicionPlanta, Tarea, ParametroIdeal,
+    NutrienteAplicado, Evento, MedicionPlanta, Tarea, ParametroIdeal, MedicionEC,
 )
 
 
@@ -112,4 +112,10 @@ class TareaAdmin(admin.ModelAdmin):
 @admin.register(ParametroIdeal)
 class ParametroIdealAdmin(admin.ModelAdmin):
     list_display = ["etapa", "temp_min", "temp_max", "hr_min", "hr_max", "vpd_min", "vpd_max"]
+
+
+@admin.register(MedicionEC)
+class MedicionECAdmin(admin.ModelAdmin):
+    list_display = ["cultivo", "timestamp", "tipo", "ph", "ec", "temp_agua"]
+    list_filter = ["cultivo", "tipo"]
 

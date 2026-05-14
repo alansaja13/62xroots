@@ -31,6 +31,7 @@ urlpatterns = [
     path("cultivo/<slug:slug>/quick/", views.quick_entry, name="quick"),
     path("cultivo/<slug:slug>/quick/evento/", views.quick_evento, name="quick_evento"),
     path("cultivo/<slug:slug>/quick/tarea/", views.quick_tarea, name="quick_tarea"),
+    path("cultivo/<slug:slug>/quick/ec/", views.quick_medicion_ec, name="quick_ec"),
     path("cultivo/<slug:slug>/timeline/", views.timeline, name="timeline"),
 
     # Planta
@@ -64,4 +65,9 @@ urlpatterns = [
     path("planta/<int:planta_pk>/medicion/nueva/", views.medicion_planta_crear, name="medicion_planta_crear"),
     path("medicion-planta/<int:pk>/editar/", views.medicion_planta_editar, name="medicion_planta_editar"),
     path("medicion-planta/<int:pk>/eliminar/", views.medicion_planta_eliminar, name="medicion_planta_eliminar"),
+
+    # MedicionEC
+    path("cultivo/<slug:slug>/medicion-ec/nueva/", views.medicion_ec_crear, name="medicion_ec_crear"),
+    path("medicion-ec/<int:pk>/editar/", views.medicion_ec_editar, name="medicion_ec_editar"),
+    path("medicion-ec/<int:pk>/eliminar/", views.medicion_ec_eliminar, name="medicion_ec_eliminar"),
 ]

@@ -227,6 +227,8 @@ class Riego(models.Model):
     ec_solucion = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     buscar_runoff = models.BooleanField(default=False)
     runoff_observado = models.BooleanField(default=False)
+    ph_runoff = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True, verbose_name="pH runoff")
+    ec_runoff = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="EC runoff (mS/cm)")
     notas = models.TextField(blank=True)
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='riegos_creados')
 
@@ -384,3 +386,28 @@ class ParametroIdeal(models.Model):
 
     def __str__(self):
         return f"Parámetros — {self.get_etapa_display()}"
+
+
+class MedicionEC(models.Model):
+    TIPO_CHOICES = [
+        ("entrada", "Agua de entrada"),
+        ("solucion", "Solución nutritiva"),
+        ("runoff", "Runoff / Drenaje"),
+        ("sustrato", "Sustrato directo"),
+    ]
+
+    cultivo = models.ForeignKey(Cultivo, on_delete=models.CASCADE, related_name="mediciones_ec")
+    timestamp = models.DateTimeField(default=timezone.now)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default="solucion")
+    ph = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True, verbose_name="pH")
+    ec = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="EC (mS/cm)")
+    temp_agua = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True, verbose_name="Temp. agua (°C)")
+    notas = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+        verbose_name = "Medición EC/pH"
+        verbose_name_plural = "Mediciones EC/pH"
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} — {self.cultivo} ({self.timestamp:%d/%m %H:%M})"

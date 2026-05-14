@@ -31,7 +31,7 @@ def staff_required(view_func):
 
 from .models import (
     CambioFotoperiodo, Cultivo, Planta, MedicionAmbiente, Riego, NutrienteAplicado,
-    Evento, MedicionPlanta, Tarea, ParametroIdeal, Nutriente,
+    Evento, MedicionPlanta, Tarea, ParametroIdeal, Nutriente, MedicionEC,
 )
 from .utils import get_cambio_fotoperiodo_activo, calcular_luz_estado
 
@@ -191,7 +191,7 @@ class RiegoForm(forms.ModelForm):
     class Meta:
         model = Riego
         fields = ["timestamp", "volumen_total_ml", "volumen_por_planta_ml", "ph_agua",
-                  "ec_solucion", "buscar_runoff", "runoff_observado", "notas"]
+                  "ec_solucion", "buscar_runoff", "runoff_observado", "ph_runoff", "ec_runoff", "notas"]
         widgets = {
             "timestamp": forms.DateTimeInput(format=_DT_FMT, attrs={"class": "form-control", "type": "datetime-local"}),
             "volumen_total_ml": forms.NumberInput(attrs={"class": "form-control", "autofocus": True}),
@@ -200,6 +200,8 @@ class RiegoForm(forms.ModelForm):
             "ec_solucion": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
             "buscar_runoff": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "runoff_observado": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "ph_runoff": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "ec_runoff": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
         }
 
@@ -233,6 +235,41 @@ class NutrienteAplicadoForm(forms.ModelForm):
         widgets = {
             "nutriente": forms.Select(attrs={"class": "form-select"}),
             "dosis_g_por_litro": forms.NumberInput(attrs={"class": "form-control", "step": "0.001"}),
+        }
+
+
+class QuickECForm(forms.Form):
+    tipo = forms.ChoiceField(
+        choices=MedicionEC.TIPO_CHOICES,
+        widget=forms.Select(attrs={"class": "form-select form-select-lg"}),
+    )
+    ph = forms.DecimalField(
+        label="pH", max_digits=4, decimal_places=2, required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "decimal", "step": "0.01", "placeholder": "6.2"}),
+    )
+    ec = forms.DecimalField(
+        label="EC (mS/cm)", max_digits=5, decimal_places=2, required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "decimal", "step": "0.01", "placeholder": "1.8"}),
+    )
+    temp_agua = forms.DecimalField(
+        label="Temp. agua (°C)", max_digits=4, decimal_places=1, required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "decimal", "step": "0.1", "placeholder": "20.0"}),
+    )
+    notas = forms.CharField(label="Notas", required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Observaciones..."}))
+
+
+class MedicionECForm(forms.ModelForm):
+    class Meta:
+        model = MedicionEC
+        fields = ["timestamp", "tipo", "ph", "ec", "temp_agua", "notas"]
+        widgets = {
+            "timestamp": forms.DateTimeInput(format=_DT_FMT, attrs={"class": "form-control", "type": "datetime-local"}),
+            "tipo": forms.Select(attrs={"class": "form-select"}),
+            "ph": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "ec": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "temp_agua": forms.NumberInput(attrs={"class": "form-control", "step": "0.1"}),
+            "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
         }
 
 
@@ -375,6 +412,7 @@ def quick_entry(request, slug):
         "form": form,
         "evento_form": QuickEventoForm(),
         "tarea_form": QuickTareaForm(),
+        "ec_form": QuickECForm(),
         "cultivo": cultivo,
     })
 
@@ -393,6 +431,24 @@ def quick_evento(request, slug):
         if request.htmx:
             return render(request, "growlog/partials/quick_evento_success.html", {"evento": evento})
         messages.success(request, f"Evento «{evento.get_tipo_display()}» registrado.")
+    return redirect("growlog:quick", cultivo.slug)
+
+
+@login_required
+@staff_required
+def quick_medicion_ec(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
+    form = QuickECForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        d = form.cleaned_data
+        medicion = MedicionEC.objects.create(
+            cultivo=cultivo, tipo=d["tipo"],
+            ph=d.get("ph"), ec=d.get("ec"), temp_agua=d.get("temp_agua"),
+            notas=d.get("notas", ""),
+        )
+        if request.htmx:
+            return render(request, "growlog/partials/quick_ec_success.html", {"medicion": medicion})
+        messages.success(request, f"Medición EC/pH registrada — {medicion.get_tipo_display()}")
     return redirect("growlog:quick", cultivo.slug)
 
 
@@ -830,6 +886,61 @@ def medicion_planta_eliminar(request, pk):
     return render(request, "growlog/crud_delete.html", {
         "title": "Eliminar medición", "object_name": str(medicion),
         "back_url": reverse("growlog:planta_detail", args=[planta_pk]),
+    })
+
+
+# ---------------------------------------------------------------------------
+# MedicionEC CRUD
+# ---------------------------------------------------------------------------
+
+@login_required
+@staff_required
+def medicion_ec_crear(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
+    initial = {"timestamp": timezone.localtime().strftime(_DT_FMT)}
+    form = MedicionECForm(request.POST or None, initial=initial)
+    if request.method == "POST" and form.is_valid():
+        m = form.save(commit=False)
+        m.cultivo = cultivo
+        m.save()
+        messages.success(request, "Medición EC/pH registrada.")
+        return redirect("growlog:cultivo_detail", slug=slug)
+    return render(request, "growlog/crud_form.html", {
+        "form": form, "title": "Nueva medición EC/pH",
+        "subtitle": cultivo.nombre,
+        "back_url": reverse("growlog:cultivo_detail", args=[slug]),
+    })
+
+
+@login_required
+@staff_required
+def medicion_ec_editar(request, pk):
+    medicion = get_object_or_404(MedicionEC, pk=pk)
+    form = MedicionECForm(request.POST or None, instance=medicion)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Medición EC/pH actualizada.")
+        return redirect("growlog:medicion_ec_editar", pk=pk)
+    return render(request, "growlog/crud_form.html", {
+        "form": form, "title": "Editar medición EC/pH",
+        "subtitle": medicion.cultivo.nombre,
+        "back_url": reverse("growlog:cultivo_detail", args=[medicion.cultivo.slug]),
+        "delete_url": reverse("growlog:medicion_ec_eliminar", args=[pk]),
+    })
+
+
+@login_required
+@staff_required
+def medicion_ec_eliminar(request, pk):
+    medicion = get_object_or_404(MedicionEC, pk=pk)
+    cultivo = medicion.cultivo
+    if request.method == "POST":
+        medicion.delete()
+        messages.success(request, "Medición EC/pH eliminada.")
+        return redirect("growlog:cultivo_detail", slug=cultivo.slug)
+    return render(request, "growlog/crud_delete.html", {
+        "title": "Eliminar medición EC/pH", "object_name": str(medicion),
+        "back_url": reverse("growlog:medicion_ec_editar", args=[pk]),
     })
 
 

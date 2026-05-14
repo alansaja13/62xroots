@@ -211,7 +211,7 @@
       {% for tarea in page_obj %}
       <tr id="row-{{ tarea.pk }}">
         {% if request.user.is_staff and estado_filter != 'completada' %}
-        <td style="text-align:center;">
+        <td style="text-align:center;" data-col="check">
           {% if not tarea.completada %}
           <button class="tl-complete-btn"
                   hx-post="{% url 'growlog:tarea_completar' tarea.pk %}"
@@ -225,16 +225,16 @@
         </td>
         {% endif %}
 
-        <td>
+        <td data-col="titulo">
           <div class="tl-titulo {% if tarea.completada %}tl-titulo--done{% endif %}">{{ tarea.titulo }}</div>
           {% if tarea.descripcion %}
           <div class="tl-desc">{{ tarea.descripcion|truncatechars:80 }}</div>
           {% endif %}
         </td>
 
-        <td><span class="tl-cat">{{ tarea.get_categoria_display }}</span></td>
+        <td data-col="cat"><span class="tl-cat">{{ tarea.get_categoria_display }}</span></td>
 
-        <td>
+        <td data-col="fecha">
           {% if tarea.fecha_objetivo %}
           <span class="tl-fecha {% if not tarea.completada and tarea.fecha_objetivo < today %}tl-fecha--vencida{% endif %}">
             {{ tarea.fecha_objetivo|date:"d/m/Y" }}
@@ -244,7 +244,7 @@
           {% endif %}
         </td>
 
-        <td>
+        <td data-col="prio">
           {% if tarea.prioridad == 'urgente' %}
             <span class="tc tc--urge">urgente</span>
           {% elif tarea.prioridad == 'baja' %}
@@ -255,7 +255,7 @@
         </td>
 
         {% if estado_filter == 'completada' or estado_filter == 'todas' %}
-        <td>
+        <td data-col="comp">
           {% if tarea.completada and tarea.completada_en %}
             <span class="tl-fecha">{{ tarea.completada_en|date:"d/m/Y" }}</span>
           {% elif not tarea.completada %}
@@ -265,7 +265,7 @@
         {% endif %}
 
         {% if request.user.is_staff %}
-        <td>
+        <td data-col="actions">
           <div class="tl-actions">
             <a href="{% url 'growlog:tarea_editar' tarea.pk %}" class="c-fine" style="font-size:12px;" title="Editar">
               <i class="bi bi-pencil"></i>

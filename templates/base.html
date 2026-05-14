@@ -476,6 +476,145 @@
       body { font-size: 13px; }
       main { padding-left: 16px !important; padding-right: 16px !important; }
     }
+
+    /* ═══ MOBILE CARD TABLES (.tbl-log) ════════════════════════ */
+    @media (max-width: 767px) {
+      .tbl-log,
+      .tbl-log thead,
+      .tbl-log tbody,
+      .tbl-log tr,
+      .tbl-log th,
+      .tbl-log td { display: block; }
+
+      .tbl-log thead { display: none; }
+
+      .tbl-log tbody tr {
+        position: relative;
+        padding: 12px 14px 11px;
+        border-bottom: 1px solid var(--rule-soft);
+        border-top: none;
+      }
+      .tbl-log tbody tr:last-child { border-bottom: none; }
+
+      .tbl-log td {
+        padding: 0 !important;
+        border: 0 !important;
+        vertical-align: top;
+      }
+
+      /* Fecha: esquina superior derecha */
+      .tbl-log td[data-col="fecha"] {
+        position: absolute;
+        top: 12px; right: 14px;
+        font-size: 10px;
+        font-family: "Geist Mono", monospace;
+        color: var(--fine);
+        text-align: right;
+        white-space: nowrap;
+        line-height: 1.4;
+      }
+
+      /* Badge tipo */
+      .tbl-log td[data-col="tipo"] {
+        margin-bottom: 6px;
+        padding-right: 80px !important; /* espacio para fecha */
+      }
+
+      /* Dato principal */
+      .tbl-log td[data-col="dato"] {
+        margin-bottom: 4px;
+      }
+
+      /* Detalle */
+      .tbl-log td[data-col="detalle"] {
+        font-size: 11px !important;
+        line-height: 1.55;
+        flex-wrap: wrap;
+        color: var(--cream-soft) !important;
+      }
+
+      /* Notas / nutrientes (solo timeline) */
+      .tbl-log td[data-col="notas"] {
+        margin-top: 4px;
+        font-size: 10px !important;
+        color: var(--fine) !important;
+        font-style: italic;
+        line-height: 1.4;
+      }
+      .tbl-log td[data-col="notas"]:empty { display: none; }
+
+      /* Acción: debajo de fecha */
+      .tbl-log td[data-col="action"] {
+        position: absolute;
+        top: 44px; right: 14px;
+        font-size: 18px !important;
+        text-align: right;
+      }
+
+      /* ── Tareas mobile ── */
+      .tl-table,
+      .tl-table thead,
+      .tl-table tbody,
+      .tl-table tr,
+      .tl-table th,
+      .tl-table td { display: block; }
+
+      .tl-table thead { display: none; }
+
+      .tl-table tbody tr {
+        position: relative;
+        padding: 11px 14px 10px 38px;
+        border-bottom: 1px solid var(--rule-soft);
+      }
+      .tl-table tbody tr:last-child { border-bottom: none; }
+
+      .tl-table td {
+        padding: 0 !important;
+        border: 0 !important;
+      }
+
+      /* Checkbox: izquierda */
+      .tl-table td[data-col="check"] {
+        position: absolute;
+        top: 13px; left: 12px;
+      }
+
+      /* Título */
+      .tl-table td[data-col="titulo"] {
+        padding-right: 68px !important;
+        margin-bottom: 5px;
+      }
+
+      /* Prioridad: esquina superior derecha */
+      .tl-table td[data-col="prio"] {
+        position: absolute;
+        top: 11px; right: 14px;
+      }
+
+      /* Categoría + fecha + completada: inline, misma línea */
+      .tl-table td[data-col="cat"],
+      .tl-table td[data-col="fecha"],
+      .tl-table td[data-col="comp"] {
+        display: inline-block !important;
+        vertical-align: middle;
+        margin-right: 10px;
+        font-size: 11px;
+      }
+
+      /* Separator between cat and fecha on mobile */
+      .tl-table td[data-col="cat"]::after {
+        content: " ·";
+        color: var(--fine);
+        margin-left: 6px;
+      }
+
+      /* Acciones */
+      .tl-table td[data-col="actions"] {
+        display: block !important;
+        margin-top: 8px;
+      }
+      .tl-table td[data-col="actions"] .tl-actions { gap: 14px; }
+    }
   </style>
 
   {% block extra_head %}{% endblock %}

@@ -1,0 +1,21 @@
+<div class="alert alert-success alert-dismissible fade show" role="alert"
+     style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+  <span style="display: inline-flex; align-items: center; justify-content: center;
+               width: 22px; height: 22px; background: var(--slate); color: var(--bg);
+               font-weight: 800; font-size: 12px;">✓</span>
+  <span class="mono" style="font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--slate);">
+    EC/pH guardado
+  </span>
+  <span class="c-cream mono" style="font-size: 13px;">
+    {{ medicion.get_tipo_display }}
+  </span>
+  {% if medicion.ph %}
+  <span class="c-fine">·</span>
+  <span class="c-cream" style="font-size: 13px; font-weight: 600;">pH {{ medicion.ph }}</span>
+  {% endif %}
+  {% if medicion.ec %}
+  <span class="c-fine">·</span>
+  <span class="c-cream" style="font-size: 13px; font-weight: 600;">EC {{ medicion.ec }} mS</span>
+  {% endif %}
+  <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>

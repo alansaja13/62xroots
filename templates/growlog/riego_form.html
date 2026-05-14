@@ -284,7 +284,7 @@
         {% endif %}
         {% if riego.ec_solucion %}
         <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="label-eyebrow">ec</span>
+          <span class="label-eyebrow">ec entrada</span>
           <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.ec_solucion }} mS</span>
         </div>
         {% endif %}
@@ -294,6 +294,18 @@
             {% if riego.runoff_observado %}observado ✓{% else %}no{% endif %}
           </span>
         </div>
+        {% if riego.ph_runoff %}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
+          <span class="label-eyebrow">pH runoff</span>
+          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.ph_runoff }}</span>
+        </div>
+        {% endif %}
+        {% if riego.ec_runoff %}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
+          <span class="label-eyebrow">EC runoff</span>
+          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.ec_runoff }} mS</span>
+        </div>
+        {% endif %}
         <div style="display: flex; justify-content: space-between; padding: 8px 0;">
           <span class="label-eyebrow">nutrientes</span>
           <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ nutrientes|length }} productos</span>

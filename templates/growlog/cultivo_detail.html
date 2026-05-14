@@ -473,11 +473,12 @@
           {% if request.user.is_staff %}
           <a href="{% url 'growlog:evento_crear' cultivo.slug %}" class="panel__action">+ evento</a>
           <a href="{% url 'growlog:riego_crear' cultivo.slug %}" class="panel__action">+ riego</a>
+          <a href="{% url 'growlog:medicion_ec_crear' cultivo.slug %}" class="panel__action">+ EC/pH</a>
           {% endif %}
           <a href="{% url 'growlog:timeline' cultivo.slug %}" class="panel__action panel__action--green">historial →</a>
         </div>
       </div>
-      <table class="table">
+      <table class="table tbl-log">
         <thead>
           <tr>
             <th style="width:96px;">Fecha</th>
@@ -490,11 +491,11 @@
         <tbody>
           {% for reg in ultimos_registros %}
           <tr>
-            <td class="c-soft" style="white-space:nowrap;">
+            <td class="c-soft" style="white-space:nowrap;" data-col="fecha">
               {{ reg.ts|date:"d/m H:i" }}
               {% if reg.obj.creado_por %}<br><span class="c-fine" style="font-size:9px;">@{{ reg.obj.creado_por.username }}</span>{% endif %}
             </td>
-            <td>
+            <td data-col="tipo">
               {% if reg.tipo == 'medicion' %}
                 <span class="tc tc--med">med</span>
               {% elif reg.tipo == 'riego' %}
@@ -503,7 +504,7 @@
                 <span class="tc tc--evento">{{ reg.obj.tipo }}</span>
               {% endif %}
             </td>
-            <td class="c-cream" style="font-weight:600;">
+            <td class="c-cream" style="font-weight:600;" data-col="dato">
               {% if reg.tipo == 'medicion' %}
                 <span style="font-size:14px;">{{ reg.obj.temperatura_c }}°C <span class="c-fine">/</span> {{ reg.obj.humedad_relativa }}%</span>
               {% elif reg.tipo == 'riego' %}
@@ -512,7 +513,7 @@
                 <span class="c-honey">{{ reg.obj.get_tipo_display|upper }}</span>
               {% endif %}
             </td>
-            <td class="c-soft" style="font-size:11.5px;">
+            <td class="c-soft" style="font-size:11.5px;" data-col="detalle">
               {% if reg.tipo == 'medicion' %}
                 <span class="vpd vpd--{{ reg.obj.vpd_estado }}">VPD {{ reg.obj.vpd }} · {{ reg.obj.vpd_estado }}</span>
                 {% if reg.obj.notas %}<span class="c-fine" style="font-style:italic; margin-left:10px;">"{{ reg.obj.notas|truncatechars:45 }}"</span>{% endif %}
@@ -531,7 +532,7 @@
                 <span class="c-cream">{{ reg.obj.descripcion|truncatechars:60 }}</span>
               {% endif %}
             </td>
-            <td style="text-align:right;">
+            <td style="text-align:right;" data-col="action">
               {% if reg.tipo == 'riego' %}
                 <a href="{% url 'growlog:riego_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
               {% elif reg.tipo == 'evento' %}

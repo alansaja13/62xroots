@@ -123,7 +123,7 @@
 
 <!-- TABLE -->
 <div class="panel">
-  <table class="table table-zebra">
+  <table class="table table-zebra tbl-log">
     <thead>
       <tr>
         <th style="width:110px;">Fecha · hora</th>
@@ -137,12 +137,12 @@
     <tbody>
       {% for reg in registros %}
       <tr>
-        <td class="c-soft" style="white-space:nowrap;">
+        <td class="c-soft" style="white-space:nowrap;" data-col="fecha">
           {{ reg.ts|date:"d/m/y" }}<br>
           <span class="c-fine" style="font-size:10px;">{{ reg.ts|date:"H:i" }}</span>
           {% if reg.obj.creado_por %}<br><span class="c-fine" style="font-size:9px; letter-spacing:.05em;">@{{ reg.obj.creado_por.username }}</span>{% endif %}
         </td>
-        <td>
+        <td data-col="tipo">
           {% if reg.tipo == 'medicion' %}
             <span class="tc tc--med">med</span>
           {% elif reg.tipo == 'riego' %}
@@ -151,7 +151,7 @@
             <span class="tc tc--evento">{{ reg.obj.tipo }}</span>
           {% endif %}
         </td>
-        <td class="c-cream" style="font-weight:600;">
+        <td class="c-cream" style="font-weight:600;" data-col="dato">
           {% if reg.tipo == 'medicion' %}
             <span style="font-size:14px;">{{ reg.obj.temperatura_c }}°C <span class="c-fine" style="font-weight:400;">/</span> {{ reg.obj.humedad_relativa }}%HR</span>
           {% elif reg.tipo == 'riego' %}
@@ -163,7 +163,7 @@
             <span class="c-honey">{{ reg.obj.get_tipo_display|upper }}</span>
           {% endif %}
         </td>
-        <td class="c-soft" style="font-size:11.5px;">
+        <td class="c-soft" style="font-size:11.5px;" data-col="detalle">
           {% if reg.tipo == 'medicion' %}
             <span class="vpd vpd--{{ reg.obj.vpd_estado }}">VPD {{ reg.obj.vpd }} kPa · {{ reg.obj.vpd_estado }}</span>
           {% elif reg.tipo == 'riego' %}
@@ -179,7 +179,7 @@
             {% endif %}
           {% endif %}
         </td>
-        <td class="c-fine" style="font-size:11px;">
+        <td class="c-fine" style="font-size:11px;" data-col="notas">
           {% if reg.tipo == 'medicion' and reg.obj.notas %}
             <span style="font-style:italic; color:var(--cream-soft);">"{{ reg.obj.notas }}"</span>
           {% elif reg.tipo == 'riego' %}
@@ -198,10 +198,10 @@
                   <span class="tc tc--baja" style="font-weight:600; letter-spacing:.05em;">{{ p.apodo }}</span>
                 {% endfor %}
               </span>
-            {% else %}—{% endif %}
-          {% else %}—{% endif %}
+            {% endif %}
+          {% endif %}
         </td>
-        <td style="text-align:right;">
+        <td style="text-align:right;" data-col="action">
           {% if reg.tipo == 'riego' %}
             <a href="{% url 'growlog:riego_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
           {% elif reg.tipo == 'evento' %}

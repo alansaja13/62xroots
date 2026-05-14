@@ -59,6 +59,7 @@
   .qe-tab--med.active  { color: var(--slate);  border-bottom-color: var(--slate); }
   .qe-tab--evt.active  { color: var(--honey);  border-bottom-color: var(--honey); }
   .qe-tab--tar.active  { color: var(--plum);   border-bottom-color: var(--plum); }
+  .qe-tab--ec.active   { color: var(--green);  border-bottom-color: var(--green); }
 
   /* ── FORM INPUTS ── */
   .qe-vital-input { display: block; position: relative; }
@@ -138,6 +139,9 @@
     </button>
     <button type="button" class="qe-tab qe-tab--tar" :class="{ active: tab === 'tarea' }" @click="tab = 'tarea'">
       <i class="bi bi-check2-square"></i> Tarea
+    </button>
+    <button type="button" class="qe-tab qe-tab--ec" :class="{ active: tab === 'ec' }" @click="tab = 'ec'">
+      <i class="bi bi-moisture"></i> EC/pH
     </button>
   </div>
 
