@@ -10,6 +10,7 @@ from django.core.cache import cache
 from django.core.files.uploadedfile import UploadedFile
 from django.core.paginator import Paginator
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django_htmx.http import HttpResponseClientRedirect
 from django.templatetags.static import static as static_url
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -405,9 +406,9 @@ def quick_entry(request, slug):
             Riego.objects.create(cultivo=cultivo, volumen_total_ml=d["volumen_total_ml"],
                                  ph_agua=d.get("ph_agua"), creado_por=request.user)
         if request.htmx:
-            return render(request, "growlog/partials/quick_success.html", {"medicion": medicion, "rego": d["rego"]})
+            return HttpResponseClientRedirect(reverse("growlog:cultivo_detail", args=[cultivo.slug]))
         messages.success(request, f"✓ Guardado — {medicion.temperatura_c}°C / {medicion.humedad_relativa}%HR / VPD {medicion.vpd} kPa")
-        return redirect("growlog:quick", cultivo.slug)
+        return redirect("growlog:cultivo_detail", slug=cultivo.slug)
     return render(request, "growlog/quick.html", {
         "form": form,
         "evento_form": QuickEventoForm(),
@@ -429,8 +430,9 @@ def quick_evento(request, slug):
             creado_por=request.user,
         )
         if request.htmx:
-            return render(request, "growlog/partials/quick_evento_success.html", {"evento": evento})
+            return HttpResponseClientRedirect(reverse("growlog:cultivo_detail", args=[cultivo.slug]))
         messages.success(request, f"Evento «{evento.get_tipo_display()}» registrado.")
+        return redirect("growlog:cultivo_detail", slug=cultivo.slug)
     return redirect("growlog:quick", cultivo.slug)
 
 
@@ -447,8 +449,9 @@ def quick_medicion_ec(request, slug):
             notas=d.get("notas", ""),
         )
         if request.htmx:
-            return render(request, "growlog/partials/quick_ec_success.html", {"medicion": medicion})
+            return HttpResponseClientRedirect(reverse("growlog:cultivo_detail", args=[cultivo.slug]))
         messages.success(request, f"Medición EC/pH registrada — {medicion.get_tipo_display()}")
+        return redirect("growlog:cultivo_detail", slug=cultivo.slug)
     return redirect("growlog:quick", cultivo.slug)
 
 
@@ -465,8 +468,9 @@ def quick_tarea(request, slug):
             creado_por=request.user,
         )
         if request.htmx:
-            return render(request, "growlog/partials/quick_tarea_success.html", {"tarea": tarea})
+            return HttpResponseClientRedirect(reverse("growlog:cultivo_detail", args=[cultivo.slug]))
         messages.success(request, f"Tarea «{tarea.titulo}» creada.")
+        return redirect("growlog:cultivo_detail", slug=cultivo.slug)
     return redirect("growlog:quick", cultivo.slug)
 
 

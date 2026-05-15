@@ -100,6 +100,11 @@
   }
 
   @media (max-width: 900px) { .qe-header { grid-template-columns: 1fr; } .qe-title { font-size: 48px; } }
+
+  #result-medicion:empty,
+  #result-evento:empty,
+  #result-tarea:empty,
+  #result-ec:empty { margin: 0 !important; }
 </style>
 {% endblock %}
 
@@ -323,6 +328,79 @@
         </div>
       </div>
 
+      <!-- ══ TAB: EC/pH ══ -->
+      <div x-show="tab === 'ec'" x-transition.opacity.duration.150ms>
+        <div id="result-ec" class="mb-3"></div>
+        <div class="panel">
+          <div class="panel__head">
+            <div class="panel__head-left">
+              <span class="panel__sigil panel__sigil--slate" style="color:var(--green); border-color:var(--green);">§</span>
+              <span class="label-eyebrow panel__title">medición · EC / pH</span>
+            </div>
+          </div>
+          <div class="panel__body">
+            <form method="post"
+                  hx-post="{% url 'growlog:quick_ec' cultivo.slug %}"
+                  hx-target="#result-ec"
+                  hx-swap="innerHTML"
+                  hx-on::after-request="if(event.detail.successful){ this.reset(); }">
+              {% csrf_token %}
+
+              {% if ec_form.non_field_errors %}
+              <div class="form-errors" style="margin-bottom: 14px;">
+                {% for error in ec_form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+              </div>
+              {% endif %}
+
+              <div class="mb-3 {% if ec_form.tipo.errors %}has-error{% endif %}">
+                <label>tipo de muestra</label>
+                {{ ec_form.tipo }}
+                {% if ec_form.tipo.errors %}<div class="field-error">{{ ec_form.tipo.errors.0 }}</div>{% endif %}
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-4 {% if ec_form.ph.errors %}has-error{% endif %}">
+                  <label>pH</label>
+                  <div class="qe-vital-input">
+                    {{ ec_form.ph }}
+                    <span class="qe-vital-input__suffix" style="color:var(--green);">pH</span>
+                  </div>
+                  {% if ec_form.ph.errors %}<div class="field-error">{{ ec_form.ph.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-4 {% if ec_form.ec.errors %}has-error{% endif %}">
+                  <label>EC</label>
+                  <div class="qe-vital-input">
+                    {{ ec_form.ec }}
+                    <span class="qe-vital-input__suffix" style="font-size:10px; color:var(--green);">mS</span>
+                  </div>
+                  {% if ec_form.ec.errors %}<div class="field-error">{{ ec_form.ec.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-4 {% if ec_form.temp_agua.errors %}has-error{% endif %}">
+                  <label>T° agua</label>
+                  <div class="qe-vital-input">
+                    {{ ec_form.temp_agua }}
+                    <span class="qe-vital-input__suffix">°C</span>
+                  </div>
+                  {% if ec_form.temp_agua.errors %}<div class="field-error">{{ ec_form.temp_agua.errors.0 }}</div>{% endif %}
+                </div>
+              </div>
+
+              <div class="mb-3 {% if ec_form.notas.errors %}has-error{% endif %}">
+                <label>notas (opcional)</label>
+                {{ ec_form.notas }}
+              </div>
+
+              <div class="d-flex justify-content-end mt-4" style="gap:10px;">
+                <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="btn-ghost">cancelar</a>
+                <button type="submit" class="btn-brand" style="background:var(--green);">
+                  <i class="bi bi-moisture"></i> guardar medición
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /col -->
 
     <!-- SIDEBAR -->
@@ -331,7 +409,7 @@
         <div class="panel__head">
           <div class="panel__head-left">
             <span class="panel__sigil">§</span>
-            <span class="label-eyebrow panel__title" x-text="tab === 'medicion' ? 'tips · ambiente' : tab === 'evento' ? 'tipos de evento' : 'prioridades'"></span>
+            <span class="label-eyebrow panel__title" x-text="tab === 'medicion' ? 'tips · ambiente' : tab === 'evento' ? 'tipos de evento' : tab === 'ec' ? 'rangos · EC/pH' : 'prioridades'"></span>
           </div>
         </div>
         <div class="panel__body" style="font-size: 12.5px; color: var(--cream-soft); line-height: 1.6;">
@@ -372,6 +450,25 @@
             <div>
               <span class="mono c-fine" style="font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;">· baja</span>
               &nbsp;Cuando haya tiempo.
+            </div>
+          </div>
+
+          <div x-show="tab === 'ec'">
+            <div style="margin-bottom:10px;">
+              <span class="mono c-green" style="font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;">● pH</span>
+              &nbsp;VEG 6.0–6.5 · FLORA 6.2–6.8
+            </div>
+            <div style="margin-bottom:10px;">
+              <span class="mono c-green" style="font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;">● EC</span>
+              &nbsp;VEG 1.2–1.8 mS · FLORA 1.6–2.4 mS
+            </div>
+            <div style="margin-bottom:10px;">
+              <span class="mono c-slate" style="font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;">◆ runoff</span>
+              &nbsp;EC alto = acumulación de sales. Lavar si supera 20% la entrada.
+            </div>
+            <div>
+              <span class="mono c-fine" style="font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;">· temp</span>
+              &nbsp;El EC varía con temperatura. Corregir a 25°C.
             </div>
           </div>
 
