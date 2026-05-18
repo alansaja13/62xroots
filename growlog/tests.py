@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.utils import timezone
 
-from .models import APIToken, CambioFotoperiodo, Cultivo, Planta
+from .models import APIToken, CambioFotoperiodo, CanopySnapshot, ColaPosicion, Cultivo, Planta
 from .utils import calcular_luz_estado, get_cambio_fotoperiodo_activo
 
 ART = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
@@ -195,3 +195,112 @@ class GetCambioFotoperiodoActivoTests(TestCase):
         ts = datetime(2026, 3, 1, 0, 0, tzinfo=ART)
         result = get_cambio_fotoperiodo_activo(self.cultivo, ts)
         self.assertEqual(result, self.flora)
+
+
+class CanopyAPITests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user('canopy_user', password='testpass123')
+        self.raw_token = secrets.token_hex(32)
+        token_hash = hashlib.sha256(self.raw_token.encode()).hexdigest()
+        APIToken.objects.create(user=self.user, token_hash=token_hash)
+        self.cultivo = Cultivo.objects.create(
+            nombre='Canopy Test',
+            fecha_inicio=timezone.localdate(),
+            estado='floracion',
+            lampara_watts_reales=314,
+            creado_por=self.user,
+        )
+        self.planta = Planta.objects.create(
+            cultivo=self.cultivo,
+            apodo='FG1',
+            posicion_tent='centro',
+            creado_por=self.user,
+        )
+
+    def _auth(self):
+        return {'HTTP_AUTHORIZATION': f'Bearer {self.raw_token}'}
+
+    def _post_json(self, url, data):
+        import json
+        return self.client.generic(
+            'POST', url, json.dumps(data),
+            content_type='application/json',
+            **self._auth(),
+        )
+
+    def test_get_canopy_sin_snapshot_devuelve_null(self):
+        r = self.client.get(f'/api/v1/cultivos/{self.cultivo.slug}/canopy/', **self._auth())
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.json()['ok'])
+        self.assertIsNone(r.json()['data'])
+
+    def test_post_canopy_crea_snapshot(self):
+        payload = {
+            'scrog_fill_pct': 40,
+            'notas': 'Test snapshot',
+            'colas': [
+                {'planta_uuid': str(self.planta.uuid), 'indice': 0, 'x': 0.5, 'y': 0.45},
+                {'planta_uuid': str(self.planta.uuid), 'indice': 1, 'x': 0.5, 'y': 0.55},
+            ],
+        }
+        r = self._post_json(f'/api/v1/cultivos/{self.cultivo.slug}/canopy/', payload)
+        self.assertEqual(r.status_code, 201)
+        data = r.json()['data']
+        self.assertEqual(data['scrog_fill_pct'], 40)
+        self.assertEqual(len(data['plantas']), 1)
+        self.assertEqual(len(data['plantas'][0]['colas']), 2)
+        self.assertEqual(CanopySnapshot.objects.count(), 1)
+        self.assertEqual(ColaPosicion.objects.count(), 2)
+
+    def test_get_canopy_devuelve_ultimo_snapshot(self):
+        snap = CanopySnapshot.objects.create(cultivo=self.cultivo, scrog_fill_pct=60)
+        ColaPosicion.objects.create(snapshot=snap, planta=self.planta, indice=0, x=0.5, y=0.4)
+        r = self.client.get(f'/api/v1/cultivos/{self.cultivo.slug}/canopy/', **self._auth())
+        self.assertEqual(r.status_code, 200)
+        data = r.json()['data']
+        self.assertEqual(data['id'], snap.id)
+        self.assertEqual(data['scrog_fill_pct'], 60)
+        self.assertEqual(data['plantas'][0]['apodo'], 'FG1')
+
+    def test_get_canopy_history(self):
+        CanopySnapshot.objects.create(cultivo=self.cultivo, scrog_fill_pct=20)
+        CanopySnapshot.objects.create(cultivo=self.cultivo, scrog_fill_pct=50)
+        r = self.client.get(f'/api/v1/cultivos/{self.cultivo.slug}/canopy/history/', **self._auth())
+        self.assertEqual(r.status_code, 200)
+        data = r.json()['data']
+        self.assertEqual(len(data), 2)
+
+    def test_get_canopy_detail(self):
+        snap = CanopySnapshot.objects.create(cultivo=self.cultivo, scrog_fill_pct=75, notas='detalle')
+        r = self.client.get(f'/api/v1/cultivos/{self.cultivo.slug}/canopy/{snap.id}/', **self._auth())
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['data']['notas'], 'detalle')
+
+    def test_post_canopy_scrog_fuera_de_rango_devuelve_400(self):
+        payload = {'scrog_fill_pct': 150, 'colas': []}
+        r = self._post_json(f'/api/v1/cultivos/{self.cultivo.slug}/canopy/', payload)
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(r.json()['ok'])
+
+    def test_post_canopy_coords_fuera_de_rango_devuelve_400(self):
+        payload = {
+            'scrog_fill_pct': 30,
+            'colas': [{'planta_uuid': str(self.planta.uuid), 'indice': 0, 'x': 1.5, 'y': 0.5}],
+        }
+        r = self._post_json(f'/api/v1/cultivos/{self.cultivo.slug}/canopy/', payload)
+        self.assertEqual(r.status_code, 400)
+
+    def test_post_canopy_uuid_invalido_devuelve_400(self):
+        payload = {
+            'scrog_fill_pct': 30,
+            'colas': [{'planta_uuid': 'uuid-falso', 'indice': 0, 'x': 0.5, 'y': 0.5}],
+        }
+        r = self._post_json(f'/api/v1/cultivos/{self.cultivo.slug}/canopy/', payload)
+        self.assertEqual(r.status_code, 400)
+
+    def test_centro_tent_coords_en_respuesta(self):
+        snap = CanopySnapshot.objects.create(cultivo=self.cultivo, scrog_fill_pct=0)
+        r = self.client.get(f'/api/v1/cultivos/{self.cultivo.slug}/canopy/{snap.id}/', **self._auth())
+        planta_data = r.json()['data']['plantas'][0]
+        self.assertEqual(planta_data['centro_tent'], {'x': 0.5, 'y': 0.5})

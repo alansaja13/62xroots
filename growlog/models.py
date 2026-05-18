@@ -388,6 +388,48 @@ class ParametroIdeal(models.Model):
         return f"Parámetros — {self.get_etapa_display()}"
 
 
+POSICION_TENT_COORDS = {
+    "centro":     (0.50, 0.50),
+    "arriba_izq": (0.30, 0.30),
+    "arriba_der": (0.70, 0.30),
+    "abajo_izq":  (0.30, 0.70),
+    "abajo_der":  (0.70, 0.70),
+    "otro":       (0.50, 0.50),
+}
+
+
+class CanopySnapshot(models.Model):
+    cultivo = models.ForeignKey(Cultivo, on_delete=models.CASCADE, related_name='canopy_snapshots')
+    creado_en = models.DateTimeField(auto_now_add=True)
+    notas = models.TextField(blank=True)
+    scrog_fill_pct = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['-creado_en']
+        verbose_name = "Canopy Snapshot"
+        verbose_name_plural = "Canopy Snapshots"
+
+    def __str__(self):
+        return f"{self.cultivo} — snapshot {self.creado_en:%d/%m/%Y %H:%M}"
+
+
+class ColaPosicion(models.Model):
+    snapshot = models.ForeignKey(CanopySnapshot, on_delete=models.CASCADE, related_name='colas')
+    planta = models.ForeignKey(Planta, on_delete=models.CASCADE, related_name='posiciones_cola')
+    indice = models.PositiveSmallIntegerField()
+    x = models.FloatField()
+    y = models.FloatField()
+
+    class Meta:
+        unique_together = [('snapshot', 'planta', 'indice')]
+        ordering = ['planta', 'indice']
+        verbose_name = "Posición de Cola"
+        verbose_name_plural = "Posiciones de Colas"
+
+    def __str__(self):
+        return f"{self.planta.apodo} cola {self.indice} @ ({self.x:.2f}, {self.y:.2f})"
+
+
 class MedicionEC(models.Model):
     TIPO_CHOICES = [
         ("entrada", "Agua de entrada"),

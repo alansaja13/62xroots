@@ -341,6 +341,9 @@
       <span class="cd-day-box__label">// día</span>
       <span class="cd-day-box__num">{{ cultivo.dias_desde_inicio }}</span>
     </div>
+    <a href="{% url 'growlog:canopy' cultivo.slug %}" class="btn-brand" style="font-size:12px;padding:8px 14px">
+      <i class="bi bi-grid-3x3-gap"></i> canopy
+    </a>
     {% if request.user.is_staff %}
     <a href="{% url 'growlog:quick' cultivo.slug %}" class="btn-brand btn-brand--lg">
       <i class="bi bi-plus-lg"></i> anotar

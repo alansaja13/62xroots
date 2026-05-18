@@ -14,6 +14,9 @@ urlpatterns = [
     path("api/v1/cultivos/<slug:slug>/tareas/", api_views.cultivo_tareas),
     path("api/v1/cultivos/<slug:slug>/cambios-fotoperiodo/", api_views.cultivo_cambios_fotoperiodo),
     path("api/v1/plantas/<uuid:planta_uuid>/", api_views.planta_detail),
+    path("api/v1/cultivos/<slug:slug>/canopy/", api_views.cultivo_canopy),
+    path("api/v1/cultivos/<slug:slug>/canopy/history/", api_views.cultivo_canopy_history),
+    path("api/v1/cultivos/<slug:slug>/canopy/<int:snapshot_id>/", api_views.cultivo_canopy_detail),
 
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
@@ -33,6 +36,9 @@ urlpatterns = [
     path("cultivo/<slug:slug>/quick/tarea/", views.quick_tarea, name="quick_tarea"),
     path("cultivo/<slug:slug>/quick/ec/", views.quick_medicion_ec, name="quick_ec"),
     path("cultivo/<slug:slug>/timeline/", views.timeline, name="timeline"),
+    path("cultivo/<slug:slug>/canopy/", views.canopy_view, name="canopy"),
+    path("cultivo/<slug:slug>/canopy/guardar/", views.canopy_guardar, name="canopy_guardar"),
+    path("cultivo/<slug:slug>/canopy/snapshot/<int:snapshot_id>/json/", views.canopy_snapshot_json, name="canopy_snapshot_json"),
 
     # Planta
     path("cultivo/<slug:slug>/planta/nueva/", views.planta_crear, name="planta_crear"),

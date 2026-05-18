@@ -10,7 +10,10 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
-from .models import APIToken, CambioFotoperiodo, Cultivo, Evento, MedicionAmbiente, Planta, Tarea
+from .models import (
+    APIToken, CambioFotoperiodo, CanopySnapshot, ColaPosicion,
+    Cultivo, Evento, MedicionAmbiente, Planta, POSICION_TENT_COORDS, Tarea,
+)
 
 EVENTO_TIPOS = {c[0] for c in Evento.TIPO_CHOICES}
 TAREA_PRIORIDADES = {c[0] for c in Tarea.PRIORIDAD_CHOICES}
@@ -422,6 +425,134 @@ def cultivo_cambios_fotoperiodo(request, slug):
         return api_ok(_cambio_fotoperiodo(cf), status=201)
 
     return api_error('Method not allowed', 405)
+
+
+def _canopy_snapshot(snapshot, plantas_qs):
+    """Serializa un CanopySnapshot con sus ColaPosicion agrupadas por planta."""
+    colas_qs = snapshot.colas.select_related('planta').order_by('planta', 'indice')
+
+    colas_by_planta = {}
+    for cp in colas_qs:
+        colas_by_planta.setdefault(cp.planta_id, []).append(cp)
+
+    plantas_data = []
+    for p in plantas_qs:
+        coords = POSICION_TENT_COORDS.get(p.posicion_tent, (0.50, 0.50))
+        colas = [
+            {'indice': cp.indice, 'x': cp.x, 'y': cp.y}
+            for cp in colas_by_planta.get(p.id, [])
+        ]
+        plantas_data.append({
+            'uuid': str(p.uuid),
+            'apodo': p.apodo,
+            'centro_tent': {'x': coords[0], 'y': coords[1]},
+            'colas': colas,
+        })
+
+    return {
+        'id': snapshot.id,
+        'creado_en': snapshot.creado_en.isoformat(),
+        'scrog_fill_pct': snapshot.scrog_fill_pct,
+        'notas': snapshot.notas,
+        'plantas': plantas_data,
+    }
+
+
+@csrf_exempt
+@require_token
+def cultivo_canopy(request, slug):
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
+
+    plantas_qs = c.plantas.filter(archivado=False).order_by('apodo')
+
+    if request.method == 'GET':
+        snapshot = c.canopy_snapshots.first()
+        if not snapshot:
+            return api_ok(None)
+        return api_ok(_canopy_snapshot(snapshot, plantas_qs))
+
+    if request.method == 'POST':
+        rl = _write_rate_limit(request)
+        if rl:
+            return rl
+        body, err = _parse_json_body(request)
+        if err:
+            return err
+
+        scrog_fill_pct = body.get('scrog_fill_pct', 0)
+        try:
+            scrog_fill_pct = int(scrog_fill_pct)
+        except (ValueError, TypeError):
+            return api_error('scrog_fill_pct debe ser entero 0-100')
+        if not (0 <= scrog_fill_pct <= 100):
+            return api_error('scrog_fill_pct fuera de rango (0-100)')
+
+        colas_raw = body.get('colas', [])
+        if not isinstance(colas_raw, list):
+            return api_error('colas debe ser una lista')
+
+        planta_map = {str(p.uuid): p for p in plantas_qs}
+        colas_validated = []
+        for item in colas_raw:
+            uuid_str = str(item.get('planta_uuid', ''))
+            planta = planta_map.get(uuid_str)
+            if not planta:
+                return api_error(f'planta_uuid desconocido: {uuid_str}')
+            try:
+                indice = int(item['indice'])
+                x = float(item['x'])
+                y = float(item['y'])
+            except (KeyError, ValueError, TypeError):
+                return api_error('Cada cola requiere indice (int), x (float), y (float)')
+            if not (0.0 <= x <= 1.0 and 0.0 <= y <= 1.0):
+                return api_error(f'x e y deben estar entre 0.0 y 1.0 (cola planta {uuid_str} indice {indice})')
+            colas_validated.append((planta, indice, x, y))
+
+        snapshot = CanopySnapshot.objects.create(
+            cultivo=c,
+            scrog_fill_pct=scrog_fill_pct,
+            notas=str(body.get('notas', ''))[:500],
+        )
+        ColaPosicion.objects.bulk_create([
+            ColaPosicion(snapshot=snapshot, planta=planta, indice=indice, x=x, y=y)
+            for planta, indice, x, y in colas_validated
+        ])
+
+        return api_ok(_canopy_snapshot(snapshot, plantas_qs), status=201)
+
+    return api_error('Method not allowed', 405)
+
+
+@require_GET
+@require_token
+def cultivo_canopy_history(request, slug):
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
+
+    snapshots = c.canopy_snapshots.all()
+    return api_ok([
+        {'id': s.id, 'creado_en': s.creado_en.isoformat(), 'scrog_fill_pct': s.scrog_fill_pct, 'notas': s.notas}
+        for s in snapshots
+    ])
+
+
+@require_GET
+@require_token
+def cultivo_canopy_detail(request, slug, snapshot_id):
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
+
+    try:
+        snapshot = c.canopy_snapshots.get(pk=snapshot_id)
+    except CanopySnapshot.DoesNotExist:
+        return api_error('Snapshot no encontrado', 404)
+
+    plantas_qs = c.plantas.filter(archivado=False).order_by('apodo')
+    return api_ok(_canopy_snapshot(snapshot, plantas_qs))
 
 
 @require_GET
