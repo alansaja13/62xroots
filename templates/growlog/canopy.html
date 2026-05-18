@@ -216,6 +216,7 @@
                  @mousemove="onMouseMove($event)"
                  @mouseup="endDrag()"
                  @mouseleave="endDrag()"
+                 @click="onSVGClick($event)"
                  @touchstart.prevent="onTouchStart($event)"
                  @touchmove.prevent="onTouchMove($event)"
                  @touchend="endDrag()"
@@ -273,7 +274,7 @@
             </template>
           </div>
 
-          <!-- SCROG slider -->
+          <!-- SCROG: click celdas en el SVG / slider para llenado rápido -->
           <div class="scrog-wrap">
             <span class="ctrl-section-title">// red scrog llena</span>
             <div class="d-flex align-items-baseline gap-2 mb-2">
@@ -281,14 +282,23 @@
               <span style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--fine);"
                     x-text="`${filledCells}/36 celdas`"></span>
             </div>
+            <p style="font-family:'Geist Mono',monospace;font-size:9px;color:var(--fine);margin:0 0 8px">
+              Hacé click en las celdas del SVG para activarlas. El slider llena en bloque.
+            </p>
             <input type="range" class="scrog-slider"
                    min="0" max="100" step="5"
-                   x-model.number="scrog_fill_pct">
+                   :value="scrog_fill_pct"
+                   @input="fillUpTo(parseInt($event.target.value))">
+            <div class="d-flex justify-content-between mt-1">
+              <button class="stepper-btn" style="font-size:10px;width:auto;padding:2px 8px"
+                      @click="cellStates = Array(36).fill(false)">limpiar</button>
+              <button class="stepper-btn" style="font-size:10px;width:auto;padding:2px 8px;border-color:var(--green);color:var(--green)"
+                      @click="cellStates = Array(36).fill(true)">llenar</button>
+            </div>
             <div class="mt-1" style="font-family:'Geist Mono',monospace;font-size:9px;color:var(--fine);display:flex;justify-content:space-between">
               <span>0%</span>
               <span style="color:var(--honey)">60% flip</span>
               <span style="color:var(--green)">80% óptimo</span>
-              <span>100%</span>
             </div>
           </div>
 
@@ -358,7 +368,7 @@ function canopyApp(cfg) {
     slug:              cfg.slug,
     watts:             cfg.watts,
     plantas:           cfg.plantas,
-    scrog_fill_pct:    cfg.scrog_fill_pct,
+    cellStates:        Array(36).fill(false),   // inicializado en initApp()
     notas:             cfg.notas,
     currentSnapshotId: cfg.currentSnapshotId,
     snapshots:         cfg.snapshots,
@@ -367,8 +377,16 @@ function canopyApp(cfg) {
     _dragging:         null,
     _dragOffX:         0,
     _dragOffY:         0,
+    _didDrag:          false,
 
     // ── Computed ─────────────────────────────────────────────────────
+    get scrog_fill_pct() {
+      const n = this.cellStates.filter(Boolean).length;
+      return Math.round(n / 36 * 100);
+    },
+    get filledCells() {
+      return this.cellStates.filter(Boolean).length;
+    },
     get totalColas() {
       return this.plantas.reduce((s, p) => s + p.colas.length, 0);
     },
@@ -377,9 +395,6 @@ function canopyApp(cfg) {
     },
     get densidad() {
       return this.totalColas / 0.64;
-    },
-    get filledCells() {
-      return Math.round(this.scrog_fill_pct * 36 / 100);
     },
     get flipEstado() {
       if (this.scrog_fill_pct < 60) return 'falta';
@@ -425,7 +440,18 @@ function canopyApp(cfg) {
 
     // ── Init ─────────────────────────────────────────────────────────
     initApp() {
-      // noop — x-effect se encarga del render inicial
+      this._initCells(cfg.scrog_fill_pct, cfg.scrog_cells || null);
+    },
+
+    _initCells(pct, cells) {
+      if (cells && cells.length > 0) {
+        // Snapshot guardado con celdas individuales
+        this.cellStates = Array.from({length: 36}, (_, i) => cells.includes(i));
+      } else {
+        // Compatibilidad: llenar las primeras N celdas desde el porcentaje
+        const n = Math.round((pct || 0) * 36 / 100);
+        this.cellStates = Array.from({length: 36}, (_, i) => i < n);
+      }
     },
 
     // ── SVG Render ───────────────────────────────────────────────────
@@ -438,16 +464,19 @@ function canopyApp(cfg) {
       // Background
       h += `<rect x="0" y="0" width="400" height="400" fill="#0a0803"/>`;
 
-      // SCROG grid
+      // SCROG grid — celdas clickeables (data-cell = índice 0..35)
       const cs = 400 / 6;
-      const filled = this.filledCells;
       for (let i = 0; i < 36; i++) {
         const row = Math.floor(i / 6), col = i % 6;
         const x = col * cs, y = row * cs;
-        if (i < filled) {
-          h += `<rect x="${x}" y="${y}" width="${cs}" height="${cs}" fill="rgba(177,209,96,0.10)" stroke="rgba(177,209,96,0.18)" stroke-width="0.5"/>`;
+        if (this.cellStates[i]) {
+          h += `<rect x="${x}" y="${y}" width="${cs}" height="${cs}"
+                      fill="rgba(177,209,96,0.15)" stroke="rgba(177,209,96,0.35)" stroke-width="1"
+                      data-cell="${i}" style="cursor:pointer"/>`;
         } else {
-          h += `<rect x="${x}" y="${y}" width="${cs}" height="${cs}" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>`;
+          h += `<rect x="${x}" y="${y}" width="${cs}" height="${cs}"
+                      fill="rgba(255,255,255,0.01)" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"
+                      data-cell="${i}" style="cursor:pointer"/>`;
         }
       }
 
@@ -546,10 +575,19 @@ function canopyApp(cfg) {
 
     onMouseMove(e) {
       if (!this._dragging) return;
+      this._didDrag = true;
       const pt = this._getSVGPoint(e.clientX, e.clientY);
       const cola = this.plantas[this._dragging.pi].colas[this._dragging.ci];
       cola.x = Math.max(0, Math.min(400, pt.x - this._dragOffX));
       cola.y = Math.max(0, Math.min(400, pt.y - this._dragOffY));
+    },
+
+    onSVGClick(e) {
+      if (this._didDrag) return;   // fue un drag, no un click
+      const cell = e.target.getAttribute('data-cell');
+      if (cell === null) return;
+      const i = parseInt(cell);
+      this.cellStates = this.cellStates.map((v, idx) => idx === i ? !v : v);
     },
 
     onTouchStart(e) {
@@ -576,7 +614,7 @@ function canopyApp(cfg) {
       cola.y = Math.max(0, Math.min(400, pt.y - this._dragOffY));
     },
 
-    endDrag() { this._dragging = null; },
+    endDrag() { this._dragging = null; this._didDrag = false; },
 
     // ── Cola steppers ────────────────────────────────────────────────
     agregarCola(pi) {
@@ -611,6 +649,12 @@ function canopyApp(cfg) {
       p.colas.pop();
     },
 
+    // ── SCROG helpers ────────────────────────────────────────────────
+    fillUpTo(pct) {
+      const n = Math.round(pct * 36 / 100);
+      this.cellStates = Array.from({length: 36}, (_, i) => i < n);
+    },
+
     // ── Load snapshot ────────────────────────────────────────────────
     async loadSnapshot(id) {
       if (!id) return;
@@ -631,6 +675,7 @@ function canopyApp(cfg) {
             y: parseFloat(c.y) * 400,
           }));
         });
+        this._initCells(snap.scrog_fill_pct, snap.scrog_cells || null);
       } catch (err) {
         console.error('Error cargando snapshot:', err);
       }
@@ -648,6 +693,7 @@ function canopyApp(cfg) {
           y: parseFloat((c.y / 400).toFixed(4)),
         }))
       );
+      const activeCells = this.cellStates.reduce((acc, v, i) => { if (v) acc.push(i); return acc; }, []);
       try {
         const resp = await fetch(`/cultivo/${this.slug}/canopy/guardar/`, {
           method: 'POST',
@@ -657,6 +703,7 @@ function canopyApp(cfg) {
           },
           body: JSON.stringify({
             scrog_fill_pct: this.scrog_fill_pct,
+            scrog_cells: activeCells,
             notas: this.notas,
             colas,
           }),

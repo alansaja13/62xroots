@@ -1137,6 +1137,7 @@ def canopy_view(request, slug):
         "watts": cultivo.lampara_watts_reales or 314,
         "plantas": plantas_data,
         "scrog_fill_pct": latest.scrog_fill_pct if latest else 0,
+        "scrog_cells": list(latest.scrog_cells) if latest and latest.scrog_cells else [],
         "notas": latest.notas if latest else "",
         "currentSnapshotId": latest.id if latest else None,
         "snapshots": snapshots_data,
@@ -1188,9 +1189,18 @@ def canopy_guardar(request, slug):
             return JsonResponse({'ok': False, 'error': 'x e y deben estar en [0,1]'}, status=400)
         colas_validated.append((planta, indice, x, y))
 
+    scrog_cells_raw = body.get('scrog_cells', [])
+    if isinstance(scrog_cells_raw, list):
+        scrog_cells = [int(i) for i in scrog_cells_raw if 0 <= int(i) < 36]
+        if scrog_cells:
+            scrog_fill_pct = round(len(scrog_cells) / 36 * 100)
+    else:
+        scrog_cells = []
+
     snapshot = CanopySnapshot.objects.create(
         cultivo=cultivo,
         scrog_fill_pct=scrog_fill_pct,
+        scrog_cells=scrog_cells,
         notas=str(body.get('notas', ''))[:500],
     )
     ColaPosicion.objects.bulk_create([
@@ -1204,6 +1214,7 @@ def canopy_guardar(request, slug):
             'id': snapshot.id,
             'creado_en': snapshot.creado_en.isoformat(),
             'scrog_fill_pct': snapshot.scrog_fill_pct,
+            'scrog_cells': snapshot.scrog_cells,
         }
     }, status=201)
 
@@ -1239,6 +1250,7 @@ def canopy_snapshot_json(request, slug, snapshot_id):
             'id': snapshot.id,
             'creado_en': snapshot.creado_en.isoformat(),
             'scrog_fill_pct': snapshot.scrog_fill_pct,
+            'scrog_cells': snapshot.scrog_cells,
             'notas': snapshot.notas,
             'plantas': plantas_data,
         }

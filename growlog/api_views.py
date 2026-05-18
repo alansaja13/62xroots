@@ -453,6 +453,7 @@ def _canopy_snapshot(snapshot, plantas_qs):
         'id': snapshot.id,
         'creado_en': snapshot.creado_en.isoformat(),
         'scrog_fill_pct': snapshot.scrog_fill_pct,
+        'scrog_cells': snapshot.scrog_cells,
         'notas': snapshot.notas,
         'plantas': plantas_data,
     }
@@ -510,9 +511,18 @@ def cultivo_canopy(request, slug):
                 return api_error(f'x e y deben estar entre 0.0 y 1.0 (cola planta {uuid_str} indice {indice})')
             colas_validated.append((planta, indice, x, y))
 
+        scrog_cells_raw = body.get('scrog_cells', [])
+        if isinstance(scrog_cells_raw, list):
+            scrog_cells = [int(i) for i in scrog_cells_raw if 0 <= int(i) < 36]
+            if scrog_cells:
+                scrog_fill_pct = round(len(scrog_cells) / 36 * 100)
+        else:
+            scrog_cells = []
+
         snapshot = CanopySnapshot.objects.create(
             cultivo=c,
             scrog_fill_pct=scrog_fill_pct,
+            scrog_cells=scrog_cells,
             notas=str(body.get('notas', ''))[:500],
         )
         ColaPosicion.objects.bulk_create([

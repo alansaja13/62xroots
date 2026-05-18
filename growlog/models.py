@@ -403,6 +403,7 @@ class CanopySnapshot(models.Model):
     creado_en = models.DateTimeField(auto_now_add=True)
     notas = models.TextField(blank=True)
     scrog_fill_pct = models.PositiveSmallIntegerField(default=0)
+    scrog_cells = models.JSONField(default=list, blank=True)
 
     class Meta:
         ordering = ['-creado_en']
