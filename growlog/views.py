@@ -1012,14 +1012,16 @@ def pwa_manifest(request):
         "background_color": "#16110b",
         "theme_color": "#16110b",
         "icons": [
-            {"src": icon_url("icon-72x72.png"),   "sizes": "72x72",   "type": "image/png"},
-            {"src": icon_url("icon-96x96.png"),   "sizes": "96x96",   "type": "image/png"},
-            {"src": icon_url("icon-128x128.png"), "sizes": "128x128", "type": "image/png"},
-            {"src": icon_url("icon-144x144.png"), "sizes": "144x144", "type": "image/png"},
-            {"src": icon_url("icon-152x152.png"), "sizes": "152x152", "type": "image/png"},
-            {"src": icon_url("icon-192x192.png"), "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-            {"src": icon_url("icon-384x384.png"), "sizes": "384x384", "type": "image/png"},
-            {"src": icon_url("icon-512x512.png"), "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+            {"src": icon_url("icon-72x72.png"),   "sizes": "72x72",   "type": "image/png", "purpose": "any"},
+            {"src": icon_url("icon-96x96.png"),   "sizes": "96x96",   "type": "image/png", "purpose": "any"},
+            {"src": icon_url("icon-128x128.png"), "sizes": "128x128", "type": "image/png", "purpose": "any"},
+            {"src": icon_url("icon-144x144.png"), "sizes": "144x144", "type": "image/png", "purpose": "any"},
+            {"src": icon_url("icon-152x152.png"), "sizes": "152x152", "type": "image/png", "purpose": "any"},
+            {"src": icon_url("icon-192x192.png"), "sizes": "192x192", "type": "image/png", "purpose": "any"},
+            {"src": icon_url("icon-192x192.png"), "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+            {"src": icon_url("icon-384x384.png"), "sizes": "384x384", "type": "image/png", "purpose": "any"},
+            {"src": icon_url("icon-512x512.png"), "sizes": "512x512", "type": "image/png", "purpose": "any"},
+            {"src": icon_url("icon-512x512.png"), "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
         ],
     }
     return JsonResponse(data)
@@ -1027,26 +1029,84 @@ def pwa_manifest(request):
 
 def pwa_service_worker(request):
     js = r"""
-const CACHE = '62xroots-v2';
+const SHELL = '62xroots-shell-v4';
+const CDN   = '62xroots-cdn-v4';
+const ALL_CACHES = [SHELL, CDN];
 
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+const CDN_URLS = [
+  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
+  'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css',
+  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
+  'https://unpkg.com/htmx.org@1.9.12',
+  'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js',
+];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(SHELL)
+      .then(c => c.add('/'))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => !ALL_CACHES.includes(k)).map(k => caches.delete(k))
+      ))
+      .then(() => clients.claim())
+  );
+});
 
 self.addEventListener('fetch', e => {
-    if (e.request.method !== 'GET') return;
-    if (!e.request.url.startsWith('http')) return;
+  if (e.request.method !== 'GET') return;
+  const url = e.request.url;
+  if (!url.startsWith('http')) return;
 
+  // CDN assets: cache-first (fixed versioned URLs)
+  if (CDN_URLS.some(u => url.startsWith(u))) {
     e.respondWith(
-        fetch(e.request)
-            .then(res => {
-                if (e.request.mode === 'navigate') {
-                    const clone = res.clone();
-                    caches.open(CACHE).then(c => c.put(e.request, clone));
-                }
-                return res;
-            })
-            .catch(() => caches.match(e.request))
+      caches.match(e.request).then(cached => {
+        if (cached) return cached;
+        return fetch(e.request).then(res => {
+          if (res.ok) caches.open(CDN).then(c => c.put(e.request, res.clone()));
+          return res;
+        });
+      })
     );
+    return;
+  }
+
+  // Django static files: stale-while-revalidate
+  if (url.includes('/static/')) {
+    e.respondWith(
+      caches.open(SHELL).then(cache =>
+        cache.match(e.request).then(cached => {
+          const fresh = fetch(e.request).then(res => {
+            if (res.ok) cache.put(e.request, res.clone());
+            return res;
+          });
+          return cached || fresh;
+        })
+      )
+    );
+    return;
+  }
+
+  // Navigation: network-first, fall back to cached page or shell
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          if (res.ok) caches.open(SHELL).then(c => c.put(e.request, res.clone()));
+          return res;
+        })
+        .catch(() =>
+          caches.match(e.request).then(r => r || caches.match('/'))
+        )
+    );
+  }
 });
 """
     resp = HttpResponse(js.strip(), content_type="application/javascript; charset=utf-8")
