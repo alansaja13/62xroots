@@ -10,6 +10,28 @@
 </div>
 {% endblock %}
 
+{% block bottom_nav %}
+<a href="{% url 'growlog:dashboard' %}" class="bottom-nav__item">
+  <i class="bi bi-arrow-left"></i>
+  <span>Cultivos</span>
+</a>
+<a href="{% url 'growlog:quick' cultivo.slug %}"
+   class="bottom-nav__item {% if request.resolver_match.url_name == 'quick' %}active{% endif %}">
+  <i class="bi bi-lightning-charge-fill"></i>
+  <span>Quick</span>
+</a>
+<a href="{% url 'growlog:timeline' cultivo.slug %}"
+   class="bottom-nav__item {% if request.resolver_match.url_name == 'timeline' %}active{% endif %}">
+  <i class="bi bi-clock-history"></i>
+  <span>Timeline</span>
+</a>
+<a href="{% url 'growlog:tareas_list' cultivo.slug %}"
+   class="bottom-nav__item {% if request.resolver_match.url_name == 'tareas_list' %}active{% endif %}">
+  <i class="bi bi-check2-square"></i>
+  <span>Tareas</span>
+</a>
+{% endblock %}
+
 {% block extra_head %}
 <style>
   /* ── HEADER ── */

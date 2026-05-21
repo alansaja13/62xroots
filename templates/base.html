@@ -2,11 +2,12 @@
 <html lang="es" data-bs-theme="dark">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}GrowLog{% endblock %} — 62xroots</title>
   <link rel="icon" type="image/png" sizes="32x32" href="{% static 'growlog/logo.png' %}">
   <link rel="shortcut icon" href="{% static 'growlog/logo.png' %}">
   <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="{% static 'growlog/icons/icon-192x192.png' %}">
   <link rel="apple-touch-icon" sizes="152x152" href="{% static 'growlog/icons/icon-152x152.png' %}">
   <link rel="apple-touch-icon" sizes="192x192" href="{% static 'growlog/icons/icon-192x192.png' %}">
   <meta name="theme-color" content="#16110b">
@@ -617,6 +618,78 @@
     }
   </style>
 
+  <style>
+    /* ═══ SAFE AREA (iPhone notch / home bar) ═══════════════════ */
+    .navbar {
+      padding-top: max(14px, calc(10px + env(safe-area-inset-top)));
+      padding-left: max(28px, calc(16px + env(safe-area-inset-left)));
+      padding-right: max(28px, calc(16px + env(safe-area-inset-right)));
+    }
+    @media (max-width: 768px) {
+      .navbar {
+        padding-left: max(16px, calc(8px + env(safe-area-inset-left)));
+        padding-right: max(16px, calc(8px + env(safe-area-inset-right)));
+      }
+    }
+
+    /* ═══ BOTTOM NAV (mobile only) ══════════════════════════════ */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 1000;
+      background: var(--bg);
+      border-top: 1px solid var(--rule);
+      display: flex;
+      align-items: stretch;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .bottom-nav__item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 10px 4px;
+      min-height: 56px;
+      color: var(--fine);
+      text-decoration: none;
+      font-family: "Geist Mono", monospace;
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-weight: 600;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: color .12s, background .12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bottom-nav__item i {
+      font-size: 20px;
+      line-height: 1;
+    }
+    .bottom-nav__item:hover,
+    .bottom-nav__item:active { color: var(--cream); background: var(--card-alt); }
+    .bottom-nav__item.active { color: var(--green); }
+    .bottom-nav__item.active i { filter: drop-shadow(0 0 6px rgba(177,209,96,.5)); }
+
+    /* Push main content above bottom nav on mobile */
+    @media (max-width: 991px) {
+      main {
+        padding-bottom: calc(68px + env(safe-area-inset-bottom)) !important;
+      }
+    }
+
+    /* ═══ TOUCH TARGETS ══════════════════════════════════════════ */
+    @media (max-width: 991px) {
+      .btn-brand, .btn-ghost { min-height: 44px; padding: 12px 20px; }
+      .nav-link { min-height: 44px; }
+      .panel__action { min-height: 44px; display: inline-flex; align-items: center; }
+      a.pill { min-height: 36px; display: inline-flex; align-items: center; }
+    }
+  </style>
+
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -693,7 +766,7 @@
   </div>
 </nav>
 
-<main class="container-fluid" style="padding: 28px 40px 36px;">
+<main class="container-fluid" style="padding: 28px 40px 36px; padding-left: max(40px, calc(16px + env(safe-area-inset-left))); padding-right: max(40px, calc(16px + env(safe-area-inset-right)));">
   {% if messages %}
     {% for msg in messages %}
     <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
@@ -705,6 +778,18 @@
 
   {% block content %}{% endblock %}
 </main>
+
+{% if user.is_authenticated %}
+<nav class="bottom-nav d-lg-none" aria-label="Navegación principal">
+  {% block bottom_nav %}
+  <a href="{% url 'growlog:dashboard' %}"
+     class="bottom-nav__item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+    <i class="bi bi-grid-1x2"></i>
+    <span>Cultivos</span>
+  </a>
+  {% endblock %}
+</nav>
+{% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/htmx.org@1.9.12"></script>
