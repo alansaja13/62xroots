@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
 
+{% block bottom_nav %}
+<a href="{{ back_url }}" class="bottom-nav__item">
+  <i class="bi bi-arrow-left"></i>
+  <span>Volver</span>
+</a>
+{% endblock %}
+
 {% block extra_head %}
 <style>
   .del-wrap {

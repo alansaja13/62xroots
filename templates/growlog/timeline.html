@@ -11,6 +11,21 @@
 </div>
 {% endblock %}
 
+{% block bottom_nav %}
+<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="bottom-nav__item">
+  <i class="bi bi-arrow-left"></i>
+  <span>Volver</span>
+</a>
+<a href="{% url 'growlog:quick' cultivo.slug %}" class="bottom-nav__item">
+  <i class="bi bi-lightning-charge-fill"></i>
+  <span>Quick</span>
+</a>
+<a href="{% url 'growlog:tareas_list' cultivo.slug %}" class="bottom-nav__item">
+  <i class="bi bi-check2-square"></i>
+  <span>Tareas</span>
+</a>
+{% endblock %}
+
 {% block extra_head %}
 <style>
   .tl-back {

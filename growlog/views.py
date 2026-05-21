@@ -379,6 +379,11 @@ def cultivo_detail(request, slug):
             "dias_veg": cultivo.dias_veg_estimados,
             "dias_flora": cultivo.dias_flora_estimados,
         }
+    hoy = timezone.localdate()
+    followups_pendientes = cultivo.eventos.filter(
+        follow_up_fecha__isnull=False,
+        follow_up_resuelto=False,
+    ).order_by("follow_up_fecha")
     return render(request, "growlog/cultivo_detail.html", {
         "cultivo": cultivo, "ultima_medicion": ultima_medicion,
         "tareas_pendientes": tareas_pendientes, "tareas_completadas": tareas_completadas,
@@ -388,6 +393,8 @@ def cultivo_detail(request, slug):
         "fotoperiodo_activo": fotoperiodo_activo,
         "luz_estado_actual": luz_estado_actual,
         "progreso": progreso,
+        "followups_pendientes": followups_pendientes,
+        "hoy": hoy,
     })
 
 
@@ -743,6 +750,16 @@ def evento_eliminar(request, pk):
         "title": "Eliminar evento", "object_name": str(evento),
         "back_url": reverse("growlog:evento_editar", args=[pk]),
     })
+
+
+@login_required
+@staff_required
+@require_POST
+def evento_resolver_followup(request, pk):
+    evento = get_object_or_404(Evento, pk=pk)
+    evento.follow_up_resuelto = True
+    evento.save(update_fields=["follow_up_resuelto"])
+    return HttpResponse("")
 
 
 # ---------------------------------------------------------------------------

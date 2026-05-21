@@ -12,6 +12,21 @@
 </div>
 {% endblock %}
 
+{% block bottom_nav %}
+<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="bottom-nav__item">
+  <i class="bi bi-arrow-left"></i>
+  <span>Volver</span>
+</a>
+<a href="{% url 'growlog:quick' cultivo.slug %}" class="bottom-nav__item">
+  <i class="bi bi-lightning-charge-fill"></i>
+  <span>Quick</span>
+</a>
+<a href="{% url 'growlog:timeline' cultivo.slug %}" class="bottom-nav__item">
+  <i class="bi bi-clock-history"></i>
+  <span>Timeline</span>
+</a>
+{% endblock %}
+
 {% block extra_head %}
 <style>
   .canopy-page { max-width: 1200px; margin: 0 auto; }

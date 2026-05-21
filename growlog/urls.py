@@ -57,6 +57,7 @@ urlpatterns = [
     path("cultivo/<slug:slug>/evento/nuevo/", views.evento_crear, name="evento_crear"),
     path("evento/<int:pk>/editar/", views.evento_editar, name="evento_editar"),
     path("evento/<int:pk>/eliminar/", views.evento_eliminar, name="evento_eliminar"),
+    path("evento/<int:pk>/resolver-followup/", views.evento_resolver_followup, name="evento_resolver_followup"),
 
     # Riego
     path("cultivo/<slug:slug>/riego/nuevo/", views.riego_crear, name="riego_crear"),

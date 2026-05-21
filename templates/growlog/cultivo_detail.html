@@ -657,6 +657,54 @@
       </div>
     </div>
 
+    <!-- Follow-ups pendientes -->
+    {% if followups_pendientes %}
+    <div class="panel" id="followups-panel">
+      <div class="panel__head">
+        <div class="panel__head-left">
+          <span class="panel__sigil" style="color:var(--rust);">§</span>
+          <span class="label-eyebrow panel__title">seguimientos · pendientes</span>
+          <span class="mono c-fine" style="font-size:10px;">· {{ followups_pendientes|length }}</span>
+        </div>
+      </div>
+      <div id="followups-lista">
+        {% for ev in followups_pendientes %}
+        <div class="cd-tarea cd-tarea--followup {% if ev.follow_up_fecha <= hoy %}cd-tarea--urgente{% endif %}"
+             id="followup-row-{{ ev.pk }}">
+          <div style="flex:1; min-width:0;">
+            <div class="cd-tarea__title">
+              <span class="c-fine" style="font-size:9px; letter-spacing:.15em; text-transform:uppercase; margin-right:6px;">{{ ev.get_tipo_display }}</span>
+              {{ ev.follow_up_descripcion|default:ev.descripcion|truncatechars:55 }}
+            </div>
+            <div class="cd-tarea__meta">
+              <span {% if ev.follow_up_fecha < hoy %}class="cd-tarea__meta--urg"{% endif %}>
+                {{ ev.follow_up_fecha|date:"d/m" }}
+                {% if ev.follow_up_fecha < hoy %} · vencido{% elif ev.follow_up_fecha == hoy %} · hoy{% endif %}
+              </span>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
+            <a href="{% url 'growlog:evento_editar' ev.pk %}" class="c-fine" style="font-size:11px;" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </a>
+            {% if request.user.is_staff %}
+            <button
+              hx-post="{% url 'growlog:evento_resolver_followup' ev.pk %}"
+              hx-target="#followup-row-{{ ev.pk }}"
+              hx-swap="outerHTML"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              style="background:none; border:none; cursor:pointer; padding:4px; color:var(--fine); font-size:11px;"
+              title="Marcar resuelto">
+              <i class="bi bi-check-lg"></i>
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Tareas completadas — siempre en DOM para OOB -->
     <div class="panel" id="tareas-done-panel" {% if not tareas_completadas %}style="display:none"{% endif %}>
       <div class="panel__head" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#tareas-done">
