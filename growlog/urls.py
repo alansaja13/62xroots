@@ -53,6 +53,7 @@ urlpatterns = [
     path("tarea/<int:pk>/editar/", views.tarea_editar, name="tarea_editar"),
     path("tarea/<int:pk>/eliminar/", views.tarea_eliminar, name="tarea_eliminar"),
     path("tarea/<int:pk>/completar/", views.tarea_completar, name="tarea_completar"),
+    path("tarea/<int:pk>/descompletar/", views.tarea_descompletar, name="tarea_descompletar"),
 
     # Evento
     path("cultivo/<slug:slug>/evento/nuevo/", views.evento_crear, name="evento_crear"),
@@ -78,4 +79,9 @@ urlpatterns = [
     path("cultivo/<slug:slug>/medicion-ec/nueva/", views.medicion_ec_crear, name="medicion_ec_crear"),
     path("medicion-ec/<int:pk>/editar/", views.medicion_ec_editar, name="medicion_ec_editar"),
     path("medicion-ec/<int:pk>/eliminar/", views.medicion_ec_eliminar, name="medicion_ec_eliminar"),
+
+    # CambioFotoperiodo
+    path("cultivo/<slug:slug>/fotoperiodo/", views.fotoperiodo_list, name="fotoperiodo_list"),
+    path("fotoperiodo/<int:pk>/editar/", views.cambio_fotoperiodo_editar, name="cambio_fotoperiodo_editar"),
+    path("fotoperiodo/<int:pk>/eliminar/", views.cambio_fotoperiodo_eliminar, name="cambio_fotoperiodo_eliminar"),
 ]

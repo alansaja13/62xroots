@@ -407,13 +407,28 @@
   </div>
 
   <div class="cd-vital cd-vital--neutral">
-    <div class="label-eyebrow"><i class="bi bi-flower1"></i> Plantas activas</div>
-    <div class="cd-vital__val" style="margin-top: 10px; color: var(--cream);">{{ plantas_count }}</div>
-    <div class="cd-vital__status c-fine">· en cultivo</div>
+    <div class="label-eyebrow"><i class="bi bi-moisture"></i> EC / pH</div>
+    <div class="cd-vital__val{% if not ultima_medicion_ec %} cd-vital__val--empty{% endif %}" style="margin-top: 10px;">
+      {% if ultima_medicion_ec %}
+        {% if ultima_medicion_ec.ec %}{{ ultima_medicion_ec.ec }}<span class="cd-vital__unit">mS</span>
+        {% elif ultima_medicion_ec.ph %}{{ ultima_medicion_ec.ph }}<span class="cd-vital__unit">pH</span>
+        {% else %}—{% endif %}
+      {% else %}—{% endif %}
+    </div>
+    <div class="cd-vital__status">
+      {% if ultima_medicion_ec %}
+        · {% if ultima_medicion_ec.ph and ultima_medicion_ec.ec %}pH {{ ultima_medicion_ec.ph }}{% else %}{{ ultima_medicion_ec.get_tipo_display }}{% endif %}
+      {% else %}· sin datos{% endif %}
+    </div>
   </div>
 </div>
+{% if ultima_medicion %}
+<div class="mono c-fine" style="font-size:10px; text-align:right; margin-top:-12px; margin-bottom:18px; letter-spacing:.05em;">
+  última medición hace {{ ultima_medicion.timestamp|timesince }}
+</div>
+{% endif %}
 
-{% if luz_estado_actual or cultivo.lampara_modelo or cultivo.sustrato or cultivo.carpa_dimensiones or fotoperiodo_activo %}
+{% if luz_estado_actual or cultivo.lampara_modelo or cultivo.sustrato or cultivo.carpa_dimensiones or fotoperiodo_activo or request.user.is_staff %}
 <div class="cd-luz-setup-row">
 
   <!-- 1/4 NEON LUZ -->
@@ -427,12 +442,22 @@
   <!-- 3/4 SETUP STRIP -->
   <div class="cd-setup-strip">
     <span class="cd-setup-strip__sig">// setup</span>
-    {% if fotoperiodo_activo %}
     <div class="cd-setup-strip__item">
       <span class="cd-setup-strip__key">fotoperiodo</span>
-      <span class="cd-setup-strip__val">{{ fotoperiodo_activo.fotoperiodo }} · enc. {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }}</span>
+      {% if fotoperiodo_activo %}
+        {% if request.user.is_staff %}
+        <a href="{% url 'growlog:fotoperiodo_list' cultivo.slug %}" class="cd-setup-strip__val" style="text-decoration:none; color:inherit;">{{ fotoperiodo_activo.fotoperiodo }} · enc. {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }} <span class="c-fine" style="font-size:9px;">↗</span></a>
+        {% else %}
+        <span class="cd-setup-strip__val">{{ fotoperiodo_activo.fotoperiodo }} · enc. {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }}</span>
+        {% endif %}
+      {% else %}
+        {% if request.user.is_staff %}
+        <a href="{% url 'growlog:fotoperiodo_list' cultivo.slug %}" class="c-fine" style="font-size:11px; letter-spacing:.06em; text-decoration:none;">configurar →</a>
+        {% else %}
+        <span class="c-fine" style="font-size:11px;">no configurado</span>
+        {% endif %}
+      {% endif %}
     </div>
-    {% endif %}
     {% if cultivo.lampara_modelo %}
     <div class="cd-setup-strip__item">
       <span class="cd-setup-strip__key">lámpara</span>
@@ -726,7 +751,7 @@
       </div>
       <div id="tareas-done" class="collapse">
         {% for tarea in tareas_completadas %}
-        <div class="cd-tarea opacity-50" style="border-left-color: var(--fine);">
+        <div id="tarea-done-{{ tarea.pk }}" class="cd-tarea opacity-50" style="border-left-color: var(--fine);">
           <span style="display:inline-flex; align-items:center; justify-content:center;
                        width:16px; height:16px; background:var(--green); color:var(--bg);
                        margin-top:2px; flex-shrink:0; font-size:10px; font-weight:800;">✓</span>
@@ -741,6 +766,15 @@
             </div>
           </div>
           {% if request.user.is_staff %}
+          <button
+            hx-post="{% url 'growlog:tarea_descompletar' tarea.pk %}"
+            hx-target="#tarea-done-{{ tarea.pk }}"
+            hx-swap="delete"
+            title="Reabrir tarea"
+            style="background:transparent; border:none; cursor:pointer; color:var(--fine); font-size:11px; padding:4px;"
+            onmouseover="this.style.color='var(--honey)'" onmouseout="this.style.color='var(--fine)'">
+            <i class="bi bi-arrow-counterclockwise"></i>
+          </button>
           <a href="{% url 'growlog:tarea_editar' tarea.pk %}"
              style="color: var(--fine); font-size: 11px; text-decoration: none; padding: 4px;" title="Editar">
             <i class="bi bi-pencil"></i>

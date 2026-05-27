@@ -275,6 +275,18 @@ class MedicionECForm(forms.ModelForm):
         }
 
 
+class CambioFotoperiodoForm(forms.ModelForm):
+    class Meta:
+        model = CambioFotoperiodo
+        fields = ["fotoperiodo", "hora_lights_on", "fecha_inicio", "notas"]
+        widgets = {
+            "fotoperiodo": forms.TextInput(attrs={"class": "form-control", "placeholder": "12/12", "autofocus": True}),
+            "hora_lights_on": forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
+            "fecha_inicio": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Ej: Inicio de floración, semana 1..."}),
+        }
+
+
 class QuickEventoForm(forms.Form):
     tipo = forms.ChoiceField(
         choices=Evento.TIPO_CHOICES,
@@ -346,6 +358,7 @@ def dashboard(request):
 def cultivo_detail(request, slug):
     cultivo = get_object_or_404(Cultivo, slug=slug)
     ultima_medicion = cultivo.mediciones.first()
+    ultima_medicion_ec = cultivo.mediciones_ec.first()
     tareas_pendientes = cultivo.tareas.filter(completada=False).order_by("fecha_objetivo", "-prioridad")[:10]
     tareas_completadas = cultivo.tareas.filter(completada=True).order_by("-completada_en")[:5]
     ultimos_registros = _build_timeline(cultivo, limit=8)
@@ -395,6 +408,7 @@ def cultivo_detail(request, slug):
         "progreso": progreso,
         "followups_pendientes": followups_pendientes,
         "hoy": hoy,
+        "ultima_medicion_ec": ultima_medicion_ec,
     })
 
 
@@ -665,6 +679,19 @@ def tarea_completar(request, pk):
     tarea.save()
     if request.htmx:
         return render(request, "growlog/partials/tarea_completar_oob.html", {"tarea": tarea})
+    return redirect("growlog:cultivo_detail", tarea.cultivo.slug)
+
+
+@require_POST
+@login_required
+@staff_required
+def tarea_descompletar(request, pk):
+    tarea = get_object_or_404(Tarea, pk=pk)
+    tarea.completada = False
+    tarea.completada_en = None
+    tarea.save()
+    if request.htmx:
+        return render(request, "growlog/partials/tarea_descompletar_oob.html", {"tarea": tarea})
     return redirect("growlog:cultivo_detail", tarea.cultivo.slug)
 
 
@@ -963,6 +990,77 @@ def medicion_ec_eliminar(request, pk):
     return render(request, "growlog/crud_delete.html", {
         "title": "Eliminar medición EC/pH", "object_name": str(medicion),
         "back_url": reverse("growlog:medicion_ec_editar", args=[pk]),
+    })
+
+
+# ---------------------------------------------------------------------------
+# CambioFotoperiodo
+# ---------------------------------------------------------------------------
+
+@login_required
+@staff_required
+def fotoperiodo_list(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
+    historial = cultivo.cambios_fotoperiodo.order_by("-fecha_inicio")
+
+    if request.method == "POST":
+        form = CambioFotoperiodoForm(request.POST)
+        if form.is_valid():
+            cambio = form.save(commit=False)
+            cambio.cultivo = cultivo
+            try:
+                cambio.full_clean()
+                cambio.save()
+                messages.success(request, f"Fotoperiodo {cambio.fotoperiodo} guardado.")
+                return redirect("growlog:fotoperiodo_list", slug=slug)
+            except Exception as e:
+                form.add_error(None, str(e))
+    else:
+        form = CambioFotoperiodoForm(initial={"fecha_inicio": timezone.localdate()})
+
+    return render(request, "growlog/fotoperiodo.html", {
+        "cultivo": cultivo,
+        "historial": historial,
+        "form": form,
+    })
+
+
+@login_required
+@staff_required
+def cambio_fotoperiodo_editar(request, pk):
+    cambio = get_object_or_404(CambioFotoperiodo, pk=pk)
+    cultivo = cambio.cultivo
+    form = CambioFotoperiodoForm(request.POST or None, instance=cambio)
+    if form.is_valid():
+        try:
+            obj = form.save(commit=False)
+            obj.full_clean()
+            obj.save()
+            messages.success(request, "Fotoperiodo actualizado.")
+            return redirect("growlog:fotoperiodo_list", slug=cultivo.slug)
+        except Exception as e:
+            form.add_error(None, str(e))
+    return render(request, "growlog/crud_form.html", {
+        "form": form,
+        "title": f"Editar fotoperiodo — {cultivo.nombre}",
+        "back_url": reverse("growlog:fotoperiodo_list", slug=cultivo.slug),
+        "delete_url": reverse("growlog:cambio_fotoperiodo_eliminar", args=[pk]),
+    })
+
+
+@login_required
+@staff_required
+def cambio_fotoperiodo_eliminar(request, pk):
+    cambio = get_object_or_404(CambioFotoperiodo, pk=pk)
+    cultivo = cambio.cultivo
+    if request.method == "POST":
+        cambio.delete()
+        messages.success(request, "Registro de fotoperiodo eliminado.")
+        return redirect("growlog:fotoperiodo_list", slug=cultivo.slug)
+    return render(request, "growlog/crud_delete.html", {
+        "title": f"Eliminar fotoperiodo {cambio.fotoperiodo}",
+        "object_name": f"{cambio.fotoperiodo} · desde {cambio.fecha_inicio}",
+        "back_url": reverse("growlog:cambio_fotoperiodo_editar", args=[pk]),
     })
 
 

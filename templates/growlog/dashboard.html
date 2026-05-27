@@ -251,7 +251,7 @@
       </div>
       <div class="cultivo-card__foot">
         <span class="cultivo-card__upd">
-          {% if m %}med. {{ m.timestamp|date:"d/m H:i" }}{% else %}sin mediciones{% endif %}
+          {% if m %}hace {{ m.timestamp|timesince }}{% else %}sin mediciones{% endif %}
         </span>
         <span class="cultivo-card__open">abrir →</span>
       </div>

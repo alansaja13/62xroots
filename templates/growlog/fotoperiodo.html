@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block title %}Fotoperiodo · {{ cultivo.nombre }}{% endblock %}
+
+{% block crumb %}
+<div class="nav-crumb d-none d-lg-flex">
+  <span class="nav-crumb__item">mis cultivos</span>
+  <span class="nav-crumb__sep">/</span>
+  <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="nav-crumb__item" style="text-decoration:none;">{{ cultivo.nombre }}</a>
+  <span class="nav-crumb__sep">/</span>
+  <span class="nav-crumb__item nav-crumb__item--last">fotoperiodo</span>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .tl-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "Geist Mono", monospace; font-size: 11px;
+    letter-spacing: .1em; color: var(--cream-soft);
+    text-decoration: none; margin-bottom: 20px;
+  }
+  .tl-back:hover { color: var(--green); }
+
+  .tl-header {
+    display: flex; align-items: baseline; gap: 18px;
+    margin-bottom: 22px; padding-bottom: 18px;
+    border-bottom: 1px solid var(--rule); flex-wrap: wrap;
+  }
+  .tl-title {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 48px; font-weight: 700; letter-spacing: -.022em;
+    line-height: .95; color: var(--cream); margin: 0;
+  }
+  .tl-title__accent { color: var(--honey); font-style: italic; }
+
+  /* Preset buttons */
+  .fp-presets {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  .fp-preset {
+    font-family: "Geist Mono", monospace; font-size: 11px;
+    letter-spacing: .12em; text-transform: uppercase;
+    padding: 8px 16px; border: 1px solid var(--rule);
+    background: transparent; color: var(--cream-soft);
+    cursor: pointer; transition: border-color .12s, color .12s, background .12s;
+  }
+  .fp-preset:hover { border-color: var(--honey); color: var(--honey); background: rgba(212,146,58,.06); }
+  .fp-preset--flip { border-color: var(--plum); color: var(--plum); }
+  .fp-preset--flip:hover { background: rgba(179,132,216,.1); border-color: var(--plum); }
+
+  /* Form layout */
+  .fp-form-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  }
+  @media (max-width: 600px) { .fp-form-grid { grid-template-columns: 1fr; } }
+
+  /* History table */
+  .fp-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .fp-table thead th {
+    font-family: "Geist Mono", monospace; font-size: 9.5px;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--fine); font-weight: 600;
+    background: var(--card-alt); border-bottom: 1px solid var(--rule);
+    padding: 10px 16px; text-align: left; white-space: nowrap;
+  }
+  .fp-table tbody td {
+    padding: 12px 16px; border-bottom: 1px solid var(--rule-soft);
+    vertical-align: middle; color: var(--cream);
+  }
+  .fp-table tbody tr:last-child td { border-bottom: none; }
+  .fp-table tbody tr:hover td { background: rgba(255,255,255,.012); }
+  .fp-table tbody tr:first-child td { /* current active */ }
+
+  .fp-active-badge {
+    font-family: "Geist Mono", monospace; font-size: 9px;
+    letter-spacing: .14em; text-transform: uppercase;
+    padding: 3px 8px; border: 1px solid var(--green);
+    color: var(--green); background: var(--green-wash);
+    white-space: nowrap;
+  }
+  .fp-valor {
+    font-family: "Geist Mono", monospace; font-size: 16px;
+    font-weight: 700; color: var(--cream); letter-spacing: .04em;
+  }
+  .fp-valor--flip { color: var(--plum); }
+  .fp-valor--veg  { color: var(--green); }
+  .fp-fecha {
+    font-family: "Geist Mono", monospace; font-size: 11px; color: var(--fine);
+  }
+  .fp-hora {
+    font-family: "Geist Mono", monospace; font-size: 11px; color: var(--cream-soft);
+  }
+
+  .fp-empty {
+    text-align: center; padding: 48px 24px;
+    color: var(--fine); font-family: "Geist Mono", monospace; font-size: 12px;
+  }
+  .fp-empty__icon { font-size: 28px; opacity: .3; display: block; margin-bottom: 14px; }
+
+  .fp-section-title {
+    font-family: "Geist Mono", monospace; font-size: 10px;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--fine); margin-bottom: 12px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="tl-back">
+  <i class="bi bi-chevron-left"></i> {{ cultivo.nombre }}
+</a>
+
+<div class="tl-header">
+  <h1 class="tl-title">fotoperiodo <span class="tl-title__accent">// {{ cultivo.nombre }}</span></h1>
+</div>
+
+<!-- NUEVO REGISTRO -->
+<div class="panel" style="margin-bottom: 24px;">
+  <div class="fp-section-title">// registrar cambio</div>
+
+  <!-- Presets -->
+  <div class="fp-presets">
+    <span class="label-eyebrow" style="align-self:center;">accesos rápidos:</span>
+    <button type="button" class="fp-preset fp-preset--veg" onclick="setPreset('20/4','06:00')">
+      20/4 <span style="opacity:.5; font-size:9px;">veg+</span>
+    </button>
+    <button type="button" class="fp-preset fp-preset--veg" onclick="setPreset('18/6','06:00')">
+      18/6 <span style="opacity:.5; font-size:9px;">veg</span>
+    </button>
+    <button type="button" class="fp-preset fp-preset--flip" onclick="setPreset('12/12','06:00')">
+      12/12 <span style="opacity:.5; font-size:9px;">flip</span>
+    </button>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger mono" style="font-size:12px; margin-bottom:14px;">
+      {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+
+    <div class="fp-form-grid">
+      <div>
+        <label class="form-label mono" style="font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--fine);">
+          Fotoperiodo (luz/oscuridad)
+        </label>
+        {{ form.fotoperiodo }}
+        {% if form.fotoperiodo.errors %}
+        <div style="color:var(--rust); font-size:11px; margin-top:4px;">{{ form.fotoperiodo.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div>
+        <label class="form-label mono" style="font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--fine);">
+          Encendido (hora)
+        </label>
+        {{ form.hora_lights_on }}
+        {% if form.hora_lights_on.errors %}
+        <div style="color:var(--rust); font-size:11px; margin-top:4px;">{{ form.hora_lights_on.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div>
+        <label class="form-label mono" style="font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--fine);">
+          Fecha de inicio
+        </label>
+        {{ form.fecha_inicio }}
+        {% if form.fecha_inicio.errors %}
+        <div style="color:var(--rust); font-size:11px; margin-top:4px;">{{ form.fecha_inicio.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div>
+        <label class="form-label mono" style="font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--fine);">
+          Notas <span style="opacity:.5;">(opcional)</span>
+        </label>
+        {{ form.notas }}
+      </div>
+    </div>
+
+    <div style="margin-top: 16px;">
+      <button type="submit" class="btn-brand">
+        <i class="bi bi-check-lg"></i> guardar
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- HISTORIAL -->
+<div class="fp-section-title">// historial</div>
+<div class="panel" style="overflow:hidden;">
+  {% if historial %}
+  <table class="fp-table">
+    <thead>
+      <tr>
+        <th>fotoperiodo</th>
+        <th>enc. a las</th>
+        <th>desde</th>
+        <th>notas</th>
+        <th style="width:80px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cambio in historial %}
+      <tr>
+        <td>
+          <span class="fp-valor {% if cambio.fotoperiodo == '12/12' %}fp-valor--flip{% elif cambio.fotoperiodo == '18/6' or cambio.fotoperiodo == '20/4' %}fp-valor--veg{% endif %}">
+            {{ cambio.fotoperiodo }}
+          </span>
+          {% if forloop.first %}
+          <span class="fp-active-badge" style="margin-left:8px;">activo</span>
+          {% endif %}
+        </td>
+        <td><span class="fp-hora">{{ cambio.hora_lights_on|time:"H:i" }}</span></td>
+        <td><span class="fp-fecha">{{ cambio.fecha_inicio|date:"d/m/Y" }}</span></td>
+        <td class="c-fine" style="font-size:11.5px;">
+          {% if cambio.notas %}{{ cambio.notas|truncatechars:60 }}{% else %}—{% endif %}
+        </td>
+        <td style="text-align:right;">
+          <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <a href="{% url 'growlog:cambio_fotoperiodo_editar' cambio.pk %}" class="c-fine" style="font-size:12px;" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <a href="{% url 'growlog:cambio_fotoperiodo_eliminar' cambio.pk %}" class="c-fine" style="font-size:12px;" title="Eliminar">
+              <i class="bi bi-trash"></i>
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="fp-empty">
+    <i class="bi bi-sun fp-empty__icon"></i>
+    Todavía no hay registros de fotoperiodo.<br>
+    <span style="margin-top:6px; display:block;">Usá el formulario de arriba para agregar el primero.</span>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function setPreset(fp, hora) {
+  document.querySelector('[name="fotoperiodo"]').value = fp;
+  document.querySelector('[name="hora_lights_on"]').value = hora;
+  document.querySelector('[name="fotoperiodo"]').focus();
+}
+</script>
+
+{% endblock %}

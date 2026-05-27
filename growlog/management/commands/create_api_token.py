@@ -27,5 +27,5 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f'Token creado para {username}:'))
         self.stdout.write(raw_token)
         self.stdout.write(self.style.WARNING(
-            '⚠  Copiá este token ahora — no puede recuperarse. Borralo de los logs de Railway.'
+            'ATENCION: Copia este token ahora, no puede recuperarse. Borralo de los logs de Railway.'
         ))

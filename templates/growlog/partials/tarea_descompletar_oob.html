@@ -1,0 +1,4 @@
+{# hx-target deletes #tarea-done-{pk}. Este OOB lo mueve de vuelta a pendientes. #}
+<div hx-swap-oob="afterbegin:#tareas-lista">
+{% include "growlog/partials/tarea_row.html" %}
+</div>
