@@ -72,6 +72,7 @@
   .tl-filter--med.tl-filter--active    { border-color: var(--slate); background: rgba(121,164,212,.08); }
   .tl-filter--riego.tl-filter--active  { border-color: var(--green); background: var(--green-wash); }
   .tl-filter--evento.tl-filter--active { border-color: var(--honey); background: rgba(212,146,58,.08); }
+  .tl-filter--ec.tl-filter--active     { border-color: var(--plum);  background: rgba(179,132,216,.08); }
   .tl-filter__label {
     font-family: "Geist Mono", monospace; font-size: 10px; font-weight: 700;
     letter-spacing: .18em; text-transform: uppercase; color: var(--cream-soft);
@@ -134,6 +135,10 @@
     <span class="tl-filter__label">evento</span>
     <span class="tl-filter__count">{{ counts.evento }}</span>
   </a>
+  <a href="?tipo=medicion_ec" class="tl-filter tl-filter--ec {% if tipo_activo == 'medicion_ec' %}tl-filter--active{% endif %}">
+    <span class="tl-filter__label">ec/ph</span>
+    <span class="tl-filter__count">{{ counts.medicion_ec }}</span>
+  </a>
 </div>
 
 <!-- TABLE -->
@@ -162,6 +167,8 @@
             <span class="tc tc--med">med</span>
           {% elif reg.tipo == 'riego' %}
             <span class="tc tc--riego">riego</span>
+          {% elif reg.tipo == 'medicion_ec' %}
+            <span class="tc tc--med" style="border-left-color:var(--plum);color:var(--plum);background:rgba(179,132,216,.08);">ec/ph</span>
           {% else %}
             <span class="tc tc--evento">{{ reg.obj.tipo }}</span>
           {% endif %}
@@ -174,6 +181,8 @@
             {% if reg.obj.volumen_por_planta_ml %}
               <span class="c-fine" style="font-weight:400; font-size:11px; margin-left:6px;">({{ reg.obj.volumen_por_planta_ml }}/planta)</span>
             {% endif %}
+          {% elif reg.tipo == 'medicion_ec' %}
+            <span style="font-size:14px;">{{ reg.obj.get_tipo_display }}</span>
           {% else %}
             <span class="c-honey">{{ reg.obj.get_tipo_display|upper }}</span>
           {% endif %}
@@ -185,6 +194,10 @@
             {% if reg.obj.ph_agua %}<span>pH <span class="c-cream">{{ reg.obj.ph_agua }}</span></span>{% endif %}
             {% if reg.obj.ec_solucion %}<span class="c-fine"> · </span><span>EC <span class="c-cream">{{ reg.obj.ec_solucion }}</span></span>{% endif %}
             {% if reg.obj.runoff_observado %}<span class="c-fine"> · </span><span class="c-green">runoff ✓</span>{% endif %}
+          {% elif reg.tipo == 'medicion_ec' %}
+            {% if reg.obj.ph %}<span>pH <span class="c-cream">{{ reg.obj.ph }}</span></span>{% endif %}
+            {% if reg.obj.ec %}<span class="c-fine">{% if reg.obj.ph %} · {% endif %}</span><span>EC <span class="c-cream">{{ reg.obj.ec }}</span> mS/cm</span>{% endif %}
+            {% if reg.obj.temp_agua %}<span class="c-fine"> · </span><span>{{ reg.obj.temp_agua }}°C</span>{% endif %}
           {% else %}
             <span class="c-cream">{{ reg.obj.descripcion|truncatechars:70 }}</span>
             {% if reg.obj.follow_up_fecha and not reg.obj.follow_up_resuelto %}
@@ -206,6 +219,8 @@
               </span>
             {% endif %}
             {% if reg.obj.notas %}<div style="margin-top:4px; color:var(--cream-soft); font-style:italic;">{{ reg.obj.notas }}</div>{% endif %}
+          {% elif reg.tipo == 'medicion_ec' and reg.obj.notas %}
+            <span style="font-style:italic; color:var(--cream-soft);">"{{ reg.obj.notas }}"</span>
           {% elif reg.tipo == 'evento' %}
             {% if reg.obj.plantas_afectadas.exists %}
               <span style="display:inline-flex; gap:5px; flex-wrap:wrap;">
@@ -221,6 +236,8 @@
             <a href="{% url 'growlog:riego_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
           {% elif reg.tipo == 'evento' %}
             <a href="{% url 'growlog:evento_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
+          {% elif reg.tipo == 'medicion_ec' %}
+            <a href="{% url 'growlog:medicion_ec_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
           {% endif %}
         </td>
       </tr>

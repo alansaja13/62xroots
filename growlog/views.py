@@ -487,7 +487,7 @@ def timeline(request, slug):
     cultivo = get_object_or_404(Cultivo, slug=slug)
     tipo = request.GET.get("tipo", "")
     todos = _build_timeline(cultivo, limit=200)
-    VALID_TIPOS = {"medicion", "riego", "evento"}
+    VALID_TIPOS = {"medicion", "riego", "evento", "medicion_ec"}
     if tipo in VALID_TIPOS:
         registros = [r for r in todos if r["tipo"] == tipo]
     else:
@@ -1347,6 +1347,8 @@ def _build_timeline(cultivo, limit=50):
         items.append({"tipo": "riego", "ts": r.timestamp, "obj": r, "icon": "bi-droplet-fill"})
     for e in cultivo.eventos.all()[:fetch]:
         items.append({"tipo": "evento", "ts": e.timestamp, "obj": e, "icon": "bi-calendar-event"})
+    for ec in cultivo.mediciones_ec.all()[:fetch]:
+        items.append({"tipo": "medicion_ec", "ts": ec.timestamp, "obj": ec, "icon": "bi-moisture"})
     items.sort(key=lambda x: x["ts"], reverse=True)
     return items[:limit]
 

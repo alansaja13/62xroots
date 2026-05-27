@@ -12,7 +12,8 @@ from django.views.decorators.http import require_GET, require_POST
 
 from .models import (
     APIToken, CambioFotoperiodo, CanopySnapshot, ColaPosicion,
-    Cultivo, Evento, MedicionAmbiente, Planta, POSICION_TENT_COORDS, Tarea,
+    Cultivo, Evento, MedicionAmbiente, Nutriente, NutrienteAplicado,
+    Planta, POSICION_TENT_COORDS, Riego, Tarea,
 )
 
 EVENTO_TIPOS = {c[0] for c in Evento.TIPO_CHOICES}
@@ -206,14 +207,122 @@ def cultivo_detail(request, slug):
     return api_ok(data)
 
 
-@require_GET
+@csrf_exempt
 @require_token
 def cultivo_riegos(request, slug):
     c, err = _get_cultivo(slug, request.api_user)
     if err:
         return err
-    riegos = c.riegos.prefetch_related('nutrientes_aplicados__nutriente').all()
-    return api_ok([_riego(r) for r in riegos])
+
+    if request.method == 'GET':
+        riegos = c.riegos.prefetch_related('nutrientes_aplicados__nutriente').all()
+        return api_ok([_riego(r) for r in riegos])
+
+    if request.method == 'POST':
+        rl = _write_rate_limit(request)
+        if rl:
+            return rl
+        body, err = _parse_json_body(request)
+        if err:
+            return err
+
+        try:
+            volumen_total_ml = int(body.get('volumen_total_ml', ''))
+            if volumen_total_ml <= 0:
+                raise ValueError
+        except (ValueError, TypeError):
+            return api_error('volumen_total_ml es requerido y debe ser entero positivo')
+
+        volumen_por_planta_ml = None
+        if body.get('volumen_por_planta_ml') is not None:
+            try:
+                volumen_por_planta_ml = int(body['volumen_por_planta_ml'])
+                if volumen_por_planta_ml <= 0:
+                    raise ValueError
+            except (ValueError, TypeError):
+                return api_error('volumen_por_planta_ml debe ser entero positivo')
+
+        ph_agua = None
+        if body.get('ph_agua') is not None:
+            try:
+                ph_agua = Decimal(str(body['ph_agua']))
+                if not (0 <= float(ph_agua) <= 14):
+                    return api_error('ph_agua fuera de rango (0-14)')
+            except (InvalidOperation, TypeError):
+                return api_error('ph_agua debe ser un número')
+
+        ec_solucion = None
+        if body.get('ec_solucion') is not None:
+            try:
+                ec_solucion = Decimal(str(body['ec_solucion']))
+                if float(ec_solucion) < 0:
+                    return api_error('ec_solucion debe ser positivo')
+            except (InvalidOperation, TypeError):
+                return api_error('ec_solucion debe ser un número')
+
+        runoff_observado = bool(body.get('runoff_observado', False))
+        notas = str(body.get('notas', ''))[:500]
+
+        nutrientes_raw = body.get('nutrientes', [])
+        if not isinstance(nutrientes_raw, list):
+            return api_error('nutrientes debe ser una lista')
+        nutrientes_validated = []
+        for item in nutrientes_raw:
+            try:
+                nutriente_id = int(item['nutriente_id'])
+                dosis = Decimal(str(item['dosis_g_por_litro']))
+            except (KeyError, ValueError, TypeError, InvalidOperation):
+                return api_error('Cada nutriente requiere nutriente_id (int) y dosis_g_por_litro (float)')
+            try:
+                nutriente = Nutriente.objects.get(pk=nutriente_id)
+            except Nutriente.DoesNotExist:
+                return api_error(f'nutriente_id {nutriente_id} no existe')
+            nutrientes_validated.append((nutriente, dosis))
+
+        riego = Riego.objects.create(
+            cultivo=c,
+            volumen_total_ml=volumen_total_ml,
+            volumen_por_planta_ml=volumen_por_planta_ml,
+            ph_agua=ph_agua,
+            ec_solucion=ec_solucion,
+            runoff_observado=runoff_observado,
+            notas=notas,
+            creado_por=request.api_user,
+        )
+        if nutrientes_validated:
+            NutrienteAplicado.objects.bulk_create([
+                NutrienteAplicado(riego=riego, nutriente=n, dosis_g_por_litro=d)
+                for n, d in nutrientes_validated
+            ])
+        return api_ok(_riego(riego), status=201)
+
+    return api_error('Method not allowed', 405)
+
+
+@csrf_exempt
+@require_token
+def cultivo_riego_detail(request, slug, riego_id):
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
+
+    try:
+        riego = c.riegos.prefetch_related('nutrientes_aplicados__nutriente').get(pk=riego_id)
+    except Riego.DoesNotExist:
+        return api_error('Riego no encontrado', 404)
+
+    if request.method == 'GET':
+        return api_ok(_riego(riego))
+
+    if request.method == 'DELETE':
+        rl = _write_rate_limit(request)
+        if rl:
+            return rl
+        riego_id_deleted = riego.id
+        riego.delete()
+        return api_ok({'deleted': riego_id_deleted})
+
+    return api_error('Method not allowed', 405)
 
 
 @csrf_exempt

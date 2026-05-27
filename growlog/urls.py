@@ -9,6 +9,7 @@ urlpatterns = [
     path("api/v1/cultivos/", api_views.cultivos_list),
     path("api/v1/cultivos/<slug:slug>/", api_views.cultivo_detail),
     path("api/v1/cultivos/<slug:slug>/riegos/", api_views.cultivo_riegos),
+    path("api/v1/cultivos/<slug:slug>/riegos/<int:riego_id>/", api_views.cultivo_riego_detail),
     path("api/v1/cultivos/<slug:slug>/mediciones/", api_views.cultivo_mediciones),
     path("api/v1/cultivos/<slug:slug>/eventos/", api_views.cultivo_eventos),
     path("api/v1/cultivos/<slug:slug>/tareas/", api_views.cultivo_tareas),

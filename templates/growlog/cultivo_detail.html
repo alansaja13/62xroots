@@ -525,6 +525,8 @@
                 <span class="tc tc--med">med</span>
               {% elif reg.tipo == 'riego' %}
                 <span class="tc tc--riego">riego</span>
+              {% elif reg.tipo == 'medicion_ec' %}
+                <span class="tc tc--med" style="border-left-color:var(--plum);color:var(--plum);background:rgba(179,132,216,.08);">ec/ph</span>
               {% else %}
                 <span class="tc tc--evento">{{ reg.obj.tipo }}</span>
               {% endif %}
@@ -534,6 +536,8 @@
                 <span style="font-size:14px;">{{ reg.obj.temperatura_c }}°C <span class="c-fine">/</span> {{ reg.obj.humedad_relativa }}%</span>
               {% elif reg.tipo == 'riego' %}
                 <span style="font-size:14px;">{{ reg.obj.volumen_total_ml }} ml</span>
+              {% elif reg.tipo == 'medicion_ec' %}
+                <span style="font-size:14px;">{{ reg.obj.get_tipo_display }}</span>
               {% else %}
                 <span class="c-honey">{{ reg.obj.get_tipo_display|upper }}</span>
               {% endif %}
@@ -553,6 +557,10 @@
                     {% endfor %}
                   </span>
                 {% endif %}
+              {% elif reg.tipo == 'medicion_ec' %}
+                {% if reg.obj.ph %}<span>pH <span class="c-cream">{{ reg.obj.ph }}</span></span>{% endif %}
+                {% if reg.obj.ec %}<span class="c-fine">{% if reg.obj.ph %} · {% endif %}</span><span>EC <span class="c-cream">{{ reg.obj.ec }}</span> mS/cm</span>{% endif %}
+                {% if reg.obj.temp_agua %}<span class="c-fine"> · </span><span>{{ reg.obj.temp_agua }}°C agua</span>{% endif %}
               {% else %}
                 <span class="c-cream">{{ reg.obj.descripcion|truncatechars:60 }}</span>
               {% endif %}
@@ -562,6 +570,8 @@
                 <a href="{% url 'growlog:riego_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
               {% elif reg.tipo == 'evento' %}
                 <a href="{% url 'growlog:evento_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
+              {% elif reg.tipo == 'medicion_ec' %}
+                <a href="{% url 'growlog:medicion_ec_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
               {% endif %}
             </td>
           </tr>
