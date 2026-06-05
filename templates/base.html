@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="{% static 'growlog/icons/icon-192x192.png' %}">
   <link rel="apple-touch-icon" sizes="152x152" href="{% static 'growlog/icons/icon-152x152.png' %}">
   <link rel="apple-touch-icon" sizes="192x192" href="{% static 'growlog/icons/icon-192x192.png' %}">
-  <meta name="theme-color" content="#16110b">
+  <meta name="theme-color" content="#0e120c">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="62xROOTS">
@@ -20,28 +20,28 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@300..700&family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300..800&family=JetBrains+Mono:wght@300..700&display=swap" rel="stylesheet">
 
   <style>
-    /* ═══ FOREST BRUTALIST · DESIGN TOKENS ═══════════════════ */
+    /* ═══ VERDE · DESIGN TOKENS ══════════════════════════════ */
     :root {
-      --bg:       #16110b;
-      --bg-alt:   #1d1610;
-      --card:     #221c14;
-      --card-alt: #2a2218;
-      --rule:     #3a2f1f;
-      --rule-soft:#28201a;
-      --cream:    #f3e9d1;
-      --cream-soft:#bfb091;
-      --fine:     #7a6c52;
+      --bg:       #0e120c;
+      --bg-alt:   #161a12;
+      --card:     #1c2218;
+      --card-alt: #232a1f;
+      --rule:     #2a3023;
+      --rule-soft:#1a201a;
+      --cream:    #ece2c8;
+      --cream-soft:#94a586;
+      --fine:     #525e48;
 
-      --green:    #b1d160;
-      --green-deep:#5a7929;
-      --green-wash:rgba(177,209,96,.08);
-      --honey:    #d4923a;
-      --rust:     #d96a3d;
+      --green:    #8aab68;
+      --green-deep:#4a5f30;
+      --green-wash:rgba(138,171,104,.10);
+      --honey:    #d49a3e;
+      --rust:     #c46a3e;
       --plum:     #b384d8;
-      --slate:    #79a4d4;
+      --slate:    #6a8aa8;
 
       /* Bootstrap dark overrides */
       --bs-body-bg: var(--bg);
@@ -54,34 +54,33 @@
     html, body { background: var(--bg); }
     body {
       color: var(--cream);
-      font-family: "Geist", system-ui, -apple-system, sans-serif;
+      font-family: "Manrope", system-ui, -apple-system, sans-serif;
       font-size: 14px;
       background:
-        radial-gradient(circle at 0% 0%, rgba(177,209,96,.04) 0, transparent 40%),
-        radial-gradient(circle at 100% 100%, rgba(217,106,61,.03) 0, transparent 35%),
+        radial-gradient(circle at 0% 0%, rgba(138,171,104,.05) 0, transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(196,106,62,.035) 0, transparent 35%),
         var(--bg);
     }
 
     /* ═══ TYPOGRAPHY ═════════════════════════════════════════ */
     .display-b {
-      font-family: "Bricolage Grotesque", "Geist", sans-serif;
-      font-variation-settings: "wdth" 85, "opsz" 96;
-      font-weight: 700;
-      letter-spacing: -.022em;
-      line-height: .95;
+      font-family: "Manrope", system-ui, sans-serif;
+      font-weight: 800;
+      letter-spacing: -.035em;
+      line-height: .92;
       color: var(--cream);
     }
     .display-b--italic { font-style: italic; }
 
     .mono {
-      font-family: "Geist Mono", ui-monospace, "Consolas", monospace;
+      font-family: "JetBrains Mono", ui-monospace, "Consolas", monospace;
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum";
     }
-    .num { font-family: "Geist Mono", monospace; font-variant-numeric: tabular-nums; }
+    .num { font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums; }
 
     .label-eyebrow {
-      font-family: "Geist Mono", monospace;
+      font-family: "JetBrains Mono", monospace;
       font-size: 10px;
       letter-spacing: .22em;
       text-transform: uppercase;
@@ -102,16 +101,15 @@
     .nav-brand img {
       width: 38px; height: 38px; display: block;
       border-radius: 50%;
-      filter: drop-shadow(0 0 8px rgba(177,209,96,.5));
+      filter: drop-shadow(0 0 8px rgba(138,171,104,.5));
     }
     .nav-brand__title {
-      font-family: "Bricolage Grotesque", sans-serif;
-      font-variation-settings: "wdth" 85, "opsz" 96;
-      font-size: 20px; font-weight: 700; letter-spacing: .02em;
+      font-family: "Manrope", sans-serif;
+      font-size: 20px; font-weight: 800; letter-spacing: -.02em;
       color: var(--cream); line-height: 1;
     }
     .nav-brand__sub {
-      font-family: "Geist Mono", monospace;
+      font-family: "JetBrains Mono", monospace;
       font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
       color: var(--fine); display: block; margin-top: 4px;
     }
@@ -119,9 +117,9 @@
       display: flex; align-items: center; gap: 10px;
       margin-left: 18px; padding-left: 18px; border-left: 1px solid var(--rule);
     }
-    .nav-crumb__sep { color: var(--fine); font-family: "Geist Mono", monospace; }
+    .nav-crumb__sep { color: var(--fine); font-family: "JetBrains Mono", monospace; }
     .nav-crumb__item {
-      font-family: "Geist Mono", monospace; font-size: 11px;
+      font-family: "JetBrains Mono", monospace; font-size: 11px;
       color: var(--cream-soft); white-space: nowrap;
     }
     .nav-crumb__item--last { color: var(--cream); font-weight: 600; }
@@ -130,27 +128,28 @@
       padding: 8px 14px !important;
       display: inline-flex !important; align-items: center; gap: 8px;
       color: var(--cream-soft) !important;
-      font-family: "Geist Mono", monospace;
-      font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
-      font-weight: 500;
+      font-family: "Manrope", sans-serif;
+      font-size: 12px; letter-spacing: .04em;
+      font-weight: 600;
       background: transparent;
       border: 1px solid transparent;
-      border-radius: 0;
-      transition: background .12s, border-color .12s;
+      border-radius: 999px;
+      transition: background .12s, border-color .12s, color .12s;
     }
     .nav-clock {
       display: flex; flex-direction: column; align-items: flex-end;
-      font-family: "Geist Mono", monospace; line-height: 1.25;
+      font-family: "JetBrains Mono", monospace; line-height: 1.25;
       padding: 4px 14px; border-left: 1px solid var(--rule);
     }
     .nav-clock__date { font-size: 9px; color: var(--fine); letter-spacing: .18em; text-transform: uppercase; }
     .nav-clock__time { font-size: 15px; color: var(--cream-soft); font-variant-numeric: tabular-nums; font-weight: 600; }
     .nav-link:hover { color: var(--cream) !important; background: var(--card-alt); border-color: var(--rule); }
-    .nav-link.active { color: var(--cream) !important; background: var(--card-alt); border-color: var(--rule); font-weight: 600; }
+    .nav-link.active { color: var(--green) !important; background: var(--card-alt); border-color: var(--green-deep); font-weight: 700; }
 
     .nav-user {
       margin-left: 20px; padding: 7px 13px;
       border: 1px solid var(--rule);
+      border-radius: 999px;
       display: inline-flex; align-items: center; gap: 8px;
       text-decoration: none;
     }
@@ -159,15 +158,15 @@
       background: var(--green); box-shadow: 0 0 8px var(--green);
     }
     .nav-user__name {
-      font-family: "Geist Mono", monospace; font-size: 10px;
+      font-family: "JetBrains Mono", monospace; font-size: 10px;
       letter-spacing: .15em; text-transform: uppercase; color: var(--cream);
     }
     .nav-user__dot--guest { background: var(--honey); box-shadow: 0 0 8px var(--honey); }
     .nav-user__guest-tag {
-      font-family: "Geist Mono", monospace; font-size: 9px;
+      font-family: "JetBrains Mono", monospace; font-size: 9px;
       letter-spacing: .15em; text-transform: uppercase;
       color: var(--honey); border: 1px solid var(--honey);
-      padding: 1px 6px; opacity: .8;
+      padding: 1px 6px; border-radius: 999px; opacity: .8;
     }
     .nav-user__logout {
       margin-left: 6px; color: var(--fine);
@@ -177,26 +176,30 @@
 
     /* ═══ PILLS / BADGES ═════════════════════════════════════ */
     .pill {
-      display: inline-block; padding: 2px 9px;
+      display: inline-block; padding: 3px 10px;
       border: 1px solid var(--fine);
+      border-radius: 999px;
       background: transparent;
-      font-family: "Geist Mono", monospace;
-      font-size: 10px; font-weight: 700;
-      letter-spacing: .15em; text-transform: uppercase;
+      font-family: "Manrope", sans-serif;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .04em;
       color: var(--fine);
       line-height: 1.5;
+      text-transform: lowercase;
     }
-    .pill--green  { color: var(--green);  border-color: var(--green); }
-    .pill--rust   { color: var(--rust);   border-color: var(--rust); }
-    .pill--honey  { color: var(--honey);  border-color: var(--honey); }
-    .pill--slate  { color: var(--slate);  border-color: var(--slate); }
-    .pill--plum   { color: var(--plum);   border-color: var(--plum); }
+    .pill--green  { color: var(--green);  border-color: rgba(138,171,104,.44); background: rgba(138,171,104,.12); }
+    .pill--rust   { color: var(--rust);   border-color: rgba(196,106,62,.44);  background: rgba(196,106,62,.12); }
+    .pill--honey  { color: var(--honey);  border-color: rgba(212,154,62,.44);  background: rgba(212,154,62,.12); }
+    .pill--slate  { color: var(--slate);  border-color: rgba(106,138,168,.44); background: rgba(106,138,168,.12); }
+    .pill--plum   { color: var(--plum);   border-color: rgba(179,132,216,.44); background: rgba(179,132,216,.12); }
     .pill--cream  { color: var(--cream);  border-color: var(--rule); }
 
     /* ═══ PANELS ═════════════════════════════════════════════ */
     .panel {
       background: var(--card);
       border: 1px solid var(--rule);
+      border-radius: 14px;
+      overflow: hidden;
       margin-bottom: 14px;
     }
     .panel__head {
@@ -212,7 +215,7 @@
     .panel__sigil--rust  { color: var(--rust); }
     .panel__title { /* uses .label-eyebrow */ color: var(--cream); }
     .panel__action {
-      font-family: "Geist Mono", monospace; font-size: 10px;
+      font-family: "JetBrains Mono", monospace; font-size: 10px;
       letter-spacing: .15em; text-transform: uppercase;
       color: var(--cream-soft); text-decoration: none;
     }
@@ -227,7 +230,7 @@
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      font-family: "Geist Mono", ui-monospace, monospace;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
       font-size: 12px;
       color: var(--cream);
       margin: 0;
@@ -235,12 +238,12 @@
     .table thead th {
       text-align: left;
       padding: 10px 14px 9px;
-      font-family: "Geist Mono", monospace;
-      font-size: 9.5px;
-      letter-spacing: .22em;
+      font-family: "Manrope", sans-serif;
+      font-size: 10px;
+      letter-spacing: .14em;
       text-transform: uppercase;
       color: var(--fine);
-      font-weight: 600;
+      font-weight: 700;
       background: var(--card-alt);
       border-bottom: 1px solid var(--rule);
       border-top: 1px solid var(--rule);
@@ -253,7 +256,7 @@
       font-variant-numeric: tabular-nums;
       color: var(--cream);
     }
-    .table-hover tbody tr:hover td { background: rgba(255,255,255,.012); }
+    .table-hover tbody tr:hover td { background: rgba(255,255,255,.018); }
     .table tbody tr:last-child td { border-bottom: none; }
     .table-zebra tbody tr:nth-child(even) { background: rgba(255,255,255,.012); }
 
@@ -261,75 +264,85 @@
     .tc {
       display: inline-block;
       padding: 2px 9px;
-      border-left: 2px solid var(--fine);
+      border-radius: 999px;
+      border: 1px solid var(--fine);
       background: rgba(255,255,255,.04);
       color: var(--fine);
-      font-family: "Geist Mono", monospace;
-      font-size: 10px; font-weight: 700;
-      letter-spacing: .15em; text-transform: uppercase;
+      font-family: "Manrope", sans-serif;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .02em;
+      text-transform: lowercase;
     }
-    .tc--med    { border-left-color: var(--slate); background: rgba(121,164,212,.08); color: var(--slate); }
-    .tc--riego  { border-left-color: var(--green); background: var(--green-wash);     color: var(--green); }
-    .tc--evento { border-left-color: var(--honey); background: rgba(212,146,58,.08);  color: var(--honey); }
-    .tc--urge   { border-left-color: var(--rust);  background: rgba(217,106,61,.08);  color: var(--rust); }
-    .tc--baja   { border-left-color: var(--fine);  background: rgba(255,255,255,.03); color: var(--fine); }
+    .tc--med    { border-color: rgba(106,138,168,.55); background: rgba(106,138,168,.10); color: var(--slate); }
+    .tc--riego  { border-color: rgba(138,171,104,.55); background: var(--green-wash);     color: var(--green); }
+    .tc--evento { border-color: rgba(212,154,62,.55);  background: rgba(212,154,62,.10);  color: var(--honey); }
+    .tc--urge   { border-color: rgba(196,106,62,.55);  background: rgba(196,106,62,.10);  color: var(--rust); }
+    .tc--baja   { border-color: var(--fine);           background: rgba(255,255,255,.03); color: var(--fine); }
 
     /* VPD status chip */
     .vpd {
-      display: inline-block; padding: 2px 7px;
-      border-left: 2px solid var(--green);
-      background: rgba(177,209,96,.1);
+      display: inline-block; padding: 2px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(138,171,104,.55);
+      background: rgba(138,171,104,.10);
       color: var(--green);
-      font-family: "Geist Mono", monospace;
-      font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px; font-weight: 600; letter-spacing: .04em;
     }
-    .vpd--ideal { border-left-color: var(--green);  background: rgba(177,209,96,.10); color: var(--green); }
-    .vpd--alto  { border-left-color: var(--rust);   background: rgba(217,106,61,.10); color: var(--rust); }
-    .vpd--bajo  { border-left-color: var(--honey);  background: rgba(212,146,58,.10); color: var(--honey); }
+    .vpd--ideal { border-color: rgba(138,171,104,.55);  background: rgba(138,171,104,.10); color: var(--green); }
+    .vpd--alto  { border-color: rgba(196,106,62,.55);   background: rgba(196,106,62,.10); color: var(--rust); }
+    .vpd--bajo  { border-color: rgba(212,154,62,.55);   background: rgba(212,154,62,.10); color: var(--honey); }
 
     /* ═══ BUTTONS ════════════════════════════════════════════ */
     .btn-brand {
-      background: var(--green);
+      background: var(--rust);
       color: var(--bg) !important;
       border: none;
-      font-family: "Geist Mono", monospace;
-      font-size: 12px; font-weight: 700;
-      letter-spacing: .2em; text-transform: uppercase;
-      padding: 12px 24px;
-      border-radius: 0;
+      font-family: "Manrope", sans-serif;
+      font-size: 13px; font-weight: 700;
+      letter-spacing: .02em;
+      padding: 12px 22px;
+      border-radius: 999px;
       display: inline-flex; align-items: center; gap: 10px;
       text-decoration: none;
       cursor: pointer;
-      transition: opacity .15s;
+      transition: opacity .15s, transform .12s;
+      box-shadow: 0 6px 18px rgba(196,106,62,.28);
     }
-    .btn-brand:hover { opacity: .85; color: var(--bg); }
-    .btn-brand--lg { padding: 14px 32px; font-size: 13px; }
+    .btn-brand:hover { opacity: .92; color: var(--bg); transform: translateY(-1px); }
+    .btn-brand--lg { padding: 14px 30px; font-size: 14px; }
+
+    /* Green-accent CTA variant (affirmative actions) */
+    .btn-brand--green {
+      background: var(--green);
+      box-shadow: 0 6px 18px rgba(138,171,104,.22);
+    }
 
     .btn-ghost {
       background: transparent;
       color: var(--cream);
       border: 1px solid var(--rule);
-      font-family: "Geist Mono", monospace;
-      font-size: 11px; font-weight: 600;
-      letter-spacing: .18em; text-transform: uppercase;
-      padding: 11px 22px;
-      border-radius: 0;
+      font-family: "Manrope", sans-serif;
+      font-size: 13px; font-weight: 600;
+      letter-spacing: .02em;
+      padding: 10px 18px;
+      border-radius: 999px;
       display: inline-flex; align-items: center; gap: 10px;
       text-decoration: none;
       cursor: pointer;
-      transition: border-color .15s, color .15s;
+      transition: border-color .15s, color .15s, background .15s;
     }
-    .btn-ghost:hover { border-color: var(--green); color: var(--green); }
-    .btn-ghost--danger:hover { border-color: var(--rust); color: var(--rust); }
+    .btn-ghost:hover { border-color: var(--green); color: var(--green); background: rgba(138,171,104,.05); }
+    .btn-ghost--danger:hover { border-color: var(--rust); color: var(--rust); background: rgba(196,106,62,.05); }
 
     /* ═══ FORM INPUTS ════════════════════════════════════════ */
     .form-label, label {
-      font-family: "Geist Mono", monospace;
-      font-size: 10px;
-      letter-spacing: .22em;
+      font-family: "Manrope", sans-serif;
+      font-size: 11px;
+      letter-spacing: .12em;
       text-transform: uppercase;
       color: var(--fine);
-      font-weight: 600;
+      font-weight: 700;
       display: block; margin-bottom: 8px;
     }
     input[type=text], input[type=number], input[type=password],
@@ -340,11 +353,11 @@
       background: var(--bg-alt);
       border: 1px solid var(--rule);
       color: var(--cream);
-      font-family: "Geist", sans-serif;
+      font-family: "Manrope", sans-serif;
       font-size: 15px; font-weight: 500;
       padding: 12px 14px;
       outline: none;
-      border-radius: 0;
+      border-radius: 10px;
       font-variant-numeric: tabular-nums;
       transition: border-color .15s, box-shadow .15s;
     }
@@ -353,22 +366,21 @@
     input[type=datetime-local]:focus, input:not([type]):focus,
     textarea:focus, select:focus {
       border-color: var(--green);
-      box-shadow: 0 0 0 3px rgba(177,209,96,.1);
+      box-shadow: 0 0 0 3px rgba(138,171,104,.14);
     }
     /* Big chunky number inputs for vital data */
     .input-num-big {
-      font-family: "Bricolage Grotesque", sans-serif !important;
-      font-variation-settings: "wdth" 90, "opsz" 96 !important;
-      font-size: 36px !important; font-weight: 800 !important;
-      letter-spacing: -.02em !important;
-      line-height: 1.1 !important;
+      font-family: "Manrope", sans-serif !important;
+      font-size: 38px !important; font-weight: 800 !important;
+      letter-spacing: -.035em !important;
+      line-height: 1.05 !important;
       padding: 10px 16px !important;
       color: var(--green) !important;
     }
-    textarea { min-height: 80px; resize: vertical; line-height: 1.5; font-size: 13.5px; }
+    textarea { min-height: 80px; resize: vertical; line-height: 1.5; font-size: 14px; }
     select {
       appearance: none;
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%237a6c52' d='M6 8L0 0h12z'/></svg>");
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%23525e48' d='M6 8L0 0h12z'/></svg>");
       background-repeat: no-repeat;
       background-position: right 14px center;
       padding-right: 36px;
@@ -376,8 +388,8 @@
     select option { background: var(--card); color: var(--cream); }
 
     /* Bootstrap form-control fallback */
-    .form-control, .form-select { background: var(--bg-alt); color: var(--cream); border: 1px solid var(--rule); border-radius: 0; }
-    .form-control:focus, .form-select:focus { background: var(--bg-alt); color: var(--cream); border-color: var(--green); box-shadow: 0 0 0 3px rgba(177,209,96,.1); }
+    .form-control, .form-select { background: var(--bg-alt); color: var(--cream); border: 1px solid var(--rule); border-radius: 10px; }
+    .form-control:focus, .form-select:focus { background: var(--bg-alt); color: var(--cream); border-color: var(--green); box-shadow: 0 0 0 3px rgba(138,171,104,.14); }
 
     /* Checkbox / radio */
     input[type=checkbox], input[type=radio] {
@@ -389,23 +401,25 @@
     .form-check-input {
       background-color: var(--bg-alt) !important;
       border: 1.5px solid var(--fine) !important;
-      border-radius: 0 !important;
+      border-radius: 5px !important;
     }
+    .form-check-input[type=radio] { border-radius: 999px !important; }
     .form-check-input:checked {
       background-color: var(--green) !important;
       border-color: var(--green) !important;
     }
-    .form-check-input:focus { box-shadow: 0 0 0 3px rgba(177,209,96,.15) !important; }
-    .form-check-label { font-family: "Geist", sans-serif; font-size: 13.5px; color: var(--cream); letter-spacing: 0; text-transform: none; font-weight: 500; margin-bottom: 0; }
+    .form-check-input:focus { box-shadow: 0 0 0 3px rgba(138,171,104,.18) !important; }
+    .form-check-label { font-family: "Manrope", sans-serif; font-size: 14px; color: var(--cream); letter-spacing: 0; text-transform: none; font-weight: 500; margin-bottom: 0; }
 
     .field-error {
-      font-family: "Geist Mono", monospace;
-      font-size: 11px; color: var(--rust);
+      font-family: "Manrope", sans-serif;
+      font-size: 12px; color: var(--rust);
       margin-top: 6px;
-      letter-spacing: .04em;
+      font-weight: 500;
+      letter-spacing: 0;
     }
     .field-hint {
-      font-family: "Geist Mono", monospace;
+      font-family: "JetBrains Mono", monospace;
       font-size: 10px; color: var(--fine);
       margin-top: 6px; letter-spacing: .05em;
     }
@@ -415,30 +429,32 @@
     .has-error input[type=datetime-local], .has-error input[type=email],
     .has-error input:not([type]), .has-error textarea, .has-error select {
       border-color: var(--rust) !important;
-      box-shadow: 0 0 0 3px rgba(217,106,61,.12) !important;
+      box-shadow: 0 0 0 3px rgba(196,106,62,.14) !important;
     }
     /* Non-field / form-level error banner */
     .form-errors {
-      border: 1px solid var(--rust); border-left: 3px solid var(--rust);
-      background: rgba(217,106,61,.07);
+      border: 1px solid rgba(196,106,62,.5); border-left: 3px solid var(--rust);
+      background: rgba(196,106,62,.07);
+      border-radius: 12px;
       padding: 12px 16px; margin-bottom: 18px;
-      font-family: "Geist Mono", monospace; font-size: 12px; color: var(--rust);
+      font-family: "Manrope", sans-serif; font-size: 13px; color: var(--rust);
       line-height: 1.6;
     }
     .form-errors__title {
-      font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
       font-size: 10px; margin-bottom: 6px;
+      font-family: "JetBrains Mono", monospace;
     }
 
     /* ═══ ALERTS / MESSAGES ══════════════════════════════════ */
     .alert {
-      border-radius: 0;
+      border-radius: 12px;
       border: 1px solid var(--rule);
       border-left: 3px solid var(--green);
       background: var(--card);
       color: var(--cream);
-      font-family: "Geist Mono", monospace;
-      font-size: 12px;
+      font-family: "Manrope", sans-serif;
+      font-size: 13px;
       padding: 12px 18px;
     }
     .alert-success { border-left-color: var(--green); }
@@ -472,7 +488,7 @@
       .nav-brand img { width: 30px; height: 30px; }
       .nav-brand__title { font-size: 16px; }
       .nav-crumb { display: none; }
-      .nav-link { padding: 6px 10px !important; font-size: 10px; }
+      .nav-link { padding: 6px 10px !important; font-size: 11px; }
       .panel__body { padding: 14px 16px; }
       body { font-size: 13px; }
       main { padding-left: 16px !important; padding-right: 16px !important; }
@@ -508,7 +524,7 @@
         position: absolute;
         top: 12px; right: 14px;
         font-size: 10px;
-        font-family: "Geist Mono", monospace;
+        font-family: "JetBrains Mono", monospace;
         color: var(--fine);
         text-align: right;
         white-space: nowrap;
@@ -654,11 +670,10 @@
       min-height: 56px;
       color: var(--fine);
       text-decoration: none;
-      font-family: "Geist Mono", monospace;
-      font-size: 9px;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      font-weight: 600;
+      font-family: "Manrope", sans-serif;
+      font-size: 10px;
+      letter-spacing: .04em;
+      font-weight: 700;
       background: none;
       border: none;
       cursor: pointer;
@@ -672,7 +687,7 @@
     .bottom-nav__item:hover,
     .bottom-nav__item:active { color: var(--cream); background: var(--card-alt); }
     .bottom-nav__item.active { color: var(--green); }
-    .bottom-nav__item.active i { filter: drop-shadow(0 0 6px rgba(177,209,96,.5)); }
+    .bottom-nav__item.active i { filter: drop-shadow(0 0 6px rgba(138,171,104,.5)); }
 
     /* Push main content above bottom nav on mobile */
     @media (max-width: 991px) {
@@ -871,7 +886,7 @@
     var container = el.closest('.qe-vital-input') || el.parentNode;
     container.insertAdjacentElement('afterend', err);
     el.style.borderColor = 'var(--rust)';
-    el.style.boxShadow = '0 0 0 3px rgba(217,106,61,.15)';
+    el.style.boxShadow = '0 0 0 3px rgba(196,106,62,.15)';
   }
 
   function clearFieldError(el) {

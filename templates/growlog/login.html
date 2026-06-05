@@ -12,24 +12,25 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@300..700&family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@300..800&family=JetBrains+Mono:wght@300..700&display=swap"
     rel="stylesheet">
 
   <style>
+    /* ═══ VERDE · LOGIN TOKENS ═══════════════════════════════ */
     :root {
-      --bg: #16110b;
-      --bg-alt: #1d1610;
-      --card: #221c14;
-      --card-alt: #2a2218;
-      --rule: #3a2f1f;
-      --rule-soft: #28201a;
-      --cream: #f3e9d1;
-      --cream-soft: #bfb091;
-      --fine: #7a6c52;
-      --green: #b1d160;
-      --green-deep: #5a7929;
-      --green-wash: rgba(177, 209, 96, .08);
-      --rust: #d96a3d;
+      --bg: #0e120c;
+      --bg-alt: #161a12;
+      --card: #1c2218;
+      --card-alt: #232a1f;
+      --rule: #2a3023;
+      --rule-soft: #1a201a;
+      --cream: #ece2c8;
+      --cream-soft: #94a586;
+      --fine: #525e48;
+      --green: #8aab68;
+      --green-deep: #4a5f30;
+      --green-wash: rgba(138, 171, 104, .10);
+      --rust: #c46a3e;
     }
 
     *,
@@ -46,11 +47,11 @@
 
     body {
       background:
-        radial-gradient(circle at 0% 0%, rgba(177, 209, 96, .04) 0, transparent 40%),
-        radial-gradient(circle at 100% 100%, rgba(217, 106, 61, .03) 0, transparent 35%),
+        radial-gradient(circle at 0% 0%, rgba(138, 171, 104, .05) 0, transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(196, 106, 62, .035) 0, transparent 35%),
         var(--bg);
       color: var(--cream);
-      font-family: "Geist", system-ui, sans-serif;
+      font-family: "Manrope", system-ui, sans-serif;
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -60,13 +61,26 @@
       overflow: hidden;
     }
 
+    /* Decoración botánica de línea (en vez de logo watermark crudo) */
+    .login-sprig {
+      position: absolute;
+      right: -80px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 560px;
+      height: 560px;
+      opacity: .12;
+      pointer-events: none;
+      color: var(--green);
+    }
+
     .login-watermark {
       position: absolute;
       right: -120px;
       top: -80px;
       width: 620px;
       height: 620px;
-      opacity: .07;
+      opacity: .05;
       pointer-events: none;
     }
 
@@ -82,21 +96,21 @@
     .login-brand img {
       width: 40px;
       height: 40px;
-      filter: drop-shadow(0 0 8px rgba(177, 209, 96, .4));
+      border-radius: 50%;
+      filter: drop-shadow(0 0 8px rgba(138, 171, 104, .45));
     }
 
     .login-brand__name {
-      font-family: "Bricolage Grotesque", sans-serif;
-      font-variation-settings: "wdth" 85, "opsz" 96;
+      font-family: "Manrope", sans-serif;
       font-size: 20px;
-      font-weight: 700;
+      font-weight: 800;
       color: var(--cream);
       line-height: 1;
-      letter-spacing: .02em;
+      letter-spacing: -.02em;
     }
 
     .login-brand__sub {
-      font-family: "Geist Mono", monospace;
+      font-family: "JetBrains Mono", monospace;
       font-size: 9px;
       letter-spacing: .22em;
       text-transform: uppercase;
@@ -115,7 +129,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-family: "Geist Mono", monospace;
+      font-family: "JetBrains Mono", monospace;
       font-size: 10px;
       color: var(--fine);
     }
@@ -128,7 +142,7 @@
     }
 
     .login-eyebrow {
-      font-family: "Geist Mono", monospace;
+      font-family: "JetBrains Mono", monospace;
       font-size: 10px;
       letter-spacing: .22em;
       text-transform: uppercase;
@@ -137,11 +151,10 @@
     }
 
     .login-title {
-      font-family: "Bricolage Grotesque", sans-serif;
-      font-variation-settings: "wdth" 85, "opsz" 96;
+      font-family: "Manrope", sans-serif;
       font-size: 68px;
       font-weight: 800;
-      letter-spacing: -.022em;
+      letter-spacing: -.04em;
       line-height: .92;
       display: block;
       margin: 0;
@@ -150,15 +163,17 @@
 
     .login-title--accent {
       color: var(--green);
-      font-style: italic;
-      font-size: large;
+      font-weight: 700;
+      font-size: 26px;
+      letter-spacing: -.02em;
     }
 
     .login-subtitle {
-      font-family: "Geist Mono", monospace;
-      font-size: 12px;
+      font-family: "Manrope", sans-serif;
+      font-size: 14px;
       color: var(--cream-soft);
       margin-top: 18px;
+      line-height: 1.5;
     }
 
     .login-fields {
@@ -169,12 +184,12 @@
     }
 
     label {
-      font-family: "Geist Mono", monospace;
-      font-size: 10px;
-      letter-spacing: .22em;
+      font-family: "Manrope", sans-serif;
+      font-size: 11px;
+      letter-spacing: .12em;
       text-transform: uppercase;
       color: var(--fine);
-      font-weight: 600;
+      font-weight: 700;
       display: block;
       margin-bottom: 8px;
     }
@@ -185,18 +200,18 @@
       background: var(--bg-alt);
       border: 1px solid var(--rule);
       color: var(--cream);
-      font-family: "Geist", sans-serif;
+      font-family: "Manrope", sans-serif;
       font-size: 15px;
       font-weight: 500;
       padding: 12px 14px;
       outline: none;
-      border-radius: 0;
+      border-radius: 10px;
       transition: border-color .15s, box-shadow .15s;
     }
 
     input:focus {
       border-color: var(--green);
-      box-shadow: 0 0 0 3px rgba(177, 209, 96, .1);
+      box-shadow: 0 0 0 3px rgba(138, 171, 104, .14);
     }
 
     .login-meta {
@@ -211,53 +226,67 @@
       align-items: center;
       gap: 10px;
       cursor: pointer;
-      font-family: "Geist Mono", monospace;
-      font-size: 10px;
-      letter-spacing: .15em;
-      text-transform: uppercase;
+      font-family: "Manrope", sans-serif;
+      font-size: 12px;
+      letter-spacing: .02em;
+      text-transform: none;
       color: var(--cream-soft);
+      font-weight: 500;
       margin-bottom: 0;
     }
 
     .remember-label input {
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
       accent-color: var(--green);
     }
 
     .btn-login {
       width: 100%;
-      background: var(--green);
+      background: var(--rust);
       color: var(--bg);
       border: none;
-      padding: 14px;
-      font-family: "Geist Mono", monospace;
-      font-size: 13px;
+      padding: 15px;
+      border-radius: 999px;
+      font-family: "Manrope", sans-serif;
+      font-size: 15px;
       font-weight: 700;
-      letter-spacing: .2em;
-      text-transform: uppercase;
+      letter-spacing: .02em;
       cursor: pointer;
-      transition: opacity .15s;
+      transition: opacity .15s, transform .12s;
+      box-shadow: 0 8px 22px rgba(196, 106, 62, .3);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
     .btn-login:hover {
-      opacity: .85;
+      opacity: .94;
+      transform: translateY(-1px);
     }
 
     .login-error {
-      background: rgba(217, 106, 61, .08);
-      border: 1px solid var(--rust);
+      background: rgba(196, 106, 62, .08);
+      border: 1px solid rgba(196, 106, 62, .5);
       border-left: 3px solid var(--rust);
       color: var(--rust);
       padding: 12px 16px;
-      font-family: "Geist Mono", monospace;
-      font-size: 12px;
+      border-radius: 12px;
+      font-family: "Manrope", sans-serif;
+      font-size: 13px;
       margin-bottom: 16px;
     }
 
     @media (max-width: 600px) {
       .login-title {
         font-size: 48px;
+      }
+
+      .login-sprig {
+        width: 360px;
+        height: 360px;
+        right: -120px;
       }
 
       .login-banner {
@@ -278,6 +307,16 @@
 <body>
 
   <img src="{% static 'growlog/logo.png' %}" alt="" class="login-watermark" aria-hidden="true">
+
+  <svg class="login-sprig" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+    <path d="M30 170 Q60 140 90 110 Q120 80 160 40" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M70 130 Q60 115 50 110" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M70 130 Q80 115 90 110" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M100 100 Q88 88 78 85" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M100 100 Q112 88 122 85" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M130 70 Q118 60 108 58" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M130 70 Q142 60 152 58" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+  </svg>
 
   <div class="login-brand">
     <img src="{% static 'growlog/logo.png' %}" alt="62xroots">
