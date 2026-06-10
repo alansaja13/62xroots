@@ -83,6 +83,8 @@
     display: block; letter-spacing: -.022em;
   }
   .cd-day-box--plum .cd-day-box__num { color: var(--plum); }
+  .cd-day-group { display: flex; gap: 10px; }
+  .cd-day-group .cd-day-box { min-width: 140px; flex: 1; }
 
   /* ── VITALS ── */
   .cd-vitals {
@@ -230,11 +232,20 @@
 
   @media (max-width: 900px) {
     .cd-header { grid-template-columns: 1fr; }
-    .cd-title { font-size: 56px; }
+    .cd-title { font-size: 48px; }
     .cd-title__accent { font-size: 32px; }
-    .cd-actions { flex-direction: row; align-items: stretch; }
+    .cd-actions { flex-direction: row; flex-wrap: wrap; align-items: stretch; }
+    .cd-day-group { flex: 1 1 100%; }
     .cd-day-box { min-width: 0; flex: 1; padding: 10px 20px; }
     .cd-day-box__num { font-size: 56px; }
+    .cd-btn-group { flex: 1; display: flex; gap: 8px; }
+    .cd-btn-group .btn-brand, .cd-btn-group .btn-ghost { flex: 1; justify-content: center; }
+    .cd-actions > .btn-brand--lg { flex: 1; justify-content: center; }
+  }
+  @media (max-width: 640px) {
+    .cd-vital { padding: 12px 14px; }
+    .cd-vital__val { font-size: 34px; }
+    .cd-vital__unit { font-size: 13px; }
   }
 
   /* ── NEON LUZ + SETUP ROW ── */
@@ -355,17 +366,37 @@
       <span>desde {{ cultivo.fecha_inicio|date:"d/m/Y" }}</span>
       <span class="cd-meta__sep">·</span>
       <span>{{ plantas_count }} plantas activas</span>
+      {% if dias_sin_riego is not None %}
+      <span class="cd-meta__sep">·</span>
+      <span class="{% if dias_sin_riego >= 5 %}c-rust{% elif dias_sin_riego >= 3 %}c-honey{% endif %}">
+        <i class="bi bi-droplet"></i>
+        {% if dias_sin_riego == 0 %}regado hoy{% elif dias_sin_riego == 1 %}último riego ayer{% else %}{{ dias_sin_riego }} días sin riego{% endif %}
+      </span>
+      {% endif %}
     </div>
   </div>
 
   <div class="cd-actions">
-    <div class="cd-day-box {% if cultivo.estado == 'floracion' %}cd-day-box--plum{% endif %}">
-      <span class="cd-day-box__label">// día</span>
-      <span class="cd-day-box__num">{{ cultivo.dias_desde_inicio }}</span>
+    <div class="cd-day-group">
+      <div class="cd-day-box">
+        <span class="cd-day-box__label">// día</span>
+        <span class="cd-day-box__num">{{ cultivo.dias_desde_inicio }}</span>
+      </div>
+      {% if dia_flora %}
+      <div class="cd-day-box cd-day-box--plum">
+        <span class="cd-day-box__label">// flora</span>
+        <span class="cd-day-box__num">{{ dia_flora }}</span>
+      </div>
+      {% endif %}
     </div>
-    <a href="{% url 'growlog:canopy' cultivo.slug %}" class="btn-brand" style="font-size:12px;padding:8px 14px">
-      <i class="bi bi-grid-3x3-gap"></i> canopy
-    </a>
+    <div class="cd-btn-group" style="display:flex; gap:8px;">
+      <a href="{% url 'growlog:canopy' cultivo.slug %}" class="btn-brand" style="font-size:12px;padding:8px 14px">
+        <i class="bi bi-grid-3x3-gap"></i> canopy
+      </a>
+      <a href="{% url 'growlog:reporte' cultivo.slug %}" class="btn-ghost" style="font-size:12px;padding:8px 14px">
+        <i class="bi bi-clipboard-data"></i> reporte
+      </a>
+    </div>
     {% if request.user.is_staff %}
     <a href="{% url 'growlog:quick' cultivo.slug %}" class="btn-brand btn-brand--lg">
       <i class="bi bi-plus-lg"></i> anotar
@@ -379,7 +410,7 @@
   <div class="cd-vital cd-vital--{% if semaforo %}{{ semaforo.temp }}{% else %}neutral{% endif %}">
     <div class="label-eyebrow"><i class="bi bi-thermometer-half"></i> Temperatura</div>
     <div class="cd-vital__val{% if not ultima_medicion %} cd-vital__val--empty{% endif %}" style="margin-top: 10px;">
-      {% if ultima_medicion %}{{ ultima_medicion.temperatura_c }}<span class="cd-vital__unit">°C</span>{% else %}—{% endif %}
+      {% if ultima_medicion %}{{ ultima_medicion.temperatura_c|floatformat:1 }}<span class="cd-vital__unit">°C</span>{% else %}—{% endif %}
     </div>
     <div class="cd-vital__status">
       · {% if semaforo %}{{ semaforo.temp }}{% else %}sin ref.{% endif %}
@@ -389,7 +420,7 @@
   <div class="cd-vital cd-vital--{% if semaforo %}{{ semaforo.hr }}{% else %}neutral{% endif %}">
     <div class="label-eyebrow"><i class="bi bi-droplet-half"></i> Humedad</div>
     <div class="cd-vital__val{% if not ultima_medicion %} cd-vital__val--empty{% endif %}" style="margin-top: 10px;">
-      {% if ultima_medicion %}{{ ultima_medicion.humedad_relativa }}<span class="cd-vital__unit">%</span>{% else %}—{% endif %}
+      {% if ultima_medicion %}{{ ultima_medicion.humedad_relativa|floatformat:0 }}<span class="cd-vital__unit">%</span>{% else %}—{% endif %}
     </div>
     <div class="cd-vital__status">
       · {% if semaforo %}{{ semaforo.hr }}{% else %}sin ref.{% endif %}
@@ -558,7 +589,7 @@
             </td>
             <td class="c-cream" style="font-weight:600;" data-col="dato">
               {% if reg.tipo == 'medicion' %}
-                <span style="font-size:14px;">{{ reg.obj.temperatura_c }}°C <span class="c-fine">/</span> {{ reg.obj.humedad_relativa }}%</span>
+                <span style="font-size:14px;">{{ reg.obj.temperatura_c|floatformat:1 }}°C <span class="c-fine">/</span> {{ reg.obj.humedad_relativa|floatformat:0 }}%</span>
               {% elif reg.tipo == 'riego' %}
                 <span style="font-size:14px;">{{ reg.obj.volumen_total_ml }} ml</span>
               {% elif reg.tipo == 'medicion_ec' %}

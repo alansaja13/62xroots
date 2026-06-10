@@ -7,8 +7,11 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.utils import timezone
 
-from .models import APIToken, CambioFotoperiodo, CanopySnapshot, ColaPosicion, Cultivo, Planta
-from .utils import calcular_luz_estado, get_cambio_fotoperiodo_activo
+from .models import (
+    APIToken, CambioFotoperiodo, CanopySnapshot, ColaPosicion, Cultivo,
+    Nutriente, NutrienteAplicado, Planta, Riego,
+)
+from .utils import calcular_luz_estado, get_cambio_fotoperiodo_activo, get_flip_a_flora
 
 ART = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
 
@@ -195,6 +198,91 @@ class GetCambioFotoperiodoActivoTests(TestCase):
         ts = datetime(2026, 3, 1, 0, 0, tzinfo=ART)
         result = get_cambio_fotoperiodo_activo(self.cultivo, ts)
         self.assertEqual(result, self.flora)
+
+
+class GetFlipAFloraTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('flipuser', password='pass')
+        self.cultivo = Cultivo.objects.create(
+            nombre='Flip Test', fecha_inicio=date(2026, 1, 1),
+            estado='floracion', creado_por=self.user,
+        )
+
+    def test_sin_cambios_devuelve_none(self):
+        self.assertIsNone(get_flip_a_flora(self.cultivo))
+
+    def test_solo_veg_devuelve_none(self):
+        CambioFotoperiodo.objects.create(
+            cultivo=self.cultivo, fotoperiodo='18/6',
+            hora_lights_on=time(17, 0), fecha_inicio=date(2026, 1, 1),
+        )
+        self.assertIsNone(get_flip_a_flora(self.cultivo))
+
+    def test_devuelve_primer_cambio_a_12h_o_menos(self):
+        CambioFotoperiodo.objects.create(
+            cultivo=self.cultivo, fotoperiodo='18/6',
+            hora_lights_on=time(17, 0), fecha_inicio=date(2026, 1, 1),
+        )
+        flip = CambioFotoperiodo.objects.create(
+            cultivo=self.cultivo, fotoperiodo='12/12',
+            hora_lights_on=time(18, 0), fecha_inicio=date(2026, 3, 1),
+        )
+        self.assertEqual(get_flip_a_flora(self.cultivo), flip)
+
+
+class ReporteViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.staff = User.objects.create_user('staffuser', password='pass', is_staff=True)
+        self.client.login(username='staffuser', password='pass')
+        self.cultivo = Cultivo.objects.create(
+            nombre='Reporte Test', fecha_inicio=date(2026, 1, 1),
+            estado='floracion', lampara_watts_reales=300, creado_por=self.staff,
+        )
+        self.planta = Planta.objects.create(
+            cultivo=self.cultivo, apodo='R1', yield_estimado_g=80, yield_real_g=65,
+        )
+        nutriente = Nutriente.objects.create(nombre='Grow', marca='BioBizz')
+        riego = Riego.objects.create(cultivo=self.cultivo, volumen_total_ml=3000, ph_agua=6.2)
+        NutrienteAplicado.objects.create(riego=riego, nutriente=nutriente, dosis_g_por_litro=2)
+
+    def test_reporte_renderiza(self):
+        r = self.client.get(f'/cultivo/{self.cultivo.slug}/reporte/')
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Reporte Test')
+        self.assertContains(r, '65 g')  # yield real
+
+    def test_reporte_g_por_watt(self):
+        r = self.client.get(f'/cultivo/{self.cultivo.slug}/reporte/')
+        # 65 g / 300 W = 0.22
+        self.assertEqual(r.context['g_por_watt'], 0.22)
+
+    def test_export_csv(self):
+        r = self.client.get(f'/cultivo/{self.cultivo.slug}/reporte/?export=csv')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('text/csv', r['Content-Type'])
+        body = r.content.decode('utf-8')
+        self.assertIn('riego', body)
+        self.assertIn('3000', body)
+
+    def test_requiere_login(self):
+        self.client.logout()
+        r = self.client.get(f'/cultivo/{self.cultivo.slug}/reporte/')
+        self.assertEqual(r.status_code, 302)
+
+    def test_cultivo_detail_muestra_dia_flora(self):
+        CambioFotoperiodo.objects.create(
+            cultivo=self.cultivo, fotoperiodo='12/12',
+            hora_lights_on=time(18, 0),
+            fecha_inicio=timezone.localdate() - timezone.timedelta(days=9),
+        )
+        r = self.client.get(f'/cultivo/{self.cultivo.slug}/')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.context['dia_flora'], 10)
+
+    def test_cultivo_detail_dias_sin_riego(self):
+        r = self.client.get(f'/cultivo/{self.cultivo.slug}/')
+        self.assertEqual(r.context['dias_sin_riego'], 0)
 
 
 class CanopyAPITests(TestCase):

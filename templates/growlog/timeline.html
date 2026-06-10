@@ -175,7 +175,7 @@
         </td>
         <td class="c-cream" style="font-weight:600;" data-col="dato">
           {% if reg.tipo == 'medicion' %}
-            <span style="font-size:14px;">{{ reg.obj.temperatura_c }}°C <span class="c-fine" style="font-weight:400;">/</span> {{ reg.obj.humedad_relativa }}%HR</span>
+            <span style="font-size:14px;">{{ reg.obj.temperatura_c|floatformat:1 }}°C <span class="c-fine" style="font-weight:400;">/</span> {{ reg.obj.humedad_relativa|floatformat:0 }}%HR</span>
           {% elif reg.tipo == 'riego' %}
             <span style="font-size:14px;">{{ reg.obj.volumen_total_ml }} ml</span>
             {% if reg.obj.volumen_por_planta_ml %}

@@ -71,6 +71,11 @@
   .fp-table tbody tr:last-child td { border-bottom: none; }
   .fp-table tbody tr:hover td { background: rgba(255,255,255,.012); }
   .fp-table tbody tr:first-child td { /* current active */ }
+  .fp-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  @media (max-width: 640px) {
+    .fp-table thead th { padding: 10px 10px; letter-spacing: .12em; }
+    .fp-table tbody td { padding: 11px 10px; }
+  }
 
   .fp-active-badge {
     font-family: "Geist Mono", monospace; font-size: 9px;
@@ -193,6 +198,7 @@
 <div class="fp-section-title">// historial</div>
 <div class="panel" style="overflow:hidden;">
   {% if historial %}
+  <div class="fp-table-scroll">
   <table class="fp-table">
     <thead>
       <tr>
@@ -233,6 +239,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <div class="fp-empty">
     <i class="bi bi-sun fp-empty__icon"></i>

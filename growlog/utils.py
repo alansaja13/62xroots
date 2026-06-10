@@ -37,6 +37,19 @@ def calcular_luz_estado(timestamp, hora_lights_on, fotoperiodo):
         return "on" if current_min >= on_min or current_min < off_min else "off"
 
 
+def get_flip_a_flora(cultivo):
+    """Primer CambioFotoperiodo con ≤12h de luz (el "flip" a floración), o None."""
+    from .models import CambioFotoperiodo
+    for cambio in CambioFotoperiodo.objects.filter(cultivo=cultivo).order_by("fecha_inicio"):
+        try:
+            horas_luz = int(cambio.fotoperiodo.split("/")[0])
+        except (ValueError, IndexError):
+            continue
+        if horas_luz <= 12:
+            return cambio
+    return None
+
+
 def resolver_luz_estado_para_medicion(cultivo, timestamp):
     """Returns 'on', 'off', or None if no CambioFotoperiodo is configured."""
     cambio = get_cambio_fotoperiodo_activo(cultivo, timestamp)

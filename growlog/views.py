@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.files.uploadedfile import UploadedFile
 from django.core.paginator import Paginator
+from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Sum
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django_htmx.http import HttpResponseClientRedirect
 from django.templatetags.static import static as static_url
@@ -35,7 +36,7 @@ from .models import (
     MedicionAmbiente, Riego, NutrienteAplicado, Evento, MedicionPlanta,
     Tarea, ParametroIdeal, Nutriente, MedicionEC, POSICION_TENT_COORDS,
 )
-from .utils import get_cambio_fotoperiodo_activo, calcular_luz_estado
+from .utils import get_cambio_fotoperiodo_activo, calcular_luz_estado, get_flip_a_flora
 
 _DT_FMT = "%Y-%m-%dT%H:%M"
 
@@ -144,7 +145,7 @@ class PlantaForm(forms.ModelForm):
         model = Planta
         fields = ["apodo", "strain", "posicion_tent", "dias_flora_estimados",
                   "indica_sativa_ratio", "thc_estimado", "yield_estimado_g",
-                  "estado", "notas_genetica", "archivado"]
+                  "yield_real_g", "estado", "notas_genetica", "archivado"]
         widgets = {
             "apodo": forms.TextInput(attrs={"class": "form-control", "autofocus": True}),
             "strain": forms.TextInput(attrs={"class": "form-control"}),
@@ -153,6 +154,7 @@ class PlantaForm(forms.ModelForm):
             "indica_sativa_ratio": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: 70/30"}),
             "thc_estimado": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
             "yield_estimado_g": forms.NumberInput(attrs={"class": "form-control"}),
+            "yield_real_g": forms.NumberInput(attrs={"class": "form-control"}),
             "estado": forms.Select(attrs={"class": "form-select"}),
             "notas_genetica": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "archivado": forms.CheckboxInput(attrs={"class": "form-check-input"}),
@@ -397,6 +399,16 @@ def cultivo_detail(request, slug):
         follow_up_fecha__isnull=False,
         follow_up_resuelto=False,
     ).order_by("follow_up_fecha")
+    # Día de flora: contado desde el flip a ≤12h de luz
+    dia_flora = None
+    flip = get_flip_a_flora(cultivo)
+    if flip and flip.fecha_inicio <= hoy:
+        dia_flora = (hoy - flip.fecha_inicio).days + 1
+    # Días desde el último riego
+    ultimo_riego = cultivo.riegos.first()
+    dias_sin_riego = None
+    if ultimo_riego:
+        dias_sin_riego = (hoy - timezone.localtime(ultimo_riego.timestamp).date()).days
     return render(request, "growlog/cultivo_detail.html", {
         "cultivo": cultivo, "ultima_medicion": ultima_medicion,
         "tareas_pendientes": tareas_pendientes, "tareas_completadas": tareas_completadas,
@@ -409,6 +421,8 @@ def cultivo_detail(request, slug):
         "followups_pendientes": followups_pendientes,
         "hoy": hoy,
         "ultima_medicion_ec": ultima_medicion_ec,
+        "dia_flora": dia_flora,
+        "dias_sin_riego": dias_sin_riego,
     })
 
 
@@ -468,7 +482,7 @@ def quick_medicion_ec(request, slug):
         medicion = MedicionEC.objects.create(
             cultivo=cultivo, tipo=d["tipo"],
             ph=d.get("ph"), ec=d.get("ec"), temp_agua=d.get("temp_agua"),
-            notas=d.get("notas", ""),
+            notas=d.get("notas", ""), creado_por=request.user,
         )
         if request.htmx:
             return HttpResponseClientRedirect(reverse("growlog:cultivo_detail", args=[cultivo.slug]))
@@ -951,6 +965,7 @@ def medicion_ec_crear(request, slug):
     if request.method == "POST" and form.is_valid():
         m = form.save(commit=False)
         m.cultivo = cultivo
+        m.creado_por = request.user
         m.save()
         messages.success(request, "Medición EC/pH registrada.")
         return redirect("growlog:cultivo_detail", slug=slug)
@@ -1043,7 +1058,7 @@ def cambio_fotoperiodo_editar(request, pk):
     return render(request, "growlog/crud_form.html", {
         "form": form,
         "title": f"Editar fotoperiodo — {cultivo.nombre}",
-        "back_url": reverse("growlog:fotoperiodo_list", slug=cultivo.slug),
+        "back_url": reverse("growlog:fotoperiodo_list", args=[cultivo.slug]),
         "delete_url": reverse("growlog:cambio_fotoperiodo_eliminar", args=[pk]),
     })
 
@@ -1248,6 +1263,132 @@ def error_500(request):
 
 
 # ---------------------------------------------------------------------------
+# Reporte de cultivo
+# ---------------------------------------------------------------------------
+
+def _reporte_csv(cultivo):
+    import csv
+    resp = HttpResponse(content_type="text/csv; charset=utf-8")
+    resp["Content-Disposition"] = f'attachment; filename="{cultivo.slug}-registros.csv"'
+    resp.write("\ufeff")  # BOM para que Excel detecte UTF-8
+    w = csv.writer(resp, delimiter=";")
+    w.writerow(["fecha", "hora", "tipo", "dato", "ph", "ec", "volumen_ml",
+                "temperatura_c", "humedad_pct", "vpd_kpa", "notas"])
+
+    filas = []
+    for m in cultivo.mediciones.all():
+        ts = timezone.localtime(m.timestamp)
+        filas.append((ts, [ts.date(), ts.strftime("%H:%M"), "medicion", "",
+                           "", "", "", m.temperatura_c, m.humedad_relativa, m.vpd, m.notas]))
+    for r in cultivo.riegos.all():
+        ts = timezone.localtime(r.timestamp)
+        nutris = " + ".join(
+            f"{na.nutriente} {na.dosis_g_por_litro}g/L"
+            for na in r.nutrientes_aplicados.select_related("nutriente")
+        )
+        notas = f"{nutris} | {r.notas}".strip(" |") if nutris else r.notas
+        filas.append((ts, [ts.date(), ts.strftime("%H:%M"), "riego", "",
+                           r.ph_agua or "", r.ec_solucion or "", r.volumen_total_ml,
+                           "", "", "", notas]))
+    for ec in cultivo.mediciones_ec.all():
+        ts = timezone.localtime(ec.timestamp)
+        filas.append((ts, [ts.date(), ts.strftime("%H:%M"), "medicion_ec", ec.get_tipo_display(),
+                           ec.ph or "", ec.ec or "", "", "", "", "", ec.notas]))
+    for e in cultivo.eventos.all():
+        ts = timezone.localtime(e.timestamp)
+        filas.append((ts, [ts.date(), ts.strftime("%H:%M"), "evento", e.get_tipo_display(),
+                           "", "", "", "", "", "", e.descripcion]))
+
+    filas.sort(key=lambda x: x[0])
+    for _, row in filas:
+        w.writerow(row)
+    return resp
+
+
+@login_required
+def cultivo_reporte(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
+    if request.GET.get("export") == "csv":
+        return _reporte_csv(cultivo)
+
+    hoy = timezone.localdate()
+    fecha_fin = cultivo.fecha_fin or hoy
+    dias_totales = (fecha_fin - cultivo.fecha_inicio).days
+
+    flip = get_flip_a_flora(cultivo)
+    dias_veg = dias_flora = None
+    if flip and flip.fecha_inicio >= cultivo.fecha_inicio:
+        dias_veg = (flip.fecha_inicio - cultivo.fecha_inicio).days
+        dias_flora = max(0, (fecha_fin - flip.fecha_inicio).days)
+
+    riego_stats = cultivo.riegos.aggregate(
+        count=Count("id"),
+        vol_total=Sum("volumen_total_ml"),
+        ph_avg=Avg("ph_agua"),
+        ec_avg=Avg("ec_solucion"),
+    )
+    litros_totales = (riego_stats["vol_total"] or 0) / 1000
+
+    nutrientes = (
+        NutrienteAplicado.objects
+        .filter(riego__cultivo=cultivo)
+        .values("nutriente__nombre", "nutriente__marca")
+        .annotate(
+            aplicaciones=Count("id"),
+            dosis_avg=Avg("dosis_g_por_litro"),
+            gramos_totales=Sum(ExpressionWrapper(
+                F("dosis_g_por_litro") * F("riego__volumen_total_ml") / 1000.0,
+                output_field=DecimalField(max_digits=12, decimal_places=2),
+            )),
+        )
+        .order_by("nutriente__marca", "nutriente__nombre")
+    )
+
+    mediciones = list(cultivo.mediciones.all())
+    ambiente = None
+    if mediciones:
+        temps = [float(m.temperatura_c) for m in mediciones]
+        hrs = [float(m.humedad_relativa) for m in mediciones]
+        vpds = [m.vpd for m in mediciones]
+        n = len(mediciones)
+        ambiente = {
+            "count": n,
+            "temp_avg": sum(temps) / n, "temp_min": min(temps), "temp_max": max(temps),
+            "hr_avg": sum(hrs) / n, "hr_min": min(hrs), "hr_max": max(hrs),
+            "vpd_avg": sum(vpds) / n, "vpd_min": min(vpds), "vpd_max": max(vpds),
+        }
+
+    plantas = list(cultivo.plantas.all())
+    yield_est_total = sum(p.yield_estimado_g or 0 for p in plantas)
+    yield_real_total = sum(p.yield_real_g or 0 for p in plantas)
+    g_por_watt = None
+    if yield_real_total and cultivo.lampara_watts_reales:
+        g_por_watt = round(yield_real_total / cultivo.lampara_watts_reales, 2)
+
+    tipo_display = dict(Evento.TIPO_CHOICES)
+    eventos_por_tipo = [
+        {"label": tipo_display.get(e["tipo"], e["tipo"]), "count": e["count"]}
+        for e in cultivo.eventos.values("tipo").annotate(count=Count("id")).order_by("-count")
+    ]
+
+    return render(request, "growlog/reporte.html", {
+        "cultivo": cultivo,
+        "dias_totales": dias_totales,
+        "dias_veg": dias_veg,
+        "dias_flora": dias_flora,
+        "riego_stats": riego_stats,
+        "litros_totales": litros_totales,
+        "nutrientes": nutrientes,
+        "ambiente": ambiente,
+        "plantas": plantas,
+        "yield_est_total": yield_est_total,
+        "yield_real_total": yield_real_total,
+        "g_por_watt": g_por_watt,
+        "eventos_por_tipo": eventos_por_tipo,
+        "eventos_total": cultivo.eventos.count(),
+    })
+
+
 # ---------------------------------------------------------------------------
 # Canopy Map
 # ---------------------------------------------------------------------------

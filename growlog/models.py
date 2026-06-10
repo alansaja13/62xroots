@@ -86,6 +86,11 @@ class Planta(models.Model):
     indica_sativa_ratio = models.CharField(max_length=20, blank=True, help_text="Ej: 70/30")
     thc_estimado = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     yield_estimado_g = models.PositiveSmallIntegerField(null=True, blank=True)
+    yield_real_g = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        verbose_name="Yield real (g)",
+        help_text="Peso seco final cosechado de esta planta.",
+    )
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default="activa")
     notas_genetica = models.TextField(blank=True)
     archivado = models.BooleanField(default=False)
@@ -446,6 +451,7 @@ class MedicionEC(models.Model):
     ec = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="EC (mS/cm)")
     temp_agua = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True, verbose_name="Temp. agua (°C)")
     notas = models.TextField(blank=True)
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='mediciones_ec_creadas')
 
     class Meta:
         ordering = ["-timestamp"]

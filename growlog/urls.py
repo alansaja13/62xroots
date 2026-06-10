@@ -37,6 +37,7 @@ urlpatterns = [
     path("cultivo/<slug:slug>/quick/tarea/", views.quick_tarea, name="quick_tarea"),
     path("cultivo/<slug:slug>/quick/ec/", views.quick_medicion_ec, name="quick_ec"),
     path("cultivo/<slug:slug>/timeline/", views.timeline, name="timeline"),
+    path("cultivo/<slug:slug>/reporte/", views.cultivo_reporte, name="reporte"),
     path("cultivo/<slug:slug>/canopy/", views.canopy_view, name="canopy"),
     path("cultivo/<slug:slug>/canopy/guardar/", views.canopy_guardar, name="canopy_guardar"),
     path("cultivo/<slug:slug>/canopy/snapshot/<int:snapshot_id>/json/", views.canopy_snapshot_json, name="canopy_snapshot_json"),

@@ -71,6 +71,14 @@
     transition: color .12s, border-color .12s;
   }
   .qe-tab:hover { color: var(--cream-soft); }
+  @media (max-width: 640px) {
+    .qe-tabs { width: 100%; }
+    .qe-tab {
+      flex: 1; justify-content: center;
+      padding: 11px 4px;
+      font-size: 10px; letter-spacing: .06em; gap: 5px;
+    }
+  }
   .qe-tab--med.active  { color: var(--slate);  border-bottom-color: var(--slate); }
   .qe-tab--evt.active  { color: var(--honey);  border-bottom-color: var(--honey); }
   .qe-tab--tar.active  { color: var(--plum);   border-bottom-color: var(--plum); }

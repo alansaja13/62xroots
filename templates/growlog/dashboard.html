@@ -158,6 +158,7 @@
 
   @media (max-width: 640px) {
     .dash-hero__title { font-size: 56px; }
+    .dash-hero__title-accent { display: block; margin-left: 0; }
     .dash-hero { grid-template-columns: 1fr; }
   }
 </style>
@@ -233,13 +234,13 @@
         <div class="cultivo-card__vital">
           <div class="label-eyebrow">T</div>
           <div class="cultivo-card__vital-val cultivo-card__vital-val--{% if m %}{% if s %}{{ s.temp }}{% else %}none{% endif %}{% else %}none{% endif %}">
-            {% if m %}{{ m.temperatura_c }}°{% else %}—{% endif %}
+            {% if m %}{{ m.temperatura_c|floatformat:1 }}°{% else %}—{% endif %}
           </div>
         </div>
         <div class="cultivo-card__vital">
           <div class="label-eyebrow">HR</div>
           <div class="cultivo-card__vital-val cultivo-card__vital-val--{% if m %}{% if s %}{{ s.hr }}{% else %}none{% endif %}{% else %}none{% endif %}">
-            {% if m %}{{ m.humedad_relativa }}%{% else %}—{% endif %}
+            {% if m %}{{ m.humedad_relativa|floatformat:0 }}%{% else %}—{% endif %}
           </div>
         </div>
         <div class="cultivo-card__vital">
