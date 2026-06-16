@@ -125,17 +125,18 @@ class NuevoCultivoForm(forms.ModelForm):
         model = Cultivo
         fields = ["nombre", "fecha_inicio", "estado", "sustrato", "carpa_dimensiones",
                   "lampara_modelo", "lampara_watts_reales",
-                  "dias_veg_estimados", "dias_flora_estimados", "notas"]
+                  "dias_veg_estimados", "dias_flora_estimados", "fecha_inicio_flora", "notas"]
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Gorilla #3", "autofocus": True}),
-            "fecha_inicio": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "fecha_inicio": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
             "estado": forms.Select(attrs={"class": "form-select"}),
+            "fecha_inicio_flora": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
             "sustrato": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Coco + perlita 30%"}),
-            "carpa_dimensiones": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: 80x80x180"}),
+            "carpa_dimensiones": forms.TextInput(attrs={"class": "form-control field-narrow", "placeholder": "Ej: 80x80x180"}),
             "lampara_modelo": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Spider Farmer SF2000"}),
-            "lampara_watts_reales": forms.NumberInput(attrs={"class": "form-control", "placeholder": "200"}),
-            "dias_veg_estimados": forms.NumberInput(attrs={"class": "form-control", "placeholder": "Ej: 30"}),
-            "dias_flora_estimados": forms.NumberInput(attrs={"class": "form-control", "placeholder": "Ej: 60"}),
+            "lampara_watts_reales": forms.NumberInput(attrs={"class": "form-control field-narrow", "placeholder": "200"}),
+            "dias_veg_estimados": forms.NumberInput(attrs={"class": "form-control field-narrow", "placeholder": "Ej: 30"}),
+            "dias_flora_estimados": forms.NumberInput(attrs={"class": "form-control field-narrow", "placeholder": "Ej: 60"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Notas iniciales..."}),
         }
 
@@ -150,11 +151,11 @@ class PlantaForm(forms.ModelForm):
             "apodo": forms.TextInput(attrs={"class": "form-control", "autofocus": True}),
             "strain": forms.TextInput(attrs={"class": "form-control"}),
             "posicion_tent": forms.Select(attrs={"class": "form-select"}),
-            "dias_flora_estimados": forms.NumberInput(attrs={"class": "form-control"}),
-            "indica_sativa_ratio": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: 70/30"}),
-            "thc_estimado": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
-            "yield_estimado_g": forms.NumberInput(attrs={"class": "form-control"}),
-            "yield_real_g": forms.NumberInput(attrs={"class": "form-control"}),
+            "dias_flora_estimados": forms.NumberInput(attrs={"class": "form-control field-narrow"}),
+            "indica_sativa_ratio": forms.TextInput(attrs={"class": "form-control field-narrow", "placeholder": "Ej: 70/30"}),
+            "thc_estimado": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
+            "yield_estimado_g": forms.NumberInput(attrs={"class": "form-control field-narrow"}),
+            "yield_real_g": forms.NumberInput(attrs={"class": "form-control field-narrow"}),
             "estado": forms.Select(attrs={"class": "form-select"}),
             "notas_genetica": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "archivado": forms.CheckboxInput(attrs={"class": "form-check-input"}),
@@ -168,9 +169,9 @@ class TareaForm(forms.ModelForm):
         widgets = {
             "titulo": forms.TextInput(attrs={"class": "form-control", "autofocus": True}),
             "descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
-            "fecha_objetivo": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "prioridad": forms.Select(attrs={"class": "form-select"}),
-            "categoria": forms.Select(attrs={"class": "form-select"}),
+            "fecha_objetivo": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
+            "prioridad": forms.Select(attrs={"class": "form-select field-narrow"}),
+            "categoria": forms.Select(attrs={"class": "form-select field-narrow"}),
             "completada": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
@@ -185,7 +186,7 @@ class EventoForm(forms.ModelForm):
             "tipo": forms.Select(attrs={"class": "form-select"}),
             "descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "plantas_afectadas": forms.CheckboxSelectMultiple(),
-            "follow_up_fecha": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "follow_up_fecha": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
             "follow_up_descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             "follow_up_resuelto": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
@@ -198,14 +199,14 @@ class RiegoForm(forms.ModelForm):
                   "ec_solucion", "buscar_runoff", "runoff_observado", "ph_runoff", "ec_runoff", "notas"]
         widgets = {
             "timestamp": forms.DateTimeInput(format=_DT_FMT, attrs={"class": "form-control", "type": "datetime-local"}),
-            "volumen_total_ml": forms.NumberInput(attrs={"class": "form-control", "autofocus": True}),
-            "volumen_por_planta_ml": forms.NumberInput(attrs={"class": "form-control"}),
-            "ph_agua": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
-            "ec_solucion": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "volumen_total_ml": forms.NumberInput(attrs={"class": "form-control field-narrow", "autofocus": True}),
+            "volumen_por_planta_ml": forms.NumberInput(attrs={"class": "form-control field-narrow"}),
+            "ph_agua": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
+            "ec_solucion": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
             "buscar_runoff": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "runoff_observado": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "ph_runoff": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
-            "ec_runoff": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "ph_runoff": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
+            "ec_runoff": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
         }
 
@@ -216,10 +217,10 @@ class MedicionPlantaForm(forms.ModelForm):
         fields = ["fecha", "altura_cm", "nudos_count", "ancho_canopy_cm",
                   "aspecto_general", "sintomas", "foto"]
         widgets = {
-            "fecha": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "altura_cm": forms.NumberInput(attrs={"class": "form-control", "step": "0.1"}),
-            "nudos_count": forms.NumberInput(attrs={"class": "form-control"}),
-            "ancho_canopy_cm": forms.NumberInput(attrs={"class": "form-control", "step": "0.1"}),
+            "fecha": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
+            "altura_cm": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.1"}),
+            "nudos_count": forms.NumberInput(attrs={"class": "form-control field-narrow"}),
+            "ancho_canopy_cm": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.1"}),
             "aspecto_general": forms.Select(attrs={"class": "form-select"}),
             "sintomas": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             "foto": forms.FileInput(attrs={"class": "form-control"}),
@@ -238,7 +239,7 @@ class NutrienteAplicadoForm(forms.ModelForm):
         fields = ["nutriente", "dosis_g_por_litro"]
         widgets = {
             "nutriente": forms.Select(attrs={"class": "form-select"}),
-            "dosis_g_por_litro": forms.NumberInput(attrs={"class": "form-control", "step": "0.001"}),
+            "dosis_g_por_litro": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.001"}),
         }
 
 
@@ -270,9 +271,9 @@ class MedicionECForm(forms.ModelForm):
         widgets = {
             "timestamp": forms.DateTimeInput(format=_DT_FMT, attrs={"class": "form-control", "type": "datetime-local"}),
             "tipo": forms.Select(attrs={"class": "form-select"}),
-            "ph": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
-            "ec": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
-            "temp_agua": forms.NumberInput(attrs={"class": "form-control", "step": "0.1"}),
+            "ph": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
+            "ec": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
+            "temp_agua": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.1"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
         }
 
@@ -282,9 +283,9 @@ class CambioFotoperiodoForm(forms.ModelForm):
         model = CambioFotoperiodo
         fields = ["fotoperiodo", "hora_lights_on", "fecha_inicio", "notas"]
         widgets = {
-            "fotoperiodo": forms.TextInput(attrs={"class": "form-control", "placeholder": "12/12", "autofocus": True}),
-            "hora_lights_on": forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
-            "fecha_inicio": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "fotoperiodo": forms.TextInput(attrs={"class": "form-control field-narrow", "placeholder": "12/12", "autofocus": True}),
+            "hora_lights_on": forms.TimeInput(attrs={"class": "form-control field-narrow", "type": "time"}),
+            "fecha_inicio": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Ej: Inicio de floración, semana 1..."}),
         }
 
@@ -399,11 +400,14 @@ def cultivo_detail(request, slug):
         follow_up_fecha__isnull=False,
         follow_up_resuelto=False,
     ).order_by("follow_up_fecha")
-    # Día de flora: contado desde el flip a ≤12h de luz
-    dia_flora = None
-    flip = get_flip_a_flora(cultivo)
-    if flip and flip.fecha_inicio <= hoy:
-        dia_flora = (hoy - flip.fecha_inicio).days + 1
+    # Día de flora: desde fecha_inicio_flora (marcada explícitamente), con
+    # fallback al primer CambioFotoperiodo a ≤12h de luz para cultivos viejos
+    # que aún no usaron la acción de marcar el flip.
+    dia_flora = cultivo.dia_flora
+    if dia_flora is None:
+        flip = get_flip_a_flora(cultivo)
+        if flip and flip.fecha_inicio <= hoy:
+            dia_flora = (hoy - flip.fecha_inicio).days + 1
     # Días desde el último riego
     ultimo_riego = cultivo.riegos.first()
     dias_sin_riego = None
@@ -558,6 +562,19 @@ def cultivo_editar(request, slug):
         "subtitle": f"Día {cultivo.dias_desde_inicio}",
         "back_url": reverse("growlog:cultivo_detail", args=[cultivo.slug]),
     })
+
+
+@login_required
+@staff_required
+def cultivo_marcar_flora(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
+    if request.method == "POST":
+        cultivo.fecha_inicio_flora = timezone.localdate()
+        if cultivo.estado == "vegetativo":
+            cultivo.estado = "floracion"
+        cultivo.save()
+        messages.success(request, "Cambio a floración marcado hoy.")
+    return redirect("growlog:cultivo_detail", cultivo.slug)
 
 
 # ---------------------------------------------------------------------------
@@ -1315,11 +1332,14 @@ def cultivo_reporte(request, slug):
     fecha_fin = cultivo.fecha_fin or hoy
     dias_totales = (fecha_fin - cultivo.fecha_inicio).days
 
-    flip = get_flip_a_flora(cultivo)
+    flip_fecha = cultivo.fecha_inicio_flora
+    if not flip_fecha:
+        flip = get_flip_a_flora(cultivo)
+        flip_fecha = flip.fecha_inicio if flip else None
     dias_veg = dias_flora = None
-    if flip and flip.fecha_inicio >= cultivo.fecha_inicio:
-        dias_veg = (flip.fecha_inicio - cultivo.fecha_inicio).days
-        dias_flora = max(0, (fecha_fin - flip.fecha_inicio).days)
+    if flip_fecha and flip_fecha >= cultivo.fecha_inicio:
+        dias_veg = (flip_fecha - cultivo.fecha_inicio).days
+        dias_flora = max(0, (fecha_fin - flip_fecha).days)
 
     riego_stats = cultivo.riegos.aggregate(
         count=Count("id"),

@@ -387,6 +387,13 @@
         <span class="cd-day-box__label">// flora</span>
         <span class="cd-day-box__num">{{ dia_flora }}</span>
       </div>
+      {% elif request.user.is_staff %}
+      <form method="post" action="{% url 'growlog:cultivo_marcar_flora' cultivo.slug %}" style="display:flex; align-items:center;">
+        {% csrf_token %}
+        <button type="submit" class="btn-ghost" style="font-size:11px;padding:6px 10px;white-space:nowrap;">
+          <i class="bi bi-flower1"></i> marcar flora hoy
+        </button>
+      </form>
       {% endif %}
     </div>
     <div class="cd-btn-group" style="display:flex; gap:8px;">

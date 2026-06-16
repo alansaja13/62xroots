@@ -34,6 +34,11 @@ class Cultivo(models.Model):
         verbose_name="Días de floración estimados",
         help_text="Días esperados en etapa de floración.",
     )
+    fecha_inicio_flora = models.DateField(
+        null=True, blank=True,
+        verbose_name="Fecha de inicio de floración",
+        help_text="Fecha en que se marcó el cambio a floración (flip a ≤12h de luz).",
+    )
     notas = models.TextField(blank=True)
     archivado = models.BooleanField(default=False)
     creado_en = models.DateTimeField(auto_now_add=True)
@@ -59,7 +64,18 @@ class Cultivo(models.Model):
 
     @property
     def dias_desde_inicio(self):
-        return (timezone.localdate() - self.fecha_inicio).days
+        """Día 1 = fecha_inicio (mismo criterio 1-indexado que dia_flora)."""
+        return (timezone.localdate() - self.fecha_inicio).days + 1
+
+    @property
+    def dia_flora(self):
+        """Día 1 = fecha_inicio_flora. None si todavía no se marcó el flip."""
+        if not self.fecha_inicio_flora:
+            return None
+        hoy = timezone.localdate()
+        if self.fecha_inicio_flora > hoy:
+            return None
+        return (hoy - self.fecha_inicio_flora).days + 1
 
 
 class Planta(models.Model):

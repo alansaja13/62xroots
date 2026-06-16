@@ -41,7 +41,7 @@ class CultivoAdmin(admin.ModelAdmin):
     inlines = [PlantaInline, MedicionAmbienteInline, RiegoInline, TareaInline]
     readonly_fields = ["dias_desde_inicio", "creado_en"]
     fieldsets = [
-        (None, {"fields": ["nombre", "estado", "fecha_inicio", "fecha_fin", "archivado"]}),
+        (None, {"fields": ["nombre", "estado", "fecha_inicio", "fecha_inicio_flora", "fecha_fin", "archivado"]}),
         ("Setup", {"fields": ["carpa_dimensiones", "sustrato", "lampara_modelo", "lampara_watts_reales"]}),
         ("Info", {"fields": ["notas", "dias_desde_inicio", "creado_en"]}),
     ]

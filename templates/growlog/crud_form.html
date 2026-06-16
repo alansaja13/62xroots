@@ -59,6 +59,17 @@
   }
   .cf-delete-link:hover { color: var(--rust); }
 
+  /* Grid de campos: por default cada campo ocupa la fila entera; los
+     campos cortos (.field-narrow, ej. pH, EC, dosis) se agrupan de a
+     varios por fila para no dejar una caja enorme vacía con "6.2" adentro. */
+  .cf-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    column-gap: 12px;
+  }
+  .cf-grid > .mb-3 { grid-column: 1 / -1; }
+  .cf-grid > .mb-3.field-narrow { grid-column: auto; }
+
   @media (max-width: 600px) {
     .cf-title { font-size: 36px; }
   }
@@ -97,35 +108,33 @@
           </div>
           {% endif %}
 
+          <div class="cf-grid">
           {% for field in form %}
             {% with wclass=field.field.widget.attrs.class %}
+            <div class="mb-3{% if field.errors %} has-error{% endif %}{% if wclass and 'field-narrow' in wclass %} field-narrow{% endif %}">
 
             {% if wclass == 'form-check-input' %}
-              <div class="mb-3">
-                <label class="form-check-label d-inline-flex align-items-center gap-2" style="cursor: pointer;">
-                  {{ field }}
-                  <span style="font-size:13px; color: var(--cream); font-weight: 500;">{{ field.label }}</span>
-                </label>
-              </div>
+              <label class="form-check-label d-inline-flex align-items-center gap-2" style="cursor: pointer;">
+                {{ field }}
+                <span style="font-size:13px; color: var(--cream); font-weight: 500;">{{ field.label }}</span>
+              </label>
 
             {% elif not wclass %}
-              <div class="mb-3">
-                <label>{{ field.label }}</label>
-                <div class="m2m-group {% if field.errors %}has-error{% endif %}">{{ field }}</div>
-              </div>
+              <label>{{ field.label }}</label>
+              <div class="m2m-group {% if field.errors %}has-error{% endif %}">{{ field }}</div>
 
             {% else %}
-              <div class="mb-3 {% if field.errors %}has-error{% endif %}">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-              </div>
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
             {% endif %}
 
             {% if field.errors %}<div class="field-error">{{ field.errors.0 }}</div>{% endif %}
             {% if field.help_text %}<div class="field-hint">{{ field.help_text }}</div>{% endif %}
 
+            </div>
             {% endwith %}
           {% endfor %}
+          </div>
 
           <div class="d-flex gap-2 mt-4">
             <button type="submit" class="btn-brand" style="flex: 1;">
