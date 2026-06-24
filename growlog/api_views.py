@@ -12,8 +12,9 @@ from django.views.decorators.http import require_GET, require_POST
 
 from .models import (
     APIToken, CambioFotoperiodo, CanopySnapshot, ColaPosicion,
-    Cultivo, Evento, MedicionAmbiente, Nutriente, NutrienteAplicado,
-    Planta, POSICION_TENT_COORDS, Riego, Tarea,
+    CostoEnergetico, Cultivo, Equipo, Evento, LecturaMedidor,
+    MedicionAmbiente, Nutriente, NutrienteAplicado,
+    Planta, POSICION_TENT_COORDS, Riego, Tarea, TarifaElectrica,
 )
 
 EVENTO_TIPOS = {c[0] for c in Evento.TIPO_CHOICES}
@@ -701,3 +702,327 @@ def planta_detail(request, planta_uuid):
         'mediciones': [_medicion_planta(m) for m in p.mediciones.all()],
     }
     return api_ok(data)
+
+
+# ── Módulo energético ─────────────────────────────────────────────────────────
+
+def _next_month(d):
+    """Primer día del mes siguiente."""
+    if d.month == 12:
+        return d.replace(year=d.year + 1, month=1, day=1)
+    return d.replace(month=d.month + 1, day=1)
+
+
+def _tarifa_vigente(hoy):
+    """TarifaElectrica con fecha_desde más reciente ≤ hoy, o None."""
+    return TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by('-fecha_desde').first()
+
+
+def _ciclo_activo(cultivo, hoy):
+    """Fotoperiodo activo según CambioFotoperiodo o estado del cultivo."""
+    cf = cultivo.cambios_fotoperiodo.filter(fecha_inicio__lte=hoy).order_by('-fecha_inicio').first()
+    if cf:
+        return cf.fotoperiodo
+    return '12/12' if cultivo.estado == 'floracion' else '18/6'
+
+
+def _calcular_meses(cultivo_inicio, costos, tarifas, hoy):
+    """Lista de dicts por mes desde cultivo_inicio hasta hoy con kWh y costo estimados."""
+    import calendar
+    meses = []
+    mes = cultivo_inicio.replace(day=1)
+
+    while mes <= hoy:
+        tarifa_mes = next((t for t in tarifas if t.fecha_desde <= mes), None)
+
+        last_day = calendar.monthrange(mes.year, mes.month)[1]
+        mes_fin = mes.replace(day=last_day)
+
+        dia_inicio = max(mes, cultivo_inicio)
+        dia_fin = min(mes_fin, hoy)
+        dias = (dia_fin - dia_inicio).days + 1
+
+        if dias > 0:
+            kwh_dia = 0.0
+            for ce in costos:
+                ce_hasta = ce.fecha_hasta
+                if ce.fecha_desde <= dia_fin and (ce_hasta is None or ce_hasta >= dia_inicio):
+                    kwh_dia += float(ce.equipo.watts) / 1000 * float(ce.equipo.horas_dia)
+
+            kwh_mes_val = round(kwh_dia * dias, 2)
+            costo_mes_val = round(kwh_mes_val * float(tarifa_mes.precio_kwh), 2) if tarifa_mes else 0.0
+
+            meses.append({
+                'mes': mes.strftime('%Y-%m'),
+                'dias': dias,
+                'kwh_estimado': kwh_mes_val,
+                'costo_estimado': costo_mes_val,
+                'tarifa': str(tarifa_mes.precio_kwh) if tarifa_mes else None,
+            })
+
+        mes = _next_month(mes)
+
+    return meses
+
+
+def _ser_equipo(e, precio_kwh=None):
+    kwh_mes = e.kwh_mes
+    d = {
+        'id': e.id,
+        'nombre': e.nombre,
+        'categoria': e.categoria,
+        'categoria_display': e.get_categoria_display(),
+        'watts': str(e.watts),
+        'horas_dia': str(e.horas_dia),
+        'kwh_mes': kwh_mes,
+        'activo': e.activo,
+        'notas': e.notas,
+    }
+    if precio_kwh is not None:
+        d['costo_mes'] = round(kwh_mes * float(precio_kwh), 2)
+    return d
+
+
+def _ser_tarifa(t):
+    return {
+        'id': t.id,
+        'fecha_desde': t.fecha_desde.isoformat(),
+        'precio_kwh': str(t.precio_kwh),
+        'distribuidora': t.distribuidora,
+    }
+
+
+def _ser_lectura(l):
+    return {
+        'id': l.id,
+        'fecha': l.fecha.isoformat(),
+        'kwh_real': str(l.kwh_real),
+        'notas': l.notas,
+    }
+
+
+# ── Endpoints equipos ─────────────────────────────────────────────────────────
+
+@require_GET
+@require_token
+def equipos_list(request):
+    equipos = Equipo.objects.all()
+    hoy = timezone.localdate()
+    tarifa = _tarifa_vigente(hoy)
+    precio_kwh = tarifa.precio_kwh if tarifa else None
+    return api_ok([_ser_equipo(e, precio_kwh) for e in equipos])
+
+
+@csrf_exempt
+@require_token
+def equipo_detail(request, equipo_id):
+    try:
+        equipo = Equipo.objects.get(pk=equipo_id)
+    except Equipo.DoesNotExist:
+        return api_error('Equipo no encontrado', 404)
+
+    if request.method == 'GET':
+        return api_ok(_ser_equipo(equipo))
+
+    if request.method == 'PATCH':
+        rl = _write_rate_limit(request)
+        if rl:
+            return rl
+        body, err = _parse_json_body(request)
+        if err:
+            return err
+
+        if 'activo' in body:
+            equipo.activo = bool(body['activo'])
+
+        if 'horas_dia' in body:
+            try:
+                horas_dia = Decimal(str(body['horas_dia']))
+                if not (0 < float(horas_dia) <= 24):
+                    return api_error('horas_dia debe estar entre 0 y 24')
+                equipo.horas_dia = horas_dia
+            except (InvalidOperation, TypeError):
+                return api_error('horas_dia debe ser un número')
+
+        if 'watts' in body:
+            try:
+                watts = Decimal(str(body['watts']))
+                if float(watts) <= 0:
+                    return api_error('watts debe ser positivo')
+                equipo.watts = watts
+            except (InvalidOperation, TypeError):
+                return api_error('watts debe ser un número')
+
+        equipo.save()
+        return api_ok(_ser_equipo(equipo))
+
+    return api_error('Method not allowed', 405)
+
+
+# ── Endpoints costos ──────────────────────────────────────────────────────────
+
+@require_GET
+@require_token
+def cultivo_costos(request, slug):
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
+
+    hoy = timezone.localdate()
+    tarifa = _tarifa_vigente(hoy)
+    precio_kwh = tarifa.precio_kwh if tarifa else None
+
+    costos_actuales = list(
+        c.costos_energeticos.select_related('equipo', 'tarifa').filter(fecha_hasta__isnull=True)
+    )
+    todos_costos = list(
+        c.costos_energeticos.select_related('equipo').order_by('fecha_desde')
+    )
+    tarifas = list(TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by('-fecha_desde'))
+
+    equipos_data = []
+    total_kwh_mes = 0.0
+    total_costo_mes = 0.0
+    for ce in costos_actuales:
+        equipos_data.append(_ser_equipo(ce.equipo, precio_kwh))
+        total_kwh_mes += ce.equipo.kwh_mes
+        if precio_kwh:
+            total_costo_mes += ce.equipo.kwh_mes * float(precio_kwh)
+
+    meses = _calcular_meses(c.fecha_inicio, todos_costos, tarifas, hoy)
+    kwh_acumulado = round(sum(m['kwh_estimado'] for m in meses), 2)
+    costo_acumulado = round(sum(m['costo_estimado'] for m in meses), 2)
+
+    yield_total = sum(
+        p.yield_estimado_g for p in c.plantas.filter(archivado=False)
+        if p.yield_estimado_g
+    )
+    costo_por_gramo = round(costo_acumulado / yield_total, 2) if yield_total > 0 else None
+
+    return api_ok({
+        'cultivo': c.slug,
+        'tarifa_vigente': _ser_tarifa(tarifa) if tarifa else None,
+        'ciclo': _ciclo_activo(c, hoy),
+        'equipos': equipos_data,
+        'totales': {
+            'kwh_mes': round(total_kwh_mes, 2),
+            'costo_mes': round(total_costo_mes, 2),
+            'kwh_acumulado': kwh_acumulado,
+            'costo_acumulado': costo_acumulado,
+            'costo_por_gramo_estimado': costo_por_gramo,
+        },
+    })
+
+
+@require_GET
+@require_token
+def cultivo_costos_historico(request, slug):
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
+
+    hoy = timezone.localdate()
+    tarifas = list(TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by('-fecha_desde'))
+    todos_costos = list(
+        c.costos_energeticos.select_related('equipo').order_by('fecha_desde')
+    )
+
+    meses = _calcular_meses(c.fecha_inicio, todos_costos, tarifas, hoy)
+    kwh_total = round(sum(m['kwh_estimado'] for m in meses), 2)
+    costo_total = round(sum(m['costo_estimado'] for m in meses), 2)
+
+    return api_ok({
+        'cultivo': c.slug,
+        'fecha_inicio': c.fecha_inicio.isoformat(),
+        'meses': meses,
+        'totales': {
+            'kwh_estimado': kwh_total,
+            'costo_estimado': costo_total,
+        },
+    })
+
+
+@require_GET
+@require_token
+def cultivo_costos_comparacion(request, slug):
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
+
+    lecturas = list(c.lecturas_medidor.all())
+    if not lecturas:
+        return api_error('No hay lecturas de medidor cargadas para este cultivo', 404)
+
+    hoy = timezone.localdate()
+    tarifas = list(TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by('-fecha_desde'))
+    todos_costos = list(
+        c.costos_energeticos.select_related('equipo').order_by('fecha_desde')
+    )
+
+    meses = _calcular_meses(c.fecha_inicio, todos_costos, tarifas, hoy)
+    kwh_estimado = round(sum(m['kwh_estimado'] for m in meses), 2)
+    costo_estimado = round(sum(m['costo_estimado'] for m in meses), 2)
+
+    kwh_real = round(float(sum(l.kwh_real for l in lecturas)), 2)
+    tarifa_actual = tarifas[0] if tarifas else None
+    costo_real = round(kwh_real * float(tarifa_actual.precio_kwh), 2) if tarifa_actual else None
+
+    variacion_pct = None
+    alerta = False
+    if kwh_estimado > 0:
+        variacion_pct = round((kwh_real - kwh_estimado) / kwh_estimado * 100, 1)
+        alerta = kwh_real > kwh_estimado * 1.15
+
+    return api_ok({
+        'cultivo': c.slug,
+        'kwh_estimado': kwh_estimado,
+        'kwh_real': kwh_real,
+        'costo_estimado': costo_estimado,
+        'costo_real': costo_real,
+        'variacion_pct': variacion_pct,
+        'alerta': alerta,
+        'lecturas': [_ser_lectura(l) for l in lecturas],
+    })
+
+
+@csrf_exempt
+@require_token
+def cultivo_lecturas_medidor(request, slug):
+    c, err = _get_cultivo(slug, request.api_user)
+    if err:
+        return err
+
+    if request.method == 'GET':
+        return api_ok([_ser_lectura(l) for l in c.lecturas_medidor.all()])
+
+    if request.method == 'POST':
+        rl = _write_rate_limit(request)
+        if rl:
+            return rl
+        body, err = _parse_json_body(request)
+        if err:
+            return err
+
+        fecha_str = str(body.get('fecha', '')).strip()
+        try:
+            from datetime import date
+            fecha = date.fromisoformat(fecha_str)
+        except (ValueError, TypeError):
+            return api_error('fecha es requerida (YYYY-MM-DD)')
+
+        try:
+            kwh_real = Decimal(str(body.get('kwh_real', '')))
+            if float(kwh_real) < 0:
+                return api_error('kwh_real debe ser positivo')
+        except (InvalidOperation, TypeError):
+            return api_error('kwh_real es requerido y debe ser un número')
+
+        l = LecturaMedidor.objects.create(
+            cultivo=c,
+            fecha=fecha,
+            kwh_real=kwh_real,
+            notas=str(body.get('notas', ''))[:500],
+        )
+        return api_ok(_ser_lectura(l), status=201)
+
+    return api_error('Method not allowed', 405)

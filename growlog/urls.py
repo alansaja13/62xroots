@@ -19,6 +19,14 @@ urlpatterns = [
     path("api/v1/cultivos/<slug:slug>/canopy/history/", api_views.cultivo_canopy_history),
     path("api/v1/cultivos/<slug:slug>/canopy/<int:snapshot_id>/", api_views.cultivo_canopy_detail),
 
+    # Módulo energético
+    path("api/v1/equipos/", api_views.equipos_list),
+    path("api/v1/equipos/<int:equipo_id>/", api_views.equipo_detail),
+    path("api/v1/cultivos/<slug:slug>/costos/", api_views.cultivo_costos),
+    path("api/v1/cultivos/<slug:slug>/costos/historico/", api_views.cultivo_costos_historico),
+    path("api/v1/cultivos/<slug:slug>/costos/comparacion/", api_views.cultivo_costos_comparacion),
+    path("api/v1/cultivos/<slug:slug>/lecturas-medidor/", api_views.cultivo_lecturas_medidor),
+
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
     path("", views.dashboard, name="dashboard"),

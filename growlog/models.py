@@ -476,3 +476,81 @@ class MedicionEC(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} — {self.cultivo} ({self.timestamp:%d/%m %H:%M})"
+
+
+# ── Módulo energético ─────────────────────────────────────────────────────────
+
+class Equipo(models.Model):
+    CATEGORIA_CHOICES = [
+        ('lampara', 'Lámpara'),
+        ('extractor', 'Extractor'),
+        ('ventilador', 'Ventilador'),
+        ('humidificador', 'Humidificador'),
+        ('otro', 'Otro'),
+    ]
+
+    nombre = models.CharField(max_length=120)
+    watts = models.DecimalField(max_digits=8, decimal_places=2)
+    horas_dia = models.DecimalField(max_digits=4, decimal_places=2)
+    categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES)
+    activo = models.BooleanField(default=True)
+    notas = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['categoria', 'nombre']
+        verbose_name = 'Equipo'
+        verbose_name_plural = 'Equipos'
+
+    def __str__(self):
+        return f"{self.nombre} ({self.watts}W)"
+
+    @property
+    def kwh_mes(self):
+        return round(float(self.watts) / 1000 * float(self.horas_dia) * 30, 2)
+
+
+class TarifaElectrica(models.Model):
+    fecha_desde = models.DateField()
+    precio_kwh = models.DecimalField(max_digits=10, decimal_places=4)
+    distribuidora = models.CharField(max_length=100, default='Edesur')
+    notas = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-fecha_desde']
+        verbose_name = 'Tarifa eléctrica'
+        verbose_name_plural = 'Tarifas eléctricas'
+
+    def __str__(self):
+        return f"${self.precio_kwh}/kWh desde {self.fecha_desde} ({self.distribuidora})"
+
+
+class CostoEnergetico(models.Model):
+    cultivo = models.ForeignKey(Cultivo, on_delete=models.CASCADE, related_name='costos_energeticos')
+    equipo = models.ForeignKey(Equipo, on_delete=models.CASCADE, related_name='costos')
+    tarifa = models.ForeignKey(TarifaElectrica, on_delete=models.PROTECT, related_name='costos')
+    fecha_desde = models.DateField()
+    fecha_hasta = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-fecha_desde']
+        verbose_name = 'Costo energético'
+        verbose_name_plural = 'Costos energéticos'
+
+    def __str__(self):
+        hasta = self.fecha_hasta or 'vigente'
+        return f"{self.equipo.nombre} en {self.cultivo.nombre} ({self.fecha_desde} → {hasta})"
+
+
+class LecturaMedidor(models.Model):
+    cultivo = models.ForeignKey(Cultivo, on_delete=models.CASCADE, related_name='lecturas_medidor')
+    fecha = models.DateField()
+    kwh_real = models.DecimalField(max_digits=10, decimal_places=2)
+    notas = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-fecha']
+        verbose_name = 'Lectura de medidor'
+        verbose_name_plural = 'Lecturas de medidor'
+
+    def __str__(self):
+        return f"{self.cultivo.nombre} — {self.fecha} ({self.kwh_real} kWh)"

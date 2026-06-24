@@ -1,8 +1,22 @@
 from django.contrib import admin
 from .models import (
-    CambioFotoperiodo, Cultivo, Planta, MedicionAmbiente, Nutriente, Riego,
-    NutrienteAplicado, Evento, MedicionPlanta, Tarea, ParametroIdeal, MedicionEC,
+    CambioFotoperiodo, CostoEnergetico, Cultivo, Equipo, LecturaMedidor,
+    MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente, NutrienteAplicado,
+    Evento, Planta, Tarea, TarifaElectrica, ParametroIdeal, Riego,
 )
+
+
+class CostoEnergeticoInline(admin.TabularInline):
+    model = CostoEnergetico
+    extra = 1
+    fields = ['equipo', 'tarifa', 'fecha_desde', 'fecha_hasta']
+
+
+class LecturaMedidorInline(admin.TabularInline):
+    model = LecturaMedidor
+    extra = 0
+    fields = ['fecha', 'kwh_real', 'notas']
+    ordering = ['-fecha']
 
 
 class PlantaInline(admin.TabularInline):
@@ -38,7 +52,7 @@ class CultivoAdmin(admin.ModelAdmin):
     list_display = ["nombre", "estado", "fecha_inicio", "dias_desde_inicio", "archivado"]
     list_filter = ["estado", "archivado"]
     search_fields = ["nombre", "sustrato"]
-    inlines = [PlantaInline, MedicionAmbienteInline, RiegoInline, TareaInline]
+    inlines = [PlantaInline, MedicionAmbienteInline, RiegoInline, TareaInline, CostoEnergeticoInline, LecturaMedidorInline]
     readonly_fields = ["dias_desde_inicio", "creado_en"]
     fieldsets = [
         (None, {"fields": ["nombre", "estado", "fecha_inicio", "fecha_inicio_flora", "fecha_fin", "archivado"]}),
@@ -118,4 +132,38 @@ class ParametroIdealAdmin(admin.ModelAdmin):
 class MedicionECAdmin(admin.ModelAdmin):
     list_display = ["cultivo", "timestamp", "tipo", "ph", "ec", "temp_agua"]
     list_filter = ["cultivo", "tipo"]
+
+
+# ── Módulo energético ─────────────────────────────────────────────────────────
+
+@admin.register(Equipo)
+class EquipoAdmin(admin.ModelAdmin):
+    list_display = ["nombre", "categoria", "watts", "horas_dia", "kwh_mes_display", "activo"]
+    list_filter = ["categoria", "activo"]
+    list_editable = ["activo", "horas_dia"]
+    search_fields = ["nombre"]
+
+    @admin.display(description="kWh/mes")
+    def kwh_mes_display(self, obj):
+        return obj.kwh_mes
+
+
+@admin.register(TarifaElectrica)
+class TarifaElectricaAdmin(admin.ModelAdmin):
+    list_display = ["distribuidora", "precio_kwh", "fecha_desde", "notas"]
+    ordering = ["-fecha_desde"]
+
+
+@admin.register(CostoEnergetico)
+class CostoEnergeticoAdmin(admin.ModelAdmin):
+    list_display = ["cultivo", "equipo", "tarifa", "fecha_desde", "fecha_hasta"]
+    list_filter = ["cultivo", "equipo", "tarifa"]
+    raw_id_fields = ["cultivo", "equipo", "tarifa"]
+
+
+@admin.register(LecturaMedidor)
+class LecturaMedidorAdmin(admin.ModelAdmin):
+    list_display = ["cultivo", "fecha", "kwh_real", "notas"]
+    list_filter = ["cultivo"]
+    ordering = ["-fecha"]
 
