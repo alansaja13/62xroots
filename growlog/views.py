@@ -32,9 +32,10 @@ def staff_required(view_func):
     return _wrapped
 
 from .models import (
-    CambioFotoperiodo, CanopySnapshot, ColaPosicion, Cultivo, Planta,
-    MedicionAmbiente, Riego, NutrienteAplicado, Evento, MedicionPlanta,
-    Tarea, ParametroIdeal, Nutriente, MedicionEC, POSICION_TENT_COORDS,
+    CambioFotoperiodo, CanopySnapshot, ColaPosicion, CostoEnergetico, Cultivo, Equipo,
+    LecturaMedidor, MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente,
+    NutrienteAplicado, Evento, Planta, ParametroIdeal, Riego, Tarea, TarifaElectrica,
+    POSICION_TENT_COORDS,
 )
 from .utils import get_cambio_fotoperiodo_activo, calcular_luz_estado, get_flip_a_flora
 
@@ -350,10 +351,38 @@ def dashboard(request):
                             "plantas_count": c.plantas.filter(estado="activa").count()})
         return result
 
+    activos_enriched = _enrich(activos)
+
+    # Energía — una query batch para todos los cultivos activos
+    hoy = timezone.localdate()
+    tarifa = TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by('-fecha_desde').first()
+    energia_items = []
+    if tarifa and activos_enriched:
+        cultivo_ids = [item['cultivo'].pk for item in activos_enriched]
+        costos_qs = CostoEnergetico.objects.filter(
+            cultivo_id__in=cultivo_ids,
+            fecha_hasta__isnull=True,
+        ).select_related('equipo')
+        costos_by_cultivo = {}
+        for ce in costos_qs:
+            costos_by_cultivo.setdefault(ce.cultivo_id, []).append(ce)
+        for item in activos_enriched:
+            c = item['cultivo']
+            costos = costos_by_cultivo.get(c.pk, [])
+            if costos:
+                total_kwh = round(sum(ce.equipo.kwh_mes for ce in costos), 1)
+                energia_items.append({
+                    'cultivo': c,
+                    'kwh_mes': total_kwh,
+                    'costo_mes': int(round(total_kwh * float(tarifa.precio_kwh), 0)),
+                })
+
     return render(request, "growlog/dashboard.html", {
-        "activos": _enrich(activos),
+        "activos": activos_enriched,
         "archivados": _enrich(archivados),
         "finalizados": _enrich(finalizados),
+        "energia_items": energia_items,
+        "tarifa": tarifa,
     })
 
 
@@ -1406,6 +1435,103 @@ def cultivo_reporte(request, slug):
         "g_por_watt": g_por_watt,
         "eventos_por_tipo": eventos_por_tipo,
         "eventos_total": cultivo.eventos.count(),
+    })
+
+
+# ---------------------------------------------------------------------------
+# Energía
+# ---------------------------------------------------------------------------
+
+@login_required
+def cultivo_energia(request, slug):
+    from decimal import Decimal, InvalidOperation
+    from datetime import date
+    from .api_views import _calcular_meses, _ciclo_activo
+
+    cultivo = get_object_or_404(Cultivo, slug=slug)
+    hoy = timezone.localdate()
+
+    if request.method == "POST":
+        fecha_str = request.POST.get("fecha", "").strip()
+        kwh_str = request.POST.get("kwh_real", "").strip()
+        notas = request.POST.get("notas", "").strip()
+        try:
+            fecha = date.fromisoformat(fecha_str)
+        except ValueError:
+            messages.error(request, "Fecha inválida.")
+            return redirect("growlog:energia", slug=slug)
+        try:
+            kwh_real = Decimal(kwh_str.replace(",", "."))
+            if kwh_real < 0:
+                raise ValueError
+        except (InvalidOperation, ValueError):
+            messages.error(request, "kWh inválido.")
+            return redirect("growlog:energia", slug=slug)
+        LecturaMedidor.objects.create(
+            cultivo=cultivo, fecha=fecha, kwh_real=kwh_real, notas=notas[:500],
+        )
+        messages.success(request, "Lectura cargada.")
+        return redirect("growlog:energia", slug=slug)
+
+    tarifa = TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by("-fecha_desde").first()
+    precio_kwh = float(tarifa.precio_kwh) if tarifa else 0
+
+    costos_actuales = list(
+        cultivo.costos_energeticos.select_related("equipo").filter(fecha_hasta__isnull=True)
+    )
+    todos_costos = list(
+        cultivo.costos_energeticos.select_related("equipo").order_by("fecha_desde")
+    )
+    tarifas = list(TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by("-fecha_desde"))
+
+    equipos_rows = []
+    total_kwh_mes = 0.0
+    total_costo_mes = 0.0
+    for ce in costos_actuales:
+        kwh = ce.equipo.kwh_mes
+        costo = round(kwh * precio_kwh, 0)
+        total_kwh_mes += kwh
+        total_costo_mes += costo
+        equipos_rows.append({"equipo": ce.equipo, "kwh_mes": kwh, "costo_mes": int(costo)})
+
+    meses = _calcular_meses(cultivo.fecha_inicio, todos_costos, tarifas, hoy)
+    kwh_acumulado = round(sum(m["kwh_estimado"] for m in meses), 1)
+    costo_acumulado = int(round(sum(m["costo_estimado"] for m in meses), 0))
+
+    yield_total = sum(
+        p.yield_estimado_g for p in cultivo.plantas.filter(archivado=False) if p.yield_estimado_g
+    )
+    costo_por_gramo = int(round(costo_acumulado / yield_total, 0)) if yield_total > 0 else None
+
+    lecturas = list(cultivo.lecturas_medidor.all())
+    kwh_real = None
+    costo_real = None
+    variacion_pct = None
+    alerta = False
+    if lecturas:
+        kwh_real = round(float(sum(l.kwh_real for l in lecturas)), 1)
+        costo_real = int(round(kwh_real * precio_kwh, 0))
+        if kwh_acumulado > 0:
+            variacion_pct = round((kwh_real - kwh_acumulado) / kwh_acumulado * 100, 1)
+            alerta = kwh_real > kwh_acumulado * 1.15
+
+    return render(request, "growlog/energia.html", {
+        "cultivo": cultivo,
+        "tarifa": tarifa,
+        "ciclo": _ciclo_activo(cultivo, hoy),
+        "equipos_rows": equipos_rows,
+        "total_kwh_mes": round(total_kwh_mes, 1),
+        "total_costo_mes": int(total_costo_mes),
+        "kwh_acumulado": kwh_acumulado,
+        "costo_acumulado": costo_acumulado,
+        "costo_por_gramo": costo_por_gramo,
+        "meses": meses,
+        "lecturas": lecturas,
+        "kwh_real": kwh_real,
+        "costo_real": costo_real,
+        "variacion_pct": variacion_pct,
+        "alerta": alerta,
+        "hoy": hoy,
     })
 
 

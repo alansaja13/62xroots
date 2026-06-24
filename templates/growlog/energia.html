@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% block title %}Energía — {{ cultivo.nombre }}{% endblock %}
+
+{% block crumb %}
+<div class="nav-crumb d-none d-lg-flex">
+  <span class="nav-crumb__item">{{ cultivo.nombre }}</span>
+  <span class="nav-crumb__sep">/</span>
+  <span class="nav-crumb__item nav-crumb__item--last">energía</span>
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="bottom-nav__item">
+  <i class="bi bi-arrow-left"></i>
+  <span>Cultivo</span>
+</a>
+<a href="{% url 'growlog:energia' cultivo.slug %}" class="bottom-nav__item active">
+  <i class="bi bi-lightning-charge"></i>
+  <span>Energía</span>
+</a>
+<a href="{% url 'growlog:reporte' cultivo.slug %}" class="bottom-nav__item">
+  <i class="bi bi-clipboard-data"></i>
+  <span>Reporte</span>
+</a>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .en-header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    flex-wrap: wrap; gap: 16px;
+    margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--rule);
+  }
+  .en-title {
+    font-size: 42px; font-weight: 800; letter-spacing: -.03em; line-height: 1;
+    color: var(--cream); margin: 0;
+  }
+  .en-stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 900px) { .en-stats-row { grid-template-columns: repeat(2, 1fr); } }
+  .en-stat {
+    background: var(--card); border: 1px solid var(--rule);
+    border-radius: 14px; padding: 16px 20px;
+  }
+  .en-stat__val {
+    font-size: 34px; font-weight: 800; letter-spacing: -.03em; line-height: 1;
+    color: var(--honey); margin-top: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .en-stat__val--green { color: var(--green); }
+  .en-stat__val--rust  { color: var(--rust); }
+  .en-stat__unit { font-size: 13px; color: var(--cream-soft); font-weight: 600; margin-left: 2px; }
+  .en-stat__sub {
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    color: var(--fine); margin-top: 6px; letter-spacing: .05em;
+  }
+  .en-alerta {
+    background: rgba(196,106,62,.1); border: 1px solid var(--rust);
+    padding: 12px 18px; margin-bottom: 18px;
+    display: flex; align-items: center; gap: 10px;
+    font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--rust);
+  }
+  .en-cmp-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .en-cmp-item {
+    padding: 16px 20px;
+    border-right: 1px solid var(--rule-soft);
+  }
+  .en-cmp-item:last-child { border-right: none; }
+  .en-cmp-val {
+    font-size: 28px; font-weight: 800; line-height: 1;
+    margin-top: 6px; font-variant-numeric: tabular-nums;
+  }
+  .en-form {
+    padding: 16px 20px; background: var(--bg-alt);
+    border-top: 1px solid var(--rule);
+  }
+  .en-form__row {
+    display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px;
+  }
+  .en-form__field { display: flex; flex-direction: column; gap: 4px; }
+  .en-form__label {
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    color: var(--fine); letter-spacing: .12em; text-transform: uppercase;
+  }
+  .en-form input {
+    background: var(--card); border: 1px solid var(--rule);
+    color: var(--cream); padding: 8px 12px; font-size: 13px;
+  }
+  .en-form input:focus {
+    outline: none; border-color: var(--honey);
+    box-shadow: 0 0 0 3px rgba(212,154,62,.14);
+  }
+  .c-honey { color: var(--honey); }
+  @media (max-width: 640px) {
+    .en-title { font-size: 28px; }
+    .en-stat { padding: 13px 14px; }
+    .en-stat__val { font-size: 26px; }
+    .en-cmp-grid { grid-template-columns: 1fr; }
+    .en-cmp-item { border-right: none; border-bottom: 1px solid var(--rule-soft); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="cd-back">
+  <i class="bi bi-chevron-left"></i> volver al cultivo
+</a>
+
+<!-- HEADER -->
+<div class="en-header">
+  <div>
+    <div class="label-eyebrow">// energía · costos eléctricos</div>
+    <h1 class="en-title">{{ cultivo.nombre }}</h1>
+    <div class="mono c-soft" style="font-size:11px; margin-top:10px;">
+      {% if tarifa %}tarifa ${{ tarifa.precio_kwh }}/kWh · {{ tarifa.distribuidora }}<span class="c-fine"> · </span>{% endif %}
+      ciclo <strong class="c-cream">{{ ciclo }}</strong>
+      {% if equipos_rows %}<span class="c-fine"> · </span>{{ equipos_rows|length }} equipos activos{% endif %}
+    </div>
+  </div>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="en-alerta" style="{% if 'success' in msg.tags %}background:rgba(138,171,104,.1);border-color:var(--green);color:var(--green);{% endif %} margin-bottom:16px;">
+  <i class="bi bi-{% if 'success' in msg.tags %}check-circle{% else %}exclamation-triangle{% endif %}"></i>
+  {{ msg }}
+</div>
+{% endfor %}
+{% endif %}
+
+{% if alerta %}
+<div class="en-alerta">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  Consumo real supera el estimado en {{ variacion_pct }}% — revisá los equipos activos.
+</div>
+{% endif %}
+
+<!-- STATS -->
+<div class="en-stats-row">
+  <div class="en-stat">
+    <div class="label-eyebrow"><i class="bi bi-lightning"></i> kWh/mes</div>
+    <div class="en-stat__val en-stat__val--green">{{ total_kwh_mes }}<span class="en-stat__unit">kWh</span></div>
+    <div class="en-stat__sub">consumo mensual estimado</div>
+  </div>
+  <div class="en-stat">
+    <div class="label-eyebrow"><i class="bi bi-cash"></i> costo/mes</div>
+    <div class="en-stat__val">${{ total_costo_mes }}</div>
+    <div class="en-stat__sub">{% if tarifa %}@ ${{ tarifa.precio_kwh }}/kWh{% else %}sin tarifa cargada{% endif %}</div>
+  </div>
+  <div class="en-stat">
+    <div class="label-eyebrow"><i class="bi bi-bar-chart-fill"></i> kWh acumulado</div>
+    <div class="en-stat__val en-stat__val--green">{{ kwh_acumulado }}<span class="en-stat__unit">kWh</span></div>
+    <div class="en-stat__sub">desde {{ cultivo.fecha_inicio|date:"d/m/Y" }}</div>
+  </div>
+  <div class="en-stat">
+    <div class="label-eyebrow"><i class="bi bi-cash-stack"></i> costo acumulado</div>
+    <div class="en-stat__val">${{ costo_acumulado }}</div>
+    <div class="en-stat__sub">{% if costo_por_gramo %}${{ costo_por_gramo }}/g estimado{% else %}sin yield configurado{% endif %}</div>
+  </div>
+</div>
+
+<!-- EQUIPOS ACTIVOS -->
+<div class="panel" style="margin-bottom:16px;">
+  <div class="panel__head">
+    <div class="panel__head-left">
+      <span class="panel__sigil panel__sigil--honey">§</span>
+      <span class="label-eyebrow panel__title">equipos activos · {{ equipos_rows|length }}</span>
+    </div>
+    {% if request.user.is_staff %}
+    <a href="/admin/growlog/costoenergetico/add/" class="btn-ghost" style="font-size:11px;padding:5px 10px;">
+      <i class="bi bi-plug"></i> vincular equipo
+    </a>
+    {% endif %}
+  </div>
+
+  {% if equipos_rows %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Equipo</th>
+        <th class="d-none d-md-table-cell">Categoría</th>
+        <th style="text-align:right;" class="d-none d-md-table-cell">h/día</th>
+        <th style="text-align:right;">kWh/mes</th>
+        <th style="text-align:right;">$/mes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in equipos_rows %}
+      <tr>
+        <td>
+          <span class="c-cream" style="font-weight:600;">{{ row.equipo.nombre }}</span>
+          <span class="d-inline d-md-none c-fine" style="font-size:10px; font-family:monospace;"> · {{ row.equipo.horas_dia }}h/día</span>
+        </td>
+        <td class="d-none d-md-table-cell">
+          <span class="pill pill--{% if row.equipo.categoria == 'lampara' %}plum{% elif row.equipo.categoria == 'extractor' %}slate{% elif row.equipo.categoria == 'ventilador' %}green{% elif row.equipo.categoria == 'humidificador' %}honey{% else %}cream{% endif %}">
+            {{ row.equipo.get_categoria_display }}
+          </span>
+        </td>
+        <td style="text-align:right;" class="c-soft d-none d-md-table-cell">{{ row.equipo.horas_dia }}h</td>
+        <td style="text-align:right;" class="c-green">{{ row.kwh_mes }}</td>
+        <td style="text-align:right;" class="c-honey">${{ row.costo_mes }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot style="border-top:2px solid var(--rule);">
+      <tr>
+        <td class="c-fine mono" style="font-size:10px;letter-spacing:.1em;">TOTAL</td>
+        <td class="d-none d-md-table-cell"></td>
+        <td class="d-none d-md-table-cell"></td>
+        <td style="text-align:right;font-weight:800;" class="c-green">{{ total_kwh_mes }}</td>
+        <td style="text-align:right;font-weight:800;" class="c-honey">${{ total_costo_mes }}</td>
+      </tr>
+    </tfoot>
+  </table>
+  {% else %}
+  <div style="padding:28px 20px;text-align:center;color:var(--fine);font-size:12px;">
+    No hay equipos vinculados a este cultivo.
+    {% if request.user.is_staff %}
+    <br><a href="/admin/growlog/costoenergetico/add/" class="c-honey" style="margin-top:8px;display:inline-block;">
+      Vincular desde el admin →
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- HISTÓRICO MENSUAL -->
+{% if meses %}
+<div class="panel" style="margin-bottom:16px;">
+  <div class="panel__head">
+    <div class="panel__head-left">
+      <span class="panel__sigil">§</span>
+      <span class="label-eyebrow panel__title">histórico mensual · {{ meses|length }} meses</span>
+    </div>
+  </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Mes</th>
+        <th style="text-align:right;" class="d-none d-md-table-cell">Días</th>
+        <th style="text-align:right;">kWh estimado</th>
+        <th style="text-align:right;">Costo estimado</th>
+        <th style="text-align:right;" class="d-none d-md-table-cell">Tarifa</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in meses %}
+      <tr>
+        <td class="c-cream" style="font-weight:600;">{{ m.mes }}</td>
+        <td style="text-align:right;" class="c-soft d-none d-md-table-cell">{{ m.dias }}</td>
+        <td style="text-align:right;" class="c-green">{{ m.kwh_estimado }}</td>
+        <td style="text-align:right;" class="c-honey">
+          {% if m.costo_estimado %}${{ m.costo_estimado|floatformat:0 }}{% else %}<span class="c-fine">—</span>{% endif %}
+        </td>
+        <td style="text-align:right;" class="c-fine d-none d-md-table-cell">
+          {% if m.tarifa %}<span class="mono">${{ m.tarifa }}</span>{% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot style="border-top:2px solid var(--rule);">
+      <tr>
+        <td class="c-fine mono" style="font-size:10px;letter-spacing:.1em;">TOTAL</td>
+        <td class="d-none d-md-table-cell"></td>
+        <td style="text-align:right;font-weight:800;" class="c-green">{{ kwh_acumulado }}</td>
+        <td style="text-align:right;font-weight:800;" class="c-honey">${{ costo_acumulado }}</td>
+        <td class="d-none d-md-table-cell"></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% endif %}
+
+<!-- MEDIDOR / COMPARACIÓN -->
+<div class="panel">
+  <div class="panel__head">
+    <div class="panel__head-left">
+      <span class="panel__sigil panel__sigil--slate">§</span>
+      <span class="label-eyebrow panel__title">lecturas del medidor{% if lecturas %} · {{ lecturas|length }}{% endif %}</span>
+    </div>
+  </div>
+
+  {% if lecturas %}
+  <!-- Comparación estimado vs real -->
+  <div class="en-cmp-grid">
+    <div class="en-cmp-item">
+      <div class="label-eyebrow">kWh estimado</div>
+      <div class="en-cmp-val" style="color:var(--green);">{{ kwh_acumulado }}</div>
+      <div class="mono c-fine" style="font-size:10px;margin-top:4px;">calculado por equipos</div>
+    </div>
+    <div class="en-cmp-item">
+      <div class="label-eyebrow">kWh real (medidor)</div>
+      <div class="en-cmp-val" style="color:{% if alerta %}var(--rust){% else %}var(--cream){% endif %};">{{ kwh_real }}</div>
+      <div class="mono c-fine" style="font-size:10px;margin-top:4px;">suma de lecturas</div>
+    </div>
+    <div class="en-cmp-item">
+      <div class="label-eyebrow">variación</div>
+      <div class="en-cmp-val" style="color:{% if alerta %}var(--rust){% elif variacion_pct and variacion_pct > 5 %}var(--honey){% else %}var(--green){% endif %};">
+        {% if variacion_pct %}{% if variacion_pct > 0 %}+{% endif %}{{ variacion_pct }}%{% else %}—{% endif %}
+      </div>
+      <div class="mono c-fine" style="font-size:10px;margin-top:4px;">{% if alerta %}alerta >15%{% elif variacion_pct %}dentro de rango{% else %}sin datos{% endif %}</div>
+    </div>
+  </div>
+  <!-- Lista lecturas -->
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th style="text-align:right;">kWh real</th>
+        <th class="d-none d-md-table-cell">Notas</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in lecturas %}
+      <tr>
+        <td class="c-cream">{{ l.fecha|date:"d/m/Y" }}</td>
+        <td style="text-align:right;" class="c-honey">{{ l.kwh_real }}</td>
+        <td class="c-soft d-none d-md-table-cell">{{ l.notas|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:24px 20px;text-align:center;color:var(--fine);font-size:12px;">
+    Sin lecturas cargadas. Ingresá la lectura del medidor para comparar con el estimado.
+  </div>
+  {% endif %}
+
+  <!-- Formulario nueva lectura -->
+  {% if request.user.is_staff %}
+  <div class="en-form">
+    <div class="label-eyebrow">+ nueva lectura</div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="en-form__row">
+        <div class="en-form__field">
+          <label class="en-form__label">Fecha</label>
+          <input type="date" name="fecha" value="{{ hoy|date:'Y-m-d' }}" required style="width:150px;">
+        </div>
+        <div class="en-form__field">
+          <label class="en-form__label">kWh acumulado</label>
+          <input type="number" name="kwh_real" step="0.01" min="0" placeholder="ej: 557.5" required style="width:180px;">
+        </div>
+        <div class="en-form__field" style="flex:1;min-width:140px;">
+          <label class="en-form__label">Notas (opcional)</label>
+          <input type="text" name="notas" placeholder="ej: mes completo" maxlength="200" style="width:100%;">
+        </div>
+        <div class="en-form__field">
+          <label class="en-form__label">&nbsp;</label>
+          <button type="submit" class="btn-brand" style="padding:8px 18px;border-color:var(--honey);background:var(--honey);">
+            <i class="bi bi-plus-lg"></i> cargar
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

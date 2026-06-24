@@ -156,6 +156,44 @@
     font-size: 36px; font-weight: 700; margin: 0; letter-spacing: -.022em;
   }
 
+  /* ── ENERGÍA STRIP ── */
+  .energia-strip {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px; margin-bottom: 28px;
+  }
+  .energia-card {
+    background: var(--card); border: 1px solid var(--rule);
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 14px;
+    color: var(--cream); text-decoration: none;
+    transition: border-color .12s;
+  }
+  .energia-card:hover { border-color: var(--honey); color: var(--cream); }
+  .energia-card__icon {
+    width: 40px; height: 40px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(212,154,62,.08); border: 1px solid rgba(212,154,62,.2);
+    color: var(--honey); font-size: 18px;
+  }
+  .energia-card__body { flex: 1; min-width: 0; }
+  .energia-card__name {
+    font-size: 12px; font-weight: 700; color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .energia-card__vals {
+    display: flex; gap: 16px; margin-top: 4px;
+  }
+  .energia-card__val {
+    font-family: "JetBrains Mono", monospace; font-size: 14px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .energia-card__val--kwh { color: var(--green); }
+  .energia-card__val--ars { color: var(--honey); }
+  .energia-card__label {
+    font-family: "JetBrains Mono", monospace; font-size: 9px;
+    color: var(--fine); letter-spacing: .12em; text-transform: uppercase;
+  }
+
   @media (max-width: 640px) {
     .dash-hero__title { font-size: 56px; }
     .dash-hero__title-accent { display: block; margin-left: 0; }
@@ -269,6 +307,39 @@
     <span class="mono c-fine" style="font-size: 10px;">iniciar log</span>
   </a>
   {% endif %}
+</div>
+{% endif %}
+
+<!-- ENERGÍA -->
+{% if energia_items %}
+<div class="section-label" style="margin-top:4px;">
+  <span class="section-label__rule" style="background:var(--honey);"></span>
+  <span class="label-eyebrow" style="color:var(--honey);">§ energía · consumo mensual</span>
+  <span class="section-label__line"></span>
+  {% if tarifa %}
+  <span class="mono c-fine" style="font-size:10px;white-space:nowrap;">${{ tarifa.precio_kwh }}/kWh · {{ tarifa.distribuidora }}</span>
+  {% endif %}
+</div>
+<div class="energia-strip">
+  {% for ei in energia_items %}
+  <a href="{% url 'growlog:energia' ei.cultivo.slug %}" class="energia-card">
+    <div class="energia-card__icon"><i class="bi bi-lightning-charge-fill"></i></div>
+    <div class="energia-card__body">
+      <div class="energia-card__name">{{ ei.cultivo.nombre }}</div>
+      <div class="energia-card__vals">
+        <div>
+          <div class="energia-card__val energia-card__val--kwh">{{ ei.kwh_mes }}<span style="font-size:9px;font-weight:400;margin-left:2px;">kWh</span></div>
+          <div class="energia-card__label">estimado/mes</div>
+        </div>
+        <div>
+          <div class="energia-card__val energia-card__val--ars">${{ ei.costo_mes }}</div>
+          <div class="energia-card__label">costo/mes</div>
+        </div>
+      </div>
+    </div>
+    <i class="bi bi-chevron-right c-fine" style="font-size:12px;"></i>
+  </a>
+  {% endfor %}
 </div>
 {% endif %}
 
