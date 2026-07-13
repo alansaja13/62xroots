@@ -8,24 +8,61 @@ urlpatterns = [
     # ── API v1 ────────────────────────────────────────────────────────────────
     path("api/v1/cultivos/", api_views.cultivos_list),
     path("api/v1/cultivos/<slug:slug>/", api_views.cultivo_detail),
+
+    # Plantas
+    path("api/v1/cultivos/<slug:slug>/plantas/", api_views.cultivo_plantas),
+    path("api/v1/plantas/<uuid:planta_uuid>/", api_views.planta_detail),
+    path("api/v1/plantas/<uuid:planta_uuid>/mediciones/", api_views.planta_mediciones),
+    path("api/v1/plantas/<uuid:planta_uuid>/mediciones/<int:medicion_id>/", api_views.medicion_planta_detail),
+
+    # Riego + detalle por planta + nutrientes aplicados
     path("api/v1/cultivos/<slug:slug>/riegos/", api_views.cultivo_riegos),
     path("api/v1/cultivos/<slug:slug>/riegos/<int:riego_id>/", api_views.cultivo_riego_detail),
+    path("api/v1/cultivos/<slug:slug>/riegos/<int:riego_id>/plantas/", api_views.cultivo_riego_plantas),
+    path("api/v1/cultivos/<slug:slug>/riegos/<int:riego_id>/plantas/<int:rp_id>/", api_views.riego_planta_detail),
+    path("api/v1/cultivos/<slug:slug>/riegos/<int:riego_id>/nutrientes/", api_views.cultivo_riego_nutrientes),
+    path("api/v1/cultivos/<slug:slug>/riegos/<int:riego_id>/nutrientes/<int:na_id>/", api_views.riego_nutriente_detail),
+
+    # Mediciones de ambiente y EC/pH
     path("api/v1/cultivos/<slug:slug>/mediciones/", api_views.cultivo_mediciones),
+    path("api/v1/cultivos/<slug:slug>/mediciones/<int:medicion_id>/", api_views.cultivo_medicion_detail),
+    path("api/v1/cultivos/<slug:slug>/mediciones-ec/", api_views.cultivo_mediciones_ec),
+    path("api/v1/cultivos/<slug:slug>/mediciones-ec/<int:medicion_id>/", api_views.medicion_ec_detail),
+
+    # Eventos
     path("api/v1/cultivos/<slug:slug>/eventos/", api_views.cultivo_eventos),
+    path("api/v1/cultivos/<slug:slug>/eventos/<int:evento_id>/", api_views.cultivo_evento_detail),
+    path("api/v1/cultivos/<slug:slug>/eventos/<int:evento_id>/resolver-followup/", api_views.evento_resolver_followup),
+
+    # Tareas
     path("api/v1/cultivos/<slug:slug>/tareas/", api_views.cultivo_tareas),
+    path("api/v1/cultivos/<slug:slug>/tareas/<int:tarea_id>/", api_views.cultivo_tarea_detail),
+
+    # Fotoperiodo
     path("api/v1/cultivos/<slug:slug>/cambios-fotoperiodo/", api_views.cultivo_cambios_fotoperiodo),
-    path("api/v1/plantas/<uuid:planta_uuid>/", api_views.planta_detail),
+    path("api/v1/cultivos/<slug:slug>/cambios-fotoperiodo/<int:cf_id>/", api_views.cambio_fotoperiodo_detail),
+
+    # Canopy
     path("api/v1/cultivos/<slug:slug>/canopy/", api_views.cultivo_canopy),
     path("api/v1/cultivos/<slug:slug>/canopy/history/", api_views.cultivo_canopy_history),
     path("api/v1/cultivos/<slug:slug>/canopy/<int:snapshot_id>/", api_views.cultivo_canopy_detail),
 
+    # Referencia (solo lectura)
+    path("api/v1/nutrientes/", api_views.nutrientes_list),
+    path("api/v1/parametros-ideales/", api_views.parametros_ideales_list),
+
     # Módulo energético
     path("api/v1/equipos/", api_views.equipos_list),
     path("api/v1/equipos/<int:equipo_id>/", api_views.equipo_detail),
+    path("api/v1/tarifas/", api_views.tarifas_list),
+    path("api/v1/tarifas/<int:tarifa_id>/", api_views.tarifa_detail),
     path("api/v1/cultivos/<slug:slug>/costos/", api_views.cultivo_costos),
     path("api/v1/cultivos/<slug:slug>/costos/historico/", api_views.cultivo_costos_historico),
     path("api/v1/cultivos/<slug:slug>/costos/comparacion/", api_views.cultivo_costos_comparacion),
+    path("api/v1/cultivos/<slug:slug>/costos/equipos/", api_views.cultivo_costos_equipos),
+    path("api/v1/cultivos/<slug:slug>/costos/equipos/<int:costo_id>/", api_views.costo_detail),
     path("api/v1/cultivos/<slug:slug>/lecturas-medidor/", api_views.cultivo_lecturas_medidor),
+    path("api/v1/cultivos/<slug:slug>/lecturas-medidor/<int:lectura_id>/", api_views.lectura_medidor_detail),
 
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),

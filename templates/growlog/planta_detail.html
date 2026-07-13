@@ -261,6 +261,84 @@
 </div>
 {% endif %}
 
+<!-- RIEGOS -->
+<div class="panel">
+  <div class="panel__head">
+    <div class="panel__head-left">
+      <span class="panel__sigil panel__sigil--slate">§</span>
+      <span class="label-eyebrow panel__title">riegos · histórico</span>
+      <span class="mono c-fine" style="font-size:10px;">· {{ riegos_planta|length }}</span>
+    </div>
+    {% if request.user.is_staff %}<a href="{% url 'growlog:riego_crear' cultivo.slug %}" class="panel__action panel__action--green">+ nuevo riego</a>{% endif %}
+  </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th style="width:110px;">Fecha</th>
+        <th style="width:100px; text-align:right;">Volumen</th>
+        <th style="width:140px;">Runoff</th>
+        <th>Notas</th>
+        <th style="width:40px; text-align:right;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for rp in riegos_planta %}
+      <tr>
+        <td class="c-soft">{{ rp.riego.timestamp|date:"d/m/Y H:i" }}</td>
+        <td style="text-align:right;" class="c-cream">
+          <span style="font-size:14px; font-weight:600;">{{ rp.volumen_ml }} <span class="c-fine" style="font-size:11px; font-weight:400;">ml</span></span>
+        </td>
+        <td class="c-soft">
+          {% if rp.runoff_observado %}
+            <span class="c-green">✓ observado</span>
+            {% if rp.ph_runoff %}<span class="c-fine"> · pH {{ rp.ph_runoff }}</span>{% endif %}
+            {% if rp.ec_runoff %}<span class="c-fine"> · EC {{ rp.ec_runoff }}</span>{% endif %}
+          {% else %}<span class="c-fine">—</span>{% endif %}
+        </td>
+        <td class="c-soft" style="{% if rp.notas %}font-style:italic;{% endif %}">{{ rp.notas|default:"—" }}</td>
+        <td style="text-align:right;">
+          <a href="{% url 'growlog:riego_editar' rp.riego_id %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" style="text-align:center; padding:36px 16px; color:var(--fine);">
+          <i class="bi bi-droplet" style="font-size:22px; display:block; margin-bottom:8px; opacity:.5;"></i>
+          Sin riegos registrados para esta planta aún.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- EVENTOS -->
+{% if eventos %}
+<div class="panel">
+  <div class="panel__head">
+    <div class="panel__head-left">
+      <span class="panel__sigil panel__sigil--honey">§</span>
+      <span class="label-eyebrow panel__title">eventos</span>
+      <span class="mono c-fine" style="font-size:10px;">· {{ eventos|length }}</span>
+    </div>
+  </div>
+  <div class="panel__body" style="padding-top: 6px; padding-bottom: 8px;">
+    {% for e in eventos %}
+    <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:10px 0; border-bottom:1px solid var(--rule-soft);">
+      <div>
+        <span class="tc tc--evento">{{ e.get_tipo_display }}</span>
+        <span class="c-soft" style="margin-left:8px; font-size:12.5px;">{{ e.descripcion|truncatechars:90 }}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+        <span class="mono c-fine" style="font-size:10px;">{{ e.timestamp|date:"d/m/y" }}</span>
+        <a href="{% url 'growlog:evento_editar' e.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <!-- MEDICIONES TABLE -->
 <div class="panel">
   <div class="panel__head">

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Riego — {{ riego }}{% endblock %}
+{% block title %}{% if riego %}Riego — {{ riego }}{% else %}Nuevo riego — {{ subtitle }}{% endif %}{% endblock %}
 
 {% block crumb %}
 <div class="nav-crumb d-none d-lg-flex">
   <span class="nav-crumb__item">mis cultivos</span>
   <span class="nav-crumb__sep">/</span>
-  <span class="nav-crumb__item">{{ riego.cultivo.nombre }}</span>
+  <span class="nav-crumb__item">{{ subtitle }}</span>
   <span class="nav-crumb__sep">/</span>
   <span class="nav-crumb__item nav-crumb__item--last">riego</span>
 </div>
@@ -82,6 +82,34 @@
     font-family: "Geist Mono", monospace; font-size: 12px;
   }
 
+  /* Desglose de riego por planta */
+  .rf-plant-row {
+    border: 1px solid var(--rule-soft);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    background: var(--bg-alt);
+  }
+  .rf-plant-row:has(input.rf-plant-check:checked) { border-color: var(--green); }
+  .rf-plant-row__head {
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; margin: 0;
+  }
+  .rf-plant-row__head input[type=checkbox] { width: 16px; height: 16px; flex-shrink: 0; }
+  .rf-plant-row__name {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 16px; font-weight: 700; color: var(--cream);
+  }
+  .rf-plant-row__detail {
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--rule-soft);
+  }
+  .rf-plant-row__detail label { font-size: 11px; }
+  .rf-plant-row__total {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--rule-soft);
+  }
+
   .rf-delete-link {
     font-family: "Geist Mono", monospace; font-size: 11px;
     color: var(--fine); text-decoration: none;
@@ -109,28 +137,29 @@
     <div class="label-eyebrow">// log · riego</div>
     <div style="display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap;">
       <h1 class="rf-title">RIEGO</h1>
-      <span class="rf-title rf-title__accent">+ nutrientes</span>
+      <span class="rf-title rf-title__accent">por planta</span>
     </div>
     <div style="display: flex; align-items: center; gap: 14px; margin-top: 12px; flex-wrap: wrap;">
       <span class="mono c-soft" style="font-size: 12px;">en</span>
-      <span class="pill pill--green">● {{ riego.cultivo.nombre }}</span>
-      <span class="mono c-soft" style="font-size: 12px;">· día {{ riego.cultivo.dias_desde_inicio }}</span>
+      <span class="pill pill--green">● {{ subtitle }}</span>
+      {% if riego %}<span class="mono c-soft" style="font-size: 12px;">· día {{ riego.cultivo.dias_desde_inicio }}</span>{% endif %}
     </div>
   </div>
 </div>
 
-<div class="row g-3">
+<div class="row g-3" x-data="{ buscarRunoff: {{ form.buscar_runoff.value|yesno:'true,false' }} }">
   <div class="col-12 col-lg-8">
     <!-- Riego form -->
     <div class="panel">
       <div class="panel__head">
         <div class="panel__head-left">
           <span class="panel__sigil">§</span>
-          <span class="label-eyebrow panel__title">datos · riego</span>
+          <span class="label-eyebrow panel__title">sesión de riego</span>
+          <span class="mono c-fine" style="font-size: 10px;">· solución compartida</span>
         </div>
       </div>
       <div class="panel__body">
-        <form method="post">
+        <form method="post" id="riego-form">
           {% csrf_token %}
           {% if form.non_field_errors %}
           <div class="form-errors" style="margin-bottom: 16px;">
@@ -147,6 +176,7 @@
                     {{ field }}
                     <span style="font-size:13px; color: var(--cream); font-weight: 500;">{{ field.label }}</span>
                   </label>
+                  <div class="field-hint">Si está activo, vas a poder cargar pH/EC del runoff por cada planta.</div>
                 </div>
               {% elif field.name == 'timestamp' or field.name == 'notas' %}
                 <div class="col-12 {% if field.errors %}has-error{% endif %}">
@@ -164,9 +194,73 @@
               {% endwith %}
             {% endfor %}
           </div>
+
+          <!-- Desglose por planta -->
+          <div class="mt-4">
+            <div class="label-eyebrow" style="margin-bottom: 10px;">plantas regadas</div>
+
+            {% if rp_formset.non_form_errors %}
+            <div class="form-errors" style="margin-bottom: 12px;">
+              {% for error in rp_formset.non_form_errors %}<div>{{ error }}</div>{% endfor %}
+            </div>
+            {% endif %}
+
+            {% if not plantas %}
+              <div class="rf-na-empty">
+                Este cultivo no tiene plantas activas todavía.
+                <a href="{% url 'growlog:planta_crear' cultivo_slug %}">Agregá una planta</a> antes de registrar el riego.
+              </div>
+            {% else %}
+              {{ rp_formset.management_form }}
+              {% for row, planta in rp_rows %}
+              <div class="rf-plant-row" x-data="{ incluida: {{ row.incluida.value|yesno:'true,false' }} }">
+                {{ row.planta_id }}
+                <label class="rf-plant-row__head">
+                  {{ row.incluida }}
+                  <span class="rf-plant-row__name">{{ planta.apodo }}</span>
+                  {% if planta.strain %}<span class="mono c-fine" style="font-size: 10px;">{{ planta.strain }}</span>{% endif %}
+                </label>
+                <div x-show="incluida" class="rf-plant-row__detail">
+                  <div class="row g-2 align-items-end">
+                    <div class="col-6 col-sm-4 rf-num-input {% if row.volumen_ml.errors %}has-error{% endif %}">
+                      <label for="{{ row.volumen_ml.id_for_label }}">ml</label>
+                      {{ row.volumen_ml }}
+                      {% if row.volumen_ml.errors %}<div class="field-error">{{ row.volumen_ml.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-6 col-sm-8" x-show="buscarRunoff">
+                      <label class="form-check-label d-flex align-items-center gap-2" style="cursor:pointer;">
+                        {{ row.runoff_observado }}
+                        <span style="font-size:12px; color: var(--cream);">runoff observado</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="row g-2 mt-1" x-show="buscarRunoff">
+                    <div class="col-6 col-sm-4">
+                      <label for="{{ row.ph_runoff.id_for_label }}">pH runoff</label>
+                      {{ row.ph_runoff }}
+                    </div>
+                    <div class="col-6 col-sm-4">
+                      <label for="{{ row.ec_runoff.id_for_label }}">EC runoff</label>
+                      {{ row.ec_runoff }}
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <label for="{{ row.notas.id_for_label }}">notas de esta planta</label>
+                    {{ row.notas }}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+              <div class="rf-plant-row__total">
+                <span class="mono c-fine" style="font-size: 10px;">el volumen total se calcula sumando las plantas incluidas</span>
+                <span class="mono c-green" id="rp-total-preview" style="font-size: 14px; font-weight: 700;">0 ml</span>
+              </div>
+            {% endif %}
+          </div>
+
           <div class="d-flex gap-2 mt-4">
             <button type="submit" class="btn-brand" style="flex: 1;">
-              <i class="bi bi-check-lg"></i> actualizar riego
+              <i class="bi bi-check-lg"></i> {% if riego %}actualizar riego{% else %}guardar riego{% endif %}
             </button>
             <a href="{{ back_url }}" class="btn-ghost">cancelar</a>
           </div>
@@ -181,6 +275,7 @@
       </div>
     </div>
 
+    {% if riego %}
     <!-- Nutrientes aplicados -->
     <div class="panel">
       <div class="panel__head">
@@ -254,6 +349,7 @@
         </form>
       </div>
     </div>
+    {% endif %}
   </div>
 
   <!-- SIDEBAR -->
@@ -266,52 +362,71 @@
         </div>
       </div>
       <div class="panel__body" style="padding-top: 8px;">
+        {% if riego %}
         <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="label-eyebrow">volumen</span>
+          <span class="label-eyebrow">volumen total</span>
           <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.volumen_total_ml }} ml</span>
         </div>
-        {% if riego.volumen_por_planta_ml %}
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="label-eyebrow">por planta</span>
-          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.volumen_por_planta_ml }} ml</span>
-        </div>
-        {% endif %}
         {% if riego.ph_agua %}
         <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="label-eyebrow">pH</span>
+          <span class="label-eyebrow">pH solución</span>
           <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.ph_agua }}</span>
         </div>
         {% endif %}
         {% if riego.ec_solucion %}
         <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="label-eyebrow">ec entrada</span>
+          <span class="label-eyebrow">ec solución</span>
           <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.ec_solucion }} mS</span>
         </div>
         {% endif %}
         <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="label-eyebrow">runoff</span>
-          <span class="mono {% if riego.runoff_observado %}c-green{% else %}c-fine{% endif %}" style="font-size: 11px; font-weight: 600;">
-            {% if riego.runoff_observado %}observado ✓{% else %}no{% endif %}
-          </span>
-        </div>
-        {% if riego.ph_runoff %}
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="label-eyebrow">pH runoff</span>
-          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.ph_runoff }}</span>
-        </div>
-        {% endif %}
-        {% if riego.ec_runoff %}
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="label-eyebrow">EC runoff</span>
-          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.ec_runoff }} mS</span>
-        </div>
-        {% endif %}
-        <div style="display: flex; justify-content: space-between; padding: 8px 0;">
           <span class="label-eyebrow">nutrientes</span>
           <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ nutrientes|length }} productos</span>
         </div>
+
+        <div style="padding: 10px 0 4px;">
+          <span class="label-eyebrow">plantas ({{ riego.detalle_plantas.count }})</span>
+        </div>
+        {% for rp in riego.detalle_plantas.all %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule-soft);">
+          <span class="mono c-soft" style="font-size: 11px;">{{ rp.planta.apodo }}</span>
+          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">
+            {{ rp.volumen_ml }} ml
+            {% if rp.runoff_observado %}<i class="bi bi-droplet-half c-green" title="runoff observado"></i>{% endif %}
+          </span>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="rf-na-empty">Guardá el riego para ver el resumen.</div>
+        {% endif %}
       </div>
     </div>
   </div>
 </div>
+
+<script>
+(function () {
+  function updateTotal() {
+    var total = 0;
+    document.querySelectorAll('.rf-plant-row').forEach(function (row) {
+      var chk = row.querySelector('input[type=checkbox][name$="-incluida"]');
+      var vol = row.querySelector('input[name$="-volumen_ml"]');
+      if (chk && chk.checked && vol && vol.value) {
+        var v = parseInt(vol.value, 10);
+        if (!isNaN(v)) total += v;
+      }
+    });
+    var el = document.getElementById('rp-total-preview');
+    if (el) el.textContent = total + ' ml';
+  }
+  document.addEventListener('input', function (e) {
+    if (e.target.closest && e.target.closest('.rf-plant-row')) updateTotal();
+  });
+  document.addEventListener('change', function (e) {
+    if (e.target.closest && e.target.closest('.rf-plant-row')) updateTotal();
+  });
+  document.addEventListener('DOMContentLoaded', updateTotal);
+  updateTotal();
+})();
+</script>
 {% endblock %}

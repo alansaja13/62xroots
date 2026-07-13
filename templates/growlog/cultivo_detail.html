@@ -615,7 +615,13 @@
               {% elif reg.tipo == 'riego' %}
                 {% if reg.obj.ph_agua %}<span>pH <span class="c-cream">{{ reg.obj.ph_agua }}</span></span>{% endif %}
                 {% if reg.obj.ec_solucion %}<span class="c-fine"> · </span><span>EC <span class="c-cream">{{ reg.obj.ec_solucion }}</span></span>{% endif %}
-                {% if reg.obj.runoff_observado %}<span class="c-fine"> · </span><span class="c-green">runoff ✓</span>{% endif %}
+                {% if reg.obj.detalle_plantas.exists %}
+                  <span style="display:inline-flex; gap:5px; flex-wrap:wrap; margin-left:8px;">
+                    {% for rp in reg.obj.detalle_plantas.all %}
+                      <span class="tc tc--baja" style="font-weight:600; letter-spacing:.05em;">{{ rp.planta.apodo }}{% if rp.runoff_observado %} · runoff ✓{% endif %}</span>
+                    {% endfor %}
+                  </span>
+                {% endif %}
                 {% if reg.obj.nutrientes_aplicados.exists %}
                   <span style="display:inline-flex; gap:5px; flex-wrap:wrap; margin-left:8px;">
                     {% for na in reg.obj.nutrientes_aplicados.all %}

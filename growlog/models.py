@@ -275,6 +275,26 @@ class NutrienteAplicado(models.Model):
         return f"{self.nutriente} @ {self.dosis_g_por_litro}g/L"
 
 
+class RiegoPlanta(models.Model):
+    """Detalle de riego por planta individual dentro de una sesión de Riego."""
+    riego = models.ForeignKey(Riego, on_delete=models.CASCADE, related_name="detalle_plantas")
+    planta = models.ForeignKey(Planta, on_delete=models.CASCADE, related_name="riegos_detalle")
+    volumen_ml = models.PositiveIntegerField(verbose_name="Volumen (ml)")
+    runoff_observado = models.BooleanField(default=False)
+    ph_runoff = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True, verbose_name="pH runoff")
+    ec_runoff = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="EC runoff (mS/cm)")
+    notas = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["planta__apodo"]
+        unique_together = [("riego", "planta")]
+        verbose_name = "Detalle de riego por planta"
+        verbose_name_plural = "Detalles de riego por planta"
+
+    def __str__(self):
+        return f"{self.planta.apodo} — {self.volumen_ml}ml (riego #{self.riego_id})"
+
+
 class Evento(models.Model):
     TIPO_CHOICES = [
         ("topping", "Topping"),

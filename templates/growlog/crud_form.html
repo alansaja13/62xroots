@@ -30,12 +30,14 @@
     color: var(--cream-soft); margin-top: 6px;
   }
 
-  /* M2M checkboxes — chip-style */
-  .m2m-group ul {
+  /* M2M checkboxes — chip-style.
+     Django's CheckboxSelectMultiple renders <div id="id_x"><div><label>…</label></div>…</div>
+     (no <ul>/<li>), so the chip rules target that actual structure. */
+  .m2m-group > div {
     list-style: none; padding: 0; margin: 0;
     display: flex; flex-wrap: wrap; gap: 6px;
   }
-  .m2m-group li label {
+  .m2m-group label {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 7px 12px;
     border: 1px solid var(--rule); background: var(--bg-alt);
@@ -45,11 +47,11 @@
     margin-bottom: 0;
     text-transform: none; letter-spacing: 0;
   }
-  .m2m-group li label:has(input:checked) {
+  .m2m-group label:has(input:checked) {
     border-color: var(--green); color: var(--green); background: var(--green-wash);
   }
-  .m2m-group li label:hover { border-color: var(--green); color: var(--green); }
-  .m2m-group li input[type=checkbox] { width: 14px; height: 14px; }
+  .m2m-group label:hover { border-color: var(--green); color: var(--green); }
+  .m2m-group input[type=checkbox] { width: 14px; height: 14px; }
 
   .cf-delete-link {
     font-family: "Geist Mono", monospace; font-size: 11px;

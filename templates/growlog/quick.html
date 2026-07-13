@@ -222,13 +222,10 @@
                     <i class="bi bi-droplet-fill"></i> Regué hoy
                   </span>
                 </label>
-                <div x-show="rego" x-transition class="row g-3 mt-2">
-                  <div class="col-6">
-                    <label>volumen (ml)</label>{{ form.volumen_total_ml }}
-                  </div>
-                  <div class="col-6">
-                    <label>pH agua</label>{{ form.ph_agua }}
-                  </div>
+                <div x-show="rego" x-transition class="mt-2">
+                  <span class="mono c-soft" style="font-size: 11px;">
+                    Al guardar te llevamos al formulario de riego para elegir qué plantas regaste y cuánto.
+                  </span>
                 </div>
               </div>
 

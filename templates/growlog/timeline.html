@@ -178,9 +178,7 @@
             <span style="font-size:14px;">{{ reg.obj.temperatura_c|floatformat:1 }}°C <span class="c-fine" style="font-weight:400;">/</span> {{ reg.obj.humedad_relativa|floatformat:0 }}%HR</span>
           {% elif reg.tipo == 'riego' %}
             <span style="font-size:14px;">{{ reg.obj.volumen_total_ml }} ml</span>
-            {% if reg.obj.volumen_por_planta_ml %}
-              <span class="c-fine" style="font-weight:400; font-size:11px; margin-left:6px;">({{ reg.obj.volumen_por_planta_ml }}/planta)</span>
-            {% endif %}
+            <span class="c-fine" style="font-weight:400; font-size:11px; margin-left:6px;">· {{ reg.obj.detalle_plantas.count }} planta{{ reg.obj.detalle_plantas.count|pluralize }}</span>
           {% elif reg.tipo == 'medicion_ec' %}
             <span style="font-size:14px;">{{ reg.obj.get_tipo_display }}</span>
           {% else %}
@@ -211,8 +209,15 @@
           {% if reg.tipo == 'medicion' and reg.obj.notas %}
             <span style="font-style:italic; color:var(--cream-soft);">"{{ reg.obj.notas }}"</span>
           {% elif reg.tipo == 'riego' %}
-            {% if reg.obj.nutrientes_aplicados.exists %}
+            {% if reg.obj.detalle_plantas.exists %}
               <span style="display:inline-flex; gap:5px; flex-wrap:wrap;">
+                {% for rp in reg.obj.detalle_plantas.all %}
+                  <span class="tc tc--baja" style="font-weight:600; letter-spacing:.05em;">{{ rp.planta.apodo }} · {{ rp.volumen_ml }}ml</span>
+                {% endfor %}
+              </span>
+            {% endif %}
+            {% if reg.obj.nutrientes_aplicados.exists %}
+              <span style="display:inline-flex; gap:5px; flex-wrap:wrap; margin-top:4px;">
                 {% for na in reg.obj.nutrientes_aplicados.all %}
                   <span class="tc tc--riego" style="font-weight:600; letter-spacing:.05em;">{{ na.nutriente }} · {{ na.dosis_g_por_litro }}g/L</span>
                 {% endfor %}

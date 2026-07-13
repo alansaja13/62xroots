@@ -34,7 +34,7 @@ def staff_required(view_func):
 from .models import (
     CambioFotoperiodo, CanopySnapshot, ColaPosicion, CostoEnergetico, Cultivo, Equipo,
     LecturaMedidor, MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente,
-    NutrienteAplicado, Evento, Planta, ParametroIdeal, Riego, Tarea, TarifaElectrica,
+    NutrienteAplicado, Evento, Planta, ParametroIdeal, Riego, RiegoPlanta, Tarea, TarifaElectrica,
     POSICION_TENT_COORDS,
 )
 from .utils import get_cambio_fotoperiodo_activo, calcular_luz_estado, get_flip_a_flora
@@ -113,10 +113,6 @@ class QuickEntryForm(forms.Form):
     )
     rego = forms.BooleanField(label="¿Regué hoy?", required=False,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
-    volumen_total_ml = forms.IntegerField(label="Volumen total (ml)", required=False,
-        widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "numeric", "placeholder": "3000"}))
-    ph_agua = forms.DecimalField(label="pH del agua", max_digits=4, decimal_places=2, required=False,
-        widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "decimal", "step": "0.1", "placeholder": "6.2"}))
     notas = forms.CharField(label="Notas", required=False,
         widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Observaciones rápidas..."}))
 
@@ -194,22 +190,119 @@ class EventoForm(forms.ModelForm):
 
 
 class RiegoForm(forms.ModelForm):
+    """Datos compartidos de la sesión de riego (solución madre). El volumen y el
+    runoff se cargan por planta en RiegoPlantaEntryForm — ver _riego_planta_formset."""
     class Meta:
         model = Riego
-        fields = ["timestamp", "volumen_total_ml", "volumen_por_planta_ml", "ph_agua",
-                  "ec_solucion", "buscar_runoff", "runoff_observado", "ph_runoff", "ec_runoff", "notas"]
+        fields = ["timestamp", "ph_agua", "ec_solucion", "buscar_runoff", "notas"]
         widgets = {
             "timestamp": forms.DateTimeInput(format=_DT_FMT, attrs={"class": "form-control", "type": "datetime-local"}),
-            "volumen_total_ml": forms.NumberInput(attrs={"class": "form-control field-narrow", "autofocus": True}),
-            "volumen_por_planta_ml": forms.NumberInput(attrs={"class": "form-control field-narrow"}),
-            "ph_agua": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
-            "ec_solucion": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
-            "buscar_runoff": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "runoff_observado": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "ph_runoff": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
-            "ec_runoff": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
-            "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "ph_agua": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01", "placeholder": "6.2"}),
+            "ec_solucion": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01", "placeholder": "1.8"}),
+            "buscar_runoff": forms.CheckboxInput(attrs={"class": "form-check-input", "x-model": "buscarRunoff"}),
+            "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Notas generales de la sesión (mezcla, incidencias)..."}),
         }
+
+
+class RiegoPlantaEntryForm(forms.Form):
+    """Una fila del desglose de riego por planta. Se instancia una por cada
+    planta activa del cultivo — ver _riego_planta_formset."""
+    planta_id = forms.IntegerField(widget=forms.HiddenInput())
+    incluida = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input", "x-model": "incluida"}),
+    )
+    volumen_ml = forms.IntegerField(
+        required=False, min_value=1, label="Volumen (ml)",
+        widget=forms.NumberInput(attrs={"class": "form-control field-narrow", "inputmode": "numeric", "placeholder": "500"}),
+    )
+    runoff_observado = forms.BooleanField(
+        required=False, label="Runoff observado",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    ph_runoff = forms.DecimalField(
+        required=False, max_digits=4, decimal_places=2, label="pH runoff",
+        widget=forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01", "placeholder": "6.0"}),
+    )
+    ec_runoff = forms.DecimalField(
+        required=False, max_digits=5, decimal_places=2, label="EC runoff (mS/cm)",
+        widget=forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01", "placeholder": "1.8"}),
+    )
+    notas = forms.CharField(
+        required=False, label="Notas",
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Notas de esta planta..."}),
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("incluida") and not cleaned.get("volumen_ml"):
+            self.add_error("volumen_ml", "Requerido para las plantas incluidas en el riego.")
+        return cleaned
+
+
+RiegoPlantaFormSet = forms.formset_factory(RiegoPlantaEntryForm, extra=0)
+
+
+def _riego_planta_formset(cultivo, data=None, riego=None):
+    """Arma el formset de desglose por planta, precargado con lo ya guardado si
+    `riego` existe (edición) o con todo desmarcado (alta nueva)."""
+    plantas = list(cultivo.plantas.filter(archivado=False).order_by("apodo"))
+    existentes = {}
+    if riego is not None:
+        existentes = {rp.planta_id: rp for rp in riego.detalle_plantas.all()}
+    initial = []
+    for p in plantas:
+        rp = existentes.get(p.id)
+        if rp:
+            initial.append({
+                "planta_id": p.id, "incluida": True, "volumen_ml": rp.volumen_ml,
+                "runoff_observado": rp.runoff_observado, "ph_runoff": rp.ph_runoff,
+                "ec_runoff": rp.ec_runoff, "notas": rp.notas,
+            })
+        else:
+            initial.append({"planta_id": p.id, "incluida": False})
+    formset = RiegoPlantaFormSet(data, initial=initial, prefix="rp")
+    return formset, plantas
+
+
+def _riego_planta_entries(rp_formset, plantas):
+    """Extrae del formset validado las filas marcadas como incluidas."""
+    planta_by_id = {p.id: p for p in plantas}
+    entries = []
+    for f in rp_formset.forms:
+        d = f.cleaned_data
+        if not d or not d.get("incluida"):
+            continue
+        planta = planta_by_id.get(d["planta_id"])
+        if not planta:
+            continue
+        entries.append({
+            "planta": planta,
+            "volumen_ml": d["volumen_ml"],
+            "runoff_observado": d.get("runoff_observado", False),
+            "ph_runoff": d.get("ph_runoff"),
+            "ec_runoff": d.get("ec_runoff"),
+            "notas": d.get("notas", ""),
+        })
+    return entries
+
+
+def _sync_riego_plantas(riego, entries):
+    """Sincroniza RiegoPlanta con las filas incluidas del formset (crea/actualiza/borra)."""
+    incoming_ids = {e["planta"].id for e in entries}
+    riego.detalle_plantas.exclude(planta_id__in=incoming_ids).delete()
+    existentes = {rp.planta_id: rp for rp in riego.detalle_plantas.all()}
+    for e in entries:
+        rp = existentes.get(e["planta"].id)
+        if rp:
+            rp.volumen_ml = e["volumen_ml"]
+            rp.runoff_observado = e["runoff_observado"]
+            rp.ph_runoff = e["ph_runoff"]
+            rp.ec_runoff = e["ec_runoff"]
+            rp.notas = e["notas"]
+            rp.save()
+        else:
+            RiegoPlanta.objects.create(riego=riego, **e)
 
 
 class MedicionPlantaForm(forms.ModelForm):
@@ -471,9 +564,12 @@ def quick_entry(request, slug):
             humedad_relativa=d["humedad_relativa"], notas=d.get("notas", ""),
             creado_por=request.user,
         )
-        if d["rego"] and d.get("volumen_total_ml"):
-            Riego.objects.create(cultivo=cultivo, volumen_total_ml=d["volumen_total_ml"],
-                                 ph_agua=d.get("ph_agua"), creado_por=request.user)
+        if d["rego"]:
+            redirect_url = reverse("growlog:riego_crear", args=[cultivo.slug])
+            if request.htmx:
+                return HttpResponseClientRedirect(redirect_url)
+            messages.success(request, f"✓ Medición guardada — ahora elegí qué plantas regaste.")
+            return redirect(redirect_url)
         if request.htmx:
             return HttpResponseClientRedirect(reverse("growlog:cultivo_detail", args=[cultivo.slug]))
         messages.success(request, f"✓ Guardado — {medicion.temperatura_c}°C / {medicion.humedad_relativa}%HR / VPD {medicion.vpd} kPa")
@@ -667,10 +763,16 @@ def planta_detail(request, pk):
     planta = get_object_or_404(Planta, pk=pk)
     mediciones = list(planta.mediciones.all())
     fotos = [m for m in mediciones if m.foto]
+    riegos_planta = list(
+        planta.riegos_detalle.select_related("riego").order_by("-riego__timestamp")[:20]
+    )
+    eventos = list(planta.eventos.order_by("-timestamp")[:20])
     return render(request, "growlog/planta_detail.html", {
         "planta": planta, "mediciones": mediciones,
         "fotos": fotos,
         "cultivo": planta.cultivo,
+        "riegos_planta": riegos_planta,
+        "eventos": eventos,
     })
 
 
@@ -859,16 +961,29 @@ def riego_crear(request, slug):
     cultivo = get_object_or_404(Cultivo, slug=slug)
     initial = {"timestamp": timezone.localtime().strftime(_DT_FMT)}
     form = RiegoForm(request.POST or None, initial=initial)
-    if request.method == "POST" and form.is_valid():
-        r = form.save(commit=False)
-        r.cultivo = cultivo
-        r.creado_por = request.user
-        r.save()
-        messages.success(request, "Riego registrado.")
-        return redirect("growlog:riego_editar", pk=r.pk)
-    return render(request, "growlog/crud_form.html", {
-        "form": form, "title": "Nuevo riego",
+    rp_formset, plantas = _riego_planta_formset(cultivo, request.POST or None)
+
+    if request.method == "POST" and form.is_valid() and rp_formset.is_valid():
+        entries = _riego_planta_entries(rp_formset, plantas)
+        if not entries:
+            messages.error(request, "Seleccioná al menos una planta e indicá su volumen de riego.")
+        else:
+            r = form.save(commit=False)
+            r.cultivo = cultivo
+            r.creado_por = request.user
+            r.volumen_total_ml = sum(e["volumen_ml"] for e in entries)
+            r.save()
+            RiegoPlanta.objects.bulk_create([RiegoPlanta(riego=r, **e) for e in entries])
+            messages.success(request, "Riego registrado.")
+            return redirect("growlog:riego_editar", pk=r.pk)
+
+    return render(request, "growlog/riego_form.html", {
+        "form": form, "riego": None,
+        "rp_rows": list(zip(rp_formset.forms, plantas)),
+        "rp_formset": rp_formset, "plantas": plantas,
+        "title": "Nuevo riego",
         "subtitle": cultivo.nombre,
+        "cultivo_slug": cultivo.slug,
         "back_url": reverse("growlog:cultivo_detail", args=[cultivo.slug]),
     })
 
@@ -877,16 +992,32 @@ def riego_crear(request, slug):
 @staff_required
 def riego_editar(request, pk):
     riego = get_object_or_404(Riego, pk=pk)
+    cultivo = riego.cultivo
     form = RiegoForm(request.POST or None, instance=riego)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Riego actualizado.")
-        return redirect("growlog:riego_editar", pk=pk)
+    rp_formset, plantas = _riego_planta_formset(cultivo, request.POST or None, riego=riego)
+
+    if request.method == "POST" and form.is_valid() and rp_formset.is_valid():
+        entries = _riego_planta_entries(rp_formset, plantas)
+        if not entries:
+            messages.error(request, "Seleccioná al menos una planta e indicá su volumen de riego.")
+        else:
+            r = form.save(commit=False)
+            r.volumen_total_ml = sum(e["volumen_ml"] for e in entries)
+            r.save()
+            _sync_riego_plantas(r, entries)
+            messages.success(request, "Riego actualizado.")
+            return redirect("growlog:riego_editar", pk=pk)
+
     nutrientes = riego.nutrientes_aplicados.select_related("nutriente").all()
     na_form = NutrienteAplicadoForm()
     return render(request, "growlog/riego_form.html", {
         "form": form, "riego": riego, "nutrientes": nutrientes,
         "na_form": na_form,
+        "rp_rows": list(zip(rp_formset.forms, plantas)),
+        "rp_formset": rp_formset, "plantas": plantas,
+        "title": "Editar riego",
+        "subtitle": cultivo.nombre,
+        "cultivo_slug": cultivo.slug,
         "back_url": reverse("growlog:cultivo_detail", args=[riego.cultivo.slug]),
         "delete_url": reverse("growlog:riego_eliminar", args=[pk]),
     })
