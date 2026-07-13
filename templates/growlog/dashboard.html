@@ -317,7 +317,7 @@
   <span class="label-eyebrow" style="color:var(--honey);">§ energía · consumo mensual</span>
   <span class="section-label__line"></span>
   {% if tarifa %}
-  <span class="mono c-fine" style="font-size:10px;white-space:nowrap;">${{ tarifa.precio_kwh }}/kWh · {{ tarifa.distribuidora }}</span>
+  <span class="mono c-fine" style="font-size:10px;white-space:nowrap;">${{ tarifa.precio_kwh|floatformat:2 }}/kWh · {{ tarifa.distribuidora }}</span>
   {% endif %}
 </div>
 <div class="energia-strip">

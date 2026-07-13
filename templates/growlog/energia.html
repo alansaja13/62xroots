@@ -118,7 +118,7 @@
     <div class="label-eyebrow">// energía · costos eléctricos</div>
     <h1 class="en-title">{{ cultivo.nombre }}</h1>
     <div class="mono c-soft" style="font-size:11px; margin-top:10px;">
-      {% if tarifa %}tarifa ${{ tarifa.precio_kwh }}/kWh · {{ tarifa.distribuidora }}<span class="c-fine"> · </span>{% endif %}
+      {% if tarifa %}tarifa ${{ tarifa.precio_kwh|floatformat:2 }}/kWh · {{ tarifa.distribuidora }}<span class="c-fine"> · </span>{% endif %}
       ciclo <strong class="c-cream">{{ ciclo }}</strong>
       {% if equipos_rows %}<span class="c-fine"> · </span>{{ equipos_rows|length }} equipos activos{% endif %}
     </div>
@@ -151,7 +151,7 @@
   <div class="en-stat">
     <div class="label-eyebrow"><i class="bi bi-cash"></i> costo/mes</div>
     <div class="en-stat__val">${{ total_costo_mes }}</div>
-    <div class="en-stat__sub">{% if tarifa %}@ ${{ tarifa.precio_kwh }}/kWh{% else %}sin tarifa cargada{% endif %}</div>
+    <div class="en-stat__sub">{% if tarifa %}@ ${{ tarifa.precio_kwh|floatformat:2 }}/kWh{% else %}sin tarifa cargada{% endif %}</div>
   </div>
   <div class="en-stat">
     <div class="label-eyebrow"><i class="bi bi-bar-chart-fill"></i> kWh acumulado</div>
