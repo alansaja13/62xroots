@@ -702,6 +702,19 @@ def cultivo_marcar_flora(request, slug):
     return redirect("growlog:cultivo_detail", cultivo.slug)
 
 
+@login_required
+@staff_required
+def cultivo_finalizar(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
+    if request.method == "POST":
+        cultivo.estado = "finalizado"
+        if not cultivo.fecha_fin:
+            cultivo.fecha_fin = timezone.localdate()
+        cultivo.save()
+        messages.success(request, f"Cultivo «{cultivo.nombre}» finalizado.")
+    return redirect("growlog:cultivo_detail", cultivo.slug)
+
+
 # ---------------------------------------------------------------------------
 # Planta CRUD
 # ---------------------------------------------------------------------------

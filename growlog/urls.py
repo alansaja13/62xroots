@@ -78,6 +78,7 @@ urlpatterns = [
     path("cultivo/<slug:slug>/", views.cultivo_detail, name="cultivo_detail"),
     path("cultivo/<slug:slug>/editar/", views.cultivo_editar, name="cultivo_editar"),
     path("cultivo/<slug:slug>/marcar-flora/", views.cultivo_marcar_flora, name="cultivo_marcar_flora"),
+    path("cultivo/<slug:slug>/finalizar/", views.cultivo_finalizar, name="cultivo_finalizar"),
     path("cultivo/<slug:slug>/quick/", views.quick_entry, name="quick"),
     path("cultivo/<slug:slug>/quick/evento/", views.quick_evento, name="quick_evento"),
     path("cultivo/<slug:slug>/quick/tarea/", views.quick_tarea, name="quick_tarea"),

@@ -406,6 +406,15 @@
       <a href="{% url 'growlog:reporte' cultivo.slug %}" class="btn-ghost" style="font-size:12px;padding:8px 14px">
         <i class="bi bi-clipboard-data"></i> reporte
       </a>
+      {% if request.user.is_staff and cultivo.estado != 'finalizado' %}
+      <form method="post" action="{% url 'growlog:cultivo_finalizar' cultivo.slug %}"
+            onsubmit="return confirm('¿Finalizar «{{ cultivo.nombre }}»? Pasará a estado finalizado con fecha de fin hoy.');">
+        {% csrf_token %}
+        <button type="submit" class="btn-ghost" style="font-size:12px;padding:8px 14px;border-color:var(--rust);color:var(--rust);">
+          <i class="bi bi-flag"></i> finalizar
+        </button>
+      </form>
+      {% endif %}
     </div>
     {% if request.user.is_staff %}
     <a href="{% url 'growlog:quick' cultivo.slug %}" class="btn-brand btn-brand--lg">
