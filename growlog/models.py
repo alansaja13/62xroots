@@ -1,5 +1,6 @@
 import math
 import uuid
+from django.core.cache import cache
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -8,6 +9,7 @@ from django.utils.text import slugify
 
 class Cultivo(models.Model):
     ESTADO_CHOICES = [
+        ("plantula", "Plántula"),
         ("vegetativo", "Vegetativo"),
         ("floracion", "Floración"),
         ("secado", "Secado"),
@@ -210,9 +212,13 @@ class MedicionAmbiente(models.Model):
         ParametroIdeal cargado para la etapa, no se puede clasificar.
         """
         v = self.vpd
-        try:
-            param = ParametroIdeal.objects.get(etapa=self.cultivo.estado)
-        except ParametroIdeal.DoesNotExist:
+        etapa = self.cultivo.estado
+        param = cache.get_or_set(
+            f"parametro_ideal:{etapa}",
+            lambda: ParametroIdeal.objects.filter(etapa=etapa).first(),
+            300,
+        )
+        if param is None:
             return None
         if float(param.vpd_min) <= v <= float(param.vpd_max):
             return "ideal"
@@ -404,6 +410,7 @@ class APIToken(models.Model):
 
 class ParametroIdeal(models.Model):
     ETAPA_CHOICES = [
+        ("plantula", "Plántula"),
         ("vegetativo", "Vegetativo"),
         ("floracion", "Floración"),
         ("secado", "Secado"),

@@ -15,6 +15,18 @@ from growlog.models import (
 
 # ── Parámetros ideales ──────────────────────────────────────────────────────
 ParametroIdeal.objects.get_or_create(
+    etapa="plantula",
+    defaults=dict(
+        temp_min=22, temp_max=26,
+        hr_min=65, hr_max=75,
+        ph_min=6.0, ph_max=6.8,
+        ec_min=0.4, ec_max=0.8,
+        vpd_min=0.40, vpd_max=0.80,
+        horas_luz=18,
+        distancia_luz_min=50, distancia_luz_max=70,
+    ),
+)
+ParametroIdeal.objects.get_or_create(
     etapa="vegetativo",
     defaults=dict(
         temp_min=22, temp_max=28,
@@ -36,6 +48,16 @@ ParametroIdeal.objects.get_or_create(
         vpd_min=0.96, vpd_max=1.15,
         horas_luz=12,
         distancia_luz_min=35, distancia_luz_max=50,
+    ),
+)
+ParametroIdeal.objects.get_or_create(
+    etapa="secado",
+    defaults=dict(
+        temp_min=15, temp_max=18,
+        hr_min=58, hr_max=62,
+        ph_min=6.0, ph_max=6.8,
+        vpd_min=0.60, vpd_max=0.90,
+        horas_luz=0,
     ),
 )
 print("✓ Parámetros ideales cargados")

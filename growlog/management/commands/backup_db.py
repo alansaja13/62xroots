@@ -1,15 +1,15 @@
 import os
 from datetime import datetime
+from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "Exporta todos los datos a un archivo JSON en la carpeta backups/"
+    help = "Exporta todos los datos a un archivo JSON en MEDIA_ROOT/backups/ (disco persistente)"
 
     def handle(self, *args, **options):
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-        backup_dir = os.path.join(base_dir, "backups")
+        backup_dir = os.path.join(settings.MEDIA_ROOT, "backups")
         os.makedirs(backup_dir, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
