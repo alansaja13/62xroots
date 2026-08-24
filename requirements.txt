@@ -2,6 +2,8 @@ Django==6.0.5
 django-htmx==1.27.0
 python-dotenv==1.2.2
 Pillow==12.2.0
+pywebpush==2.0.3
+APScheduler==3.10.4
 
 # Production
 gunicorn==23.0.0

@@ -204,16 +204,19 @@ class MedicionAmbiente(models.Model):
 
     @property
     def vpd_estado(self):
+        """Ideal/alto/bajo según el rango de VPD de ParametroIdeal para la etapa del cultivo.
+
+        Única fuente de verdad (ver también _evaluar_ambiente en views.py) — si no hay
+        ParametroIdeal cargado para la etapa, no se puede clasificar.
+        """
         v = self.vpd
-        etapa = self.cultivo.estado
-        if etapa == "vegetativo":
-            if 0.8 <= v <= 1.2:
-                return "ideal"
-            return "bajo" if v < 0.8 else "alto"
-        else:
-            if 1.0 <= v <= 1.5:
-                return "ideal"
-            return "bajo" if v < 1.0 else "alto"
+        try:
+            param = ParametroIdeal.objects.get(etapa=self.cultivo.estado)
+        except ParametroIdeal.DoesNotExist:
+            return None
+        if float(param.vpd_min) <= v <= float(param.vpd_max):
+            return "ideal"
+        return "bajo" if v < float(param.vpd_min) else "alto"
 
 
 class Nutriente(models.Model):
@@ -427,6 +430,23 @@ class ParametroIdeal(models.Model):
 
     def __str__(self):
         return f"Parámetros — {self.get_etapa_display()}"
+
+
+class PushSubscription(models.Model):
+    """Suscripción a notificaciones push del navegador (Web Push API)."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="push_subscriptions")
+    endpoint = models.URLField(max_length=500, unique=True)
+    p256dh = models.CharField(max_length=255)
+    auth = models.CharField(max_length=255)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Suscripción push"
+        verbose_name_plural = "Suscripciones push"
+
+    def __str__(self):
+        return f"{self.user.username} — {self.creado_en:%d/%m/%Y}"
 
 
 POSICION_TENT_COORDS = {

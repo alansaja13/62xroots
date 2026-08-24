@@ -1,3 +1,4 @@
+import json
 import secrets
 from functools import wraps
 
@@ -34,7 +35,8 @@ def staff_required(view_func):
 from .models import (
     CambioFotoperiodo, CanopySnapshot, ColaPosicion, CostoEnergetico, Cultivo, Equipo,
     LecturaMedidor, MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente,
-    NutrienteAplicado, Evento, Planta, ParametroIdeal, Riego, RiegoPlanta, Tarea, TarifaElectrica,
+    NutrienteAplicado, Evento, Planta, ParametroIdeal, PushSubscription, Riego, RiegoPlanta,
+    Tarea, TarifaElectrica,
     POSICION_TENT_COORDS,
 )
 from .utils import get_cambio_fotoperiodo_activo, calcular_luz_estado, get_flip_a_flora
@@ -1314,6 +1316,46 @@ def invitado_eliminar(request, pk):
 
 
 # ---------------------------------------------------------------------------
+# Push notifications
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_POST
+def push_subscribe(request):
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({"error": "JSON inválido"}, status=400)
+
+    endpoint = data.get("endpoint")
+    keys = data.get("keys") or {}
+    p256dh = keys.get("p256dh")
+    auth = keys.get("auth")
+    if not endpoint or not p256dh or not auth:
+        return JsonResponse({"error": "Datos de suscripción incompletos"}, status=400)
+
+    PushSubscription.objects.update_or_create(
+        endpoint=endpoint,
+        defaults={"user": request.user, "p256dh": p256dh, "auth": auth},
+    )
+    return JsonResponse({"ok": True})
+
+
+@login_required
+@require_POST
+def push_unsubscribe(request):
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({"error": "JSON inválido"}, status=400)
+
+    endpoint = data.get("endpoint")
+    if endpoint:
+        PushSubscription.objects.filter(endpoint=endpoint).delete()
+    return JsonResponse({"ok": True})
+
+
+# ---------------------------------------------------------------------------
 # PWA — manifest + service worker
 # ---------------------------------------------------------------------------
 
@@ -1349,8 +1391,8 @@ def pwa_manifest(request):
 
 def pwa_service_worker(request):
     js = r"""
-const SHELL = '62xroots-shell-v4';
-const CDN   = '62xroots-cdn-v4';
+const SHELL = '62xroots-shell-v5';
+const CDN   = '62xroots-cdn-v5';
 const ALL_CACHES = [SHELL, CDN];
 
 const CDN_URLS = [
@@ -1427,6 +1469,32 @@ self.addEventListener('fetch', e => {
         )
     );
   }
+});
+
+self.addEventListener('push', e => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (err) {
+    data = { title: '62×ROOTS', body: e.data ? e.data.text() : '' };
+  }
+  const title = data.title || '62×ROOTS';
+  const options = {
+    body: data.body || '',
+    icon: '/static/growlog/icons/icon-192x192.png',
+    badge: '/static/growlog/icons/icon-96x96.png',
+    data: { url: data.url || '/' },
+  };
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) { if (c.url === url && 'focus' in c) return c.focus(); }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
 });
 """
     resp = HttpResponse(js.strip(), content_type="application/javascript; charset=utf-8")

@@ -68,6 +68,10 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
     path("", views.dashboard, name="dashboard"),
 
+    # Push notifications
+    path("push/subscribe/", views.push_subscribe, name="push_subscribe"),
+    path("push/unsubscribe/", views.push_unsubscribe, name="push_unsubscribe"),
+
     # Invitados
     path("invitados/", views.invitados_panel, name="invitados_panel"),
     path("invitados/crear/", views.invitado_crear, name="invitado_crear"),

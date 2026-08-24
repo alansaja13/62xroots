@@ -57,6 +57,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "growlog.context_processors.push_settings",
             ],
         },
     },
@@ -134,6 +135,14 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 # H-5: Rate limiting via cache (implementado manualmente en views.py)
 LOGIN_MAX_ATTEMPTS = 10
 LOGIN_LOCKOUT_SECONDS = 1800  # 30 minutos
+
+# Web Push (notificaciones del navegador) — claves VAPID
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
+VAPID_ADMIN_EMAIL = os.environ.get("VAPID_ADMIN_EMAIL", "alansaja13@gmail.com")
+
+# Hora (0-23, horario local TIME_ZONE) en que corre el recordatorio diario de medición
+RECORDATORIO_MEDICION_HORA = int(os.environ.get("RECORDATORIO_MEDICION_HORA", "20"))
 
 # M-4: Headers de seguridad para producción
 if not DEBUG:

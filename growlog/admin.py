@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     CambioFotoperiodo, CostoEnergetico, Cultivo, Equipo, LecturaMedidor,
     MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente, NutrienteAplicado,
-    Evento, Planta, Tarea, TarifaElectrica, ParametroIdeal, Riego,
+    Evento, Planta, PushSubscription, Tarea, TarifaElectrica, ParametroIdeal, Riego,
 )
 
 
@@ -126,6 +126,12 @@ class TareaAdmin(admin.ModelAdmin):
 @admin.register(ParametroIdeal)
 class ParametroIdealAdmin(admin.ModelAdmin):
     list_display = ["etapa", "temp_min", "temp_max", "hr_min", "hr_max", "vpd_min", "vpd_max"]
+
+
+@admin.register(PushSubscription)
+class PushSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ["user", "creado_en", "endpoint"]
+    list_filter = ["user"]
 
 
 @admin.register(MedicionEC)

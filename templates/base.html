@@ -764,6 +764,10 @@
       </div>
 
       {% if user.is_authenticated %}
+      <button id="push-toggle-btn" type="button" class="nav-link" title="Notificaciones push"
+              style="display:none; border:1px solid var(--rule); cursor:pointer;">
+        <i class="bi bi-bell" id="push-toggle-icon"></i>
+      </button>
       <div class="nav-user">
         <span class="nav-user__dot{% if not user.is_staff %} nav-user__dot--guest{% endif %}"></span>
         <span class="nav-user__name">{{ user.username }}</span>
@@ -920,6 +924,85 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+{% if user.is_authenticated %}
+<script>
+(function () {
+  'use strict';
+  var VAPID_PUBLIC_KEY = '{{ vapid_public_key }}';
+  var btn = document.getElementById('push-toggle-btn');
+  var icon = document.getElementById('push-toggle-icon');
+
+  if (!btn || !VAPID_PUBLIC_KEY || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return;
+  }
+  btn.style.display = 'inline-flex';
+
+  function urlBase64ToUint8Array(base64String) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    var rawData = atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+    for (var i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
+  function postJSON(url, body) {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+      body: JSON.stringify(body),
+    });
+  }
+
+  function updateIcon(subscribed) {
+    icon.className = subscribed ? 'bi bi-bell-fill' : 'bi bi-bell';
+    btn.title = subscribed ? 'Desactivar notificaciones' : 'Activar notificaciones';
+  }
+
+  function refreshState() {
+    navigator.serviceWorker.ready.then(function (reg) {
+      reg.pushManager.getSubscription().then(function (sub) { updateIcon(!!sub); });
+    });
+  }
+
+  btn.addEventListener('click', function () {
+    navigator.serviceWorker.ready.then(function (reg) {
+      reg.pushManager.getSubscription().then(function (sub) {
+        if (sub) {
+          var endpoint = sub.endpoint;
+          sub.unsubscribe().then(function () {
+            postJSON('{% url "growlog:push_unsubscribe" %}', { endpoint: endpoint })
+              .then(function () { updateIcon(false); });
+          });
+          return;
+        }
+        if (Notification.permission === 'denied') {
+          alert('Las notificaciones están bloqueadas para este sitio en el navegador — habilitalas desde la configuración del sitio y volvé a intentar.');
+          return;
+        }
+        Notification.requestPermission().then(function (perm) {
+          if (perm !== 'granted') return;
+          reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+          }).then(function (newSub) {
+            postJSON('{% url "growlog:push_subscribe" %}', newSub.toJSON())
+              .then(function () { updateIcon(true); });
+          }).catch(function (err) {
+            console.error('Error al suscribirse a notificaciones push:', err);
+          });
+        });
+      });
+    });
+  });
+
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.ready.then(refreshState);
+  });
+})();
+</script>
+{% endif %}
 
 <script>
 (function() {
