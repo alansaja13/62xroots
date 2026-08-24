@@ -114,8 +114,32 @@ STORAGES = {
     },
 }
 
-MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Storage de media
+# - Local / sin R2 configurado: filesystem (MEDIA_ROOT en disco)
+# - Producción: Cloudflare R2 (S3-compatible) via django-storages
+R2_BUCKET = os.environ.get("R2_BUCKET")
+if R2_BUCKET:
+    R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL", "").removeprefix("https://").removeprefix("http://").rstrip("/")
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": R2_BUCKET,
+            "endpoint_url": os.environ.get("R2_ENDPOINT"),
+            "access_key": os.environ.get("R2_ACCESS_KEY"),
+            "secret_key": os.environ.get("R2_SECRET_KEY"),
+            "custom_domain": R2_PUBLIC_URL,
+            "region_name": "auto",
+            "addressing_style": "path",
+            "querystring_auth": False,
+            "default_acl": None,
+            "file_overwrite": False,
+        },
+    }
+    MEDIA_URL = f"https://{R2_PUBLIC_URL}/"
+else:
+    MEDIA_URL = "/media/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
