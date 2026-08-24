@@ -94,11 +94,16 @@ class Planta(models.Model):
         ("descartada", "Descartada"),
         ("cosechada", "Cosechada"),
     ]
+    TIPO_CHOICES = [
+        ("foto", "Fotoperiódica"),
+        ("auto", "Autofloreciente"),
+    ]
 
     cultivo = models.ForeignKey(Cultivo, on_delete=models.CASCADE, related_name="plantas")
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     apodo = models.CharField(max_length=60)
     strain = models.CharField(max_length=120, blank=True)
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default="foto")
     posicion_tent = models.CharField(max_length=20, choices=POSICION_CHOICES, default="otro")
     dias_flora_estimados = models.PositiveSmallIntegerField(null=True, blank=True)
     indica_sativa_ratio = models.CharField(max_length=20, blank=True, help_text="Ej: 70/30")
@@ -121,6 +126,36 @@ class Planta(models.Model):
 
     def __str__(self):
         return f"{self.apodo} ({self.strain or 'sin strain'})"
+
+
+class CambioEtapaPlanta(models.Model):
+    ETAPA_CHOICES = [
+        ("plantula", "Plántula"),
+        ("veg_temprano", "Veg. temprano"),
+        ("veg_tardio", "Veg. tardío"),
+        ("flora_temprana", "Flora temprana"),
+        ("flora_tardia", "Flora tardía"),
+        ("secado", "Secado"),
+        ("curado", "Curado"),
+    ]
+
+    planta = models.ForeignKey(Planta, on_delete=models.CASCADE, related_name="cambios_etapa")
+    etapa = models.CharField(max_length=20, choices=ETAPA_CHOICES)
+    fecha_inicio = models.DateField(
+        verbose_name="Fecha de inicio",
+        help_text="Fecha desde la cual la planta está en esta etapa",
+    )
+    notas = models.TextField(blank=True, verbose_name="Notas")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-fecha_inicio"]
+        unique_together = [("planta", "fecha_inicio")]
+        verbose_name = "Cambio de etapa"
+        verbose_name_plural = "Cambios de etapa"
+
+    def __str__(self):
+        return f"{self.planta} — {self.get_etapa_display()} desde {self.fecha_inicio:%d/%m/%Y}"
 
 
 class CambioFotoperiodo(models.Model):
@@ -206,13 +241,18 @@ class MedicionAmbiente(models.Model):
 
     @property
     def vpd_estado(self):
-        """Ideal/alto/bajo según el rango de VPD de ParametroIdeal para la etapa del cultivo.
+        """Ideal/alto/bajo según el rango de VPD de ParametroIdeal para la etapa
+        efectiva del cultivo (la más avanzada entre sus plantas activas — ver
+        etapa_efectiva_cultivo en utils.py).
 
         Única fuente de verdad (ver también _evaluar_ambiente en views.py) — si no hay
         ParametroIdeal cargado para la etapa, no se puede clasificar.
         """
+        from .utils import etapa_efectiva_cultivo
         v = self.vpd
-        etapa = self.cultivo.estado
+        etapa = etapa_efectiva_cultivo(self.cultivo)
+        if etapa is None:
+            return None
         param = cache.get_or_set(
             f"parametro_ideal:{etapa}",
             lambda: ParametroIdeal.objects.filter(etapa=etapa).first(),
@@ -411,9 +451,12 @@ class APIToken(models.Model):
 class ParametroIdeal(models.Model):
     ETAPA_CHOICES = [
         ("plantula", "Plántula"),
-        ("vegetativo", "Vegetativo"),
-        ("floracion", "Floración"),
+        ("veg_temprano", "Veg. temprano"),
+        ("veg_tardio", "Veg. tardío"),
+        ("flora_temprana", "Flora temprana"),
+        ("flora_tardia", "Flora tardía"),
         ("secado", "Secado"),
+        ("curado", "Curado"),
     ]
 
     etapa = models.CharField(max_length=20, choices=ETAPA_CHOICES, unique=True)

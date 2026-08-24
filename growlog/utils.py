@@ -56,3 +56,56 @@ def resolver_luz_estado_para_medicion(cultivo, timestamp):
     if cambio is None:
         return None
     return calcular_luz_estado(timestamp, cambio.hora_lights_on, cambio.fotoperiodo)
+
+
+ETAPA_ORDEN = [
+    "plantula", "veg_temprano", "veg_tardio",
+    "flora_temprana", "flora_tardia", "secado", "curado",
+]
+
+# Fallback para plantas sin CambioEtapaPlanta todavía, mapeado desde el estado
+# administrativo (coarse) del cultivo. "finalizado" no tiene etapa de ambiente.
+DEFAULT_ETAPA_POR_ESTADO_CULTIVO = {
+    "plantula": "plantula",
+    "vegetativo": "veg_temprano",
+    "floracion": "flora_temprana",
+    "secado": "secado",
+    "curado": "curado",
+    "finalizado": None,
+}
+
+
+def get_etapa_activa_planta(planta, fecha=None):
+    """Devuelve el CambioEtapaPlanta vigente para `planta` en `fecha` (hoy por defecto), o None."""
+    from django.utils import timezone
+    fecha = fecha or timezone.localdate()
+    return (
+        planta.cambios_etapa
+        .filter(fecha_inicio__lte=fecha)
+        .order_by("-fecha_inicio")
+        .first()
+    )
+
+
+def etapa_efectiva_planta(planta, fecha=None):
+    """Etapa vigente de la planta: su historial si tiene, si no el default
+    mapeado desde el estado administrativo del cultivo."""
+    cambio = get_etapa_activa_planta(planta, fecha)
+    if cambio is not None:
+        return cambio.etapa
+    return DEFAULT_ETAPA_POR_ESTADO_CULTIVO.get(planta.cultivo.estado)
+
+
+def etapa_efectiva_cultivo(cultivo, fecha=None):
+    """Etapa más avanzada entre las plantas activas del cultivo (el ambiente
+    compartido se ajusta a la planta que más lo necesita, no al promedio).
+    Si no hay plantas activas o ninguna resuelve etapa, cae al estado del cultivo."""
+    etapas = [
+        e for e in (
+            etapa_efectiva_planta(p, fecha)
+            for p in cultivo.plantas.filter(estado="activa")
+        ) if e
+    ]
+    if not etapas:
+        return DEFAULT_ETAPA_POR_ESTADO_CULTIVO.get(cultivo.estado)
+    return max(etapas, key=ETAPA_ORDEN.index)

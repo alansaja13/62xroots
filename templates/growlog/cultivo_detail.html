@@ -686,7 +686,10 @@
             </div>
             <div style="flex:1; min-width: 0;">
               <div class="cd-planta-row__name">{{ p.apodo }}</div>
-              <div class="cd-planta-row__sub">{{ p.strain|default:"sin strain" }} · {{ p.get_posicion_tent_display|lower }}</div>
+              <div class="cd-planta-row__sub">
+                {{ p.strain|default:"sin strain" }} · {{ p.get_posicion_tent_display|lower }}
+                {% if p.etapa_actual_display %} · {{ p.etapa_actual_display|lower }}{% endif %}
+              </div>
             </div>
             <span class="c-green mono" style="font-size:14px;">→</span>
           </a>

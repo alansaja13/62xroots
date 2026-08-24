@@ -27,27 +27,51 @@ ParametroIdeal.objects.get_or_create(
     ),
 )
 ParametroIdeal.objects.get_or_create(
-    etapa="vegetativo",
+    etapa="veg_temprano",
     defaults=dict(
         temp_min=22, temp_max=28,
-        hr_min=50, hr_max=70,
+        hr_min=55, hr_max=70,
         ph_min=6.0, ph_max=6.8,
-        ec_min=0.8, ec_max=1.4,
-        vpd_min=0.80, vpd_max=0.95,
+        ec_min=0.8, ec_max=1.1,
+        vpd_min=0.80, vpd_max=1.00,
         horas_luz=18,
         distancia_luz_min=40, distancia_luz_max=60,
     ),
 )
 ParametroIdeal.objects.get_or_create(
-    etapa="floracion",
+    etapa="veg_tardio",
     defaults=dict(
-        temp_min=20, temp_max=26,
-        hr_min=40, hr_max=55,
+        temp_min=21, temp_max=27,
+        hr_min=50, hr_max=65,
         ph_min=6.0, ph_max=6.8,
-        ec_min=1.2, ec_max=2.0,
-        vpd_min=0.96, vpd_max=1.15,
+        ec_min=1.0, ec_max=1.4,
+        vpd_min=1.00, vpd_max=1.20,
+        horas_luz=18,
+        distancia_luz_min=35, distancia_luz_max=55,
+    ),
+)
+ParametroIdeal.objects.get_or_create(
+    etapa="flora_temprana",
+    defaults=dict(
+        temp_min=21, temp_max=26,
+        hr_min=45, hr_max=55,
+        ph_min=6.0, ph_max=6.8,
+        ec_min=1.2, ec_max=1.7,
+        vpd_min=1.00, vpd_max=1.30,
         horas_luz=12,
         distancia_luz_min=35, distancia_luz_max=50,
+    ),
+)
+ParametroIdeal.objects.get_or_create(
+    etapa="flora_tardia",
+    defaults=dict(
+        temp_min=20, temp_max=25,
+        hr_min=40, hr_max=50,
+        ph_min=6.0, ph_max=6.8,
+        ec_min=1.4, ec_max=2.0,
+        vpd_min=1.20, vpd_max=1.50,
+        horas_luz=12,
+        distancia_luz_min=30, distancia_luz_max=45,
     ),
 )
 ParametroIdeal.objects.get_or_create(

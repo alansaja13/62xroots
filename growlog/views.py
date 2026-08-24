@@ -33,13 +33,16 @@ def staff_required(view_func):
     return _wrapped
 
 from .models import (
-    CambioFotoperiodo, CanopySnapshot, ColaPosicion, CostoEnergetico, Cultivo, Equipo,
+    CambioEtapaPlanta, CambioFotoperiodo, CanopySnapshot, ColaPosicion, CostoEnergetico, Cultivo, Equipo,
     LecturaMedidor, MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente,
     NutrienteAplicado, Evento, Planta, ParametroIdeal, PushSubscription, Riego, RiegoPlanta,
     Tarea, TarifaElectrica,
     POSICION_TENT_COORDS,
 )
-from .utils import get_cambio_fotoperiodo_activo, calcular_luz_estado, get_flip_a_flora
+from .utils import (
+    get_cambio_fotoperiodo_activo, calcular_luz_estado, get_flip_a_flora,
+    etapa_efectiva_cultivo, etapa_efectiva_planta,
+)
 
 _DT_FMT = "%Y-%m-%dT%H:%M"
 
@@ -143,12 +146,13 @@ class NuevoCultivoForm(forms.ModelForm):
 class PlantaForm(forms.ModelForm):
     class Meta:
         model = Planta
-        fields = ["apodo", "strain", "posicion_tent", "dias_flora_estimados",
+        fields = ["apodo", "strain", "tipo", "posicion_tent", "dias_flora_estimados",
                   "indica_sativa_ratio", "thc_estimado", "yield_estimado_g",
                   "yield_real_g", "estado", "notas_genetica", "archivado"]
         widgets = {
             "apodo": forms.TextInput(attrs={"class": "form-control", "autofocus": True}),
             "strain": forms.TextInput(attrs={"class": "form-control"}),
+            "tipo": forms.Select(attrs={"class": "form-select"}),
             "posicion_tent": forms.Select(attrs={"class": "form-select"}),
             "dias_flora_estimados": forms.NumberInput(attrs={"class": "form-control field-narrow"}),
             "indica_sativa_ratio": forms.TextInput(attrs={"class": "form-control field-narrow", "placeholder": "Ej: 70/30"}),
@@ -386,6 +390,17 @@ class CambioFotoperiodoForm(forms.ModelForm):
         }
 
 
+class CambioEtapaPlantaForm(forms.ModelForm):
+    class Meta:
+        model = CambioEtapaPlanta
+        fields = ["etapa", "fecha_inicio", "notas"]
+        widgets = {
+            "etapa": forms.Select(attrs={"class": "form-select", "autofocus": True}),
+            "fecha_inicio": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
+            "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Ej: Primeros pistilos visibles..."}),
+        }
+
+
 class QuickEventoForm(forms.Form):
     tipo = forms.ChoiceField(
         choices=Evento.TIPO_CHOICES,
@@ -437,11 +452,13 @@ def dashboard(request):
             ultima = c.mediciones.first()
             semaforo = None
             if ultima:
-                try:
-                    param = ParametroIdeal.objects.get(etapa=c.estado)
-                    semaforo = _evaluar_ambiente(ultima, param)
-                except ParametroIdeal.DoesNotExist:
-                    pass
+                etapa = etapa_efectiva_cultivo(c)
+                if etapa:
+                    try:
+                        param = ParametroIdeal.objects.get(etapa=etapa)
+                        semaforo = _evaluar_ambiente(ultima, param)
+                    except ParametroIdeal.DoesNotExist:
+                        pass
             result.append({"cultivo": c, "ultima_medicion": ultima, "semaforo": semaforo,
                             "plantas_count": c.plantas.filter(estado="activa").count()})
         return result
@@ -490,14 +507,20 @@ def cultivo_detail(request, slug):
     tareas_completadas = cultivo.tareas.filter(completada=True).order_by("-completada_en")[:5]
     ultimos_registros = _build_timeline(cultivo, limit=8)
     plantas_count = cultivo.plantas.filter(estado="activa").count()
-    plantas = cultivo.plantas.all()
+    plantas = list(cultivo.plantas.all())
+    etapa_display_map = dict(CambioEtapaPlanta.ETAPA_CHOICES)
+    for p in plantas:
+        p.etapa_actual = etapa_efectiva_planta(p)
+        p.etapa_actual_display = etapa_display_map.get(p.etapa_actual)
     semaforo = None
     if ultima_medicion:
-        try:
-            param = ParametroIdeal.objects.get(etapa=cultivo.estado)
-            semaforo = _evaluar_ambiente(ultima_medicion, param)
-        except ParametroIdeal.DoesNotExist:
-            pass
+        etapa = etapa_efectiva_cultivo(cultivo)
+        if etapa:
+            try:
+                param = ParametroIdeal.objects.get(etapa=etapa)
+                semaforo = _evaluar_ambiente(ultima_medicion, param)
+            except ParametroIdeal.DoesNotExist:
+                pass
     fotoperiodo_activo = get_cambio_fotoperiodo_activo(cultivo, timezone.now())
     luz_estado_actual = None
     if fotoperiodo_activo:
@@ -782,12 +805,15 @@ def planta_detail(request, pk):
         planta.riegos_detalle.select_related("riego").order_by("-riego__timestamp")[:20]
     )
     eventos = list(planta.eventos.order_by("-timestamp")[:20])
+    etapa_actual = etapa_efectiva_planta(planta)
     return render(request, "growlog/planta_detail.html", {
         "planta": planta, "mediciones": mediciones,
         "fotos": fotos,
         "cultivo": planta.cultivo,
         "riegos_planta": riegos_planta,
         "eventos": eventos,
+        "etapa_actual": etapa_actual,
+        "etapa_actual_display": dict(CambioEtapaPlanta.ETAPA_CHOICES).get(etapa_actual),
     })
 
 
@@ -1268,6 +1294,78 @@ def cambio_fotoperiodo_eliminar(request, pk):
         "title": f"Eliminar fotoperiodo {cambio.fotoperiodo}",
         "object_name": f"{cambio.fotoperiodo} · desde {cambio.fecha_inicio}",
         "back_url": reverse("growlog:cambio_fotoperiodo_editar", args=[pk]),
+    })
+
+
+# ---------------------------------------------------------------------------
+# CambioEtapaPlanta
+# ---------------------------------------------------------------------------
+
+@login_required
+@staff_required
+def planta_etapa_list(request, pk):
+    planta = get_object_or_404(Planta, pk=pk)
+    historial = planta.cambios_etapa.order_by("-fecha_inicio")
+
+    if request.method == "POST":
+        form = CambioEtapaPlantaForm(request.POST)
+        if form.is_valid():
+            cambio = form.save(commit=False)
+            cambio.planta = planta
+            try:
+                cambio.full_clean()
+                cambio.save()
+                messages.success(request, f"Etapa {cambio.get_etapa_display()} guardada.")
+                return redirect("growlog:planta_etapa_list", pk=pk)
+            except Exception as e:
+                form.add_error(None, str(e))
+    else:
+        form = CambioEtapaPlantaForm(initial={"fecha_inicio": timezone.localdate()})
+
+    return render(request, "growlog/etapa_planta.html", {
+        "planta": planta,
+        "cultivo": planta.cultivo,
+        "historial": historial,
+        "form": form,
+    })
+
+
+@login_required
+@staff_required
+def cambio_etapa_planta_editar(request, pk):
+    cambio = get_object_or_404(CambioEtapaPlanta, pk=pk)
+    planta = cambio.planta
+    form = CambioEtapaPlantaForm(request.POST or None, instance=cambio)
+    if form.is_valid():
+        try:
+            obj = form.save(commit=False)
+            obj.full_clean()
+            obj.save()
+            messages.success(request, "Etapa actualizada.")
+            return redirect("growlog:planta_etapa_list", pk=planta.pk)
+        except Exception as e:
+            form.add_error(None, str(e))
+    return render(request, "growlog/crud_form.html", {
+        "form": form,
+        "title": f"Editar etapa — {planta.apodo}",
+        "back_url": reverse("growlog:planta_etapa_list", args=[planta.pk]),
+        "delete_url": reverse("growlog:cambio_etapa_planta_eliminar", args=[pk]),
+    })
+
+
+@login_required
+@staff_required
+def cambio_etapa_planta_eliminar(request, pk):
+    cambio = get_object_or_404(CambioEtapaPlanta, pk=pk)
+    planta = cambio.planta
+    if request.method == "POST":
+        cambio.delete()
+        messages.success(request, "Registro de etapa eliminado.")
+        return redirect("growlog:planta_etapa_list", pk=planta.pk)
+    return render(request, "growlog/crud_delete.html", {
+        "title": f"Eliminar etapa {cambio.get_etapa_display()}",
+        "object_name": f"{cambio.get_etapa_display()} · desde {cambio.fecha_inicio}",
+        "back_url": reverse("growlog:cambio_etapa_planta_editar", args=[pk]),
     })
 
 

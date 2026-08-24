@@ -137,4 +137,9 @@ urlpatterns = [
     path("cultivo/<slug:slug>/fotoperiodo/", views.fotoperiodo_list, name="fotoperiodo_list"),
     path("fotoperiodo/<int:pk>/editar/", views.cambio_fotoperiodo_editar, name="cambio_fotoperiodo_editar"),
     path("fotoperiodo/<int:pk>/eliminar/", views.cambio_fotoperiodo_eliminar, name="cambio_fotoperiodo_eliminar"),
+
+    # CambioEtapaPlanta
+    path("planta/<int:pk>/etapa/", views.planta_etapa_list, name="planta_etapa_list"),
+    path("etapa-planta/<int:pk>/editar/", views.cambio_etapa_planta_editar, name="cambio_etapa_planta_editar"),
+    path("etapa-planta/<int:pk>/eliminar/", views.cambio_etapa_planta_eliminar, name="cambio_etapa_planta_eliminar"),
 ]

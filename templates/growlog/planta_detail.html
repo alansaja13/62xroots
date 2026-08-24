@@ -177,6 +177,12 @@
       <span class="pill pill--{% if planta.estado == 'activa' %}green{% elif planta.estado == 'cosechada' %}honey{% else %}rust{% endif %}">
         ● {{ planta.get_estado_display }}
       </span>
+      {% if etapa_actual_display %}
+      <a href="{% url 'growlog:planta_etapa_list' planta.pk %}" class="pill pill--green" style="text-decoration:none;">
+        {{ etapa_actual_display }}
+      </a>
+      {% endif %}
+      <span>{{ planta.get_tipo_display|lower }}</span>
       <span>posición · {{ planta.get_posicion_tent_display|lower }}</span>
       <span class="c-fine">·</span>
       <span>{{ mediciones|length }} mediciones</span>
@@ -187,6 +193,9 @@
     {% if request.user.is_staff %}
     <a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="btn-brand">
       <i class="bi bi-plus-lg"></i> medir
+    </a>
+    <a href="{% url 'growlog:planta_etapa_list' planta.pk %}" class="btn-ghost">
+      <i class="bi bi-flower1"></i> etapa
     </a>
     <a href="{% url 'growlog:planta_editar' planta.pk %}" class="btn-ghost">
       <i class="bi bi-pencil"></i> editar
