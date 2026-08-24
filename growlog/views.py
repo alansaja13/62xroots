@@ -1,5 +1,6 @@
 import json
 import secrets
+from datetime import timedelta
 from functools import wraps
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -575,6 +576,48 @@ def cultivo_detail(request, slug):
         "dia_flora": dia_flora,
         "dias_sin_riego": dias_sin_riego,
     })
+
+
+@login_required
+def cultivo_tendencias(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
+    return render(request, "growlog/tendencias.html", {"cultivo": cultivo})
+
+
+@login_required
+def cultivo_tendencias_json(request, slug):
+    cultivo = get_object_or_404(Cultivo, slug=slug)
+    try:
+        dias = int(request.GET.get("dias", 30))
+    except ValueError:
+        dias = 30
+
+    mediciones_qs = cultivo.mediciones.order_by("timestamp")
+    if dias > 0:
+        desde = timezone.now() - timedelta(days=dias)
+        mediciones_qs = mediciones_qs.filter(timestamp__gte=desde)
+
+    mediciones = [{
+        "timestamp": m.timestamp.isoformat(),
+        "temp": float(m.temperatura_c),
+        "hr": float(m.humedad_relativa),
+        "vpd": m.vpd,
+        "vpd_estado": m.vpd_estado,
+        "luz_estado": m.luz_estado,
+    } for m in mediciones_qs]
+
+    rango_ideal = None
+    etapa = etapa_efectiva_cultivo(cultivo)
+    if etapa:
+        param = ParametroIdeal.objects.filter(etapa=etapa).first()
+        if param:
+            rango_ideal = {
+                "temp_min": float(param.temp_min), "temp_max": float(param.temp_max),
+                "hr_min": float(param.hr_min), "hr_max": float(param.hr_max),
+                "vpd_min": float(param.vpd_min), "vpd_max": float(param.vpd_max),
+            }
+
+    return JsonResponse({"mediciones": mediciones, "rango_ideal": rango_ideal})
 
 
 @login_required

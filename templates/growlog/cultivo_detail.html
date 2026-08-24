@@ -400,6 +400,9 @@
       <a href="{% url 'growlog:canopy' cultivo.slug %}" class="btn-brand" style="font-size:12px;padding:8px 14px">
         <i class="bi bi-grid-3x3-gap"></i> canopy
       </a>
+      <a href="{% url 'growlog:cultivo_tendencias' cultivo.slug %}" class="btn-ghost" style="font-size:12px;padding:8px 14px;border-color:var(--slate);color:var(--slate);">
+        <i class="bi bi-graph-up"></i> tendencias
+      </a>
       <a href="{% url 'growlog:energia' cultivo.slug %}" class="btn-ghost" style="font-size:12px;padding:8px 14px;border-color:var(--honey);color:var(--honey);">
         <i class="bi bi-lightning-charge"></i> energía
       </a>

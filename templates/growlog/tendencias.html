@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block title %}Tendencias · {{ cultivo.nombre }}{% endblock %}
+
+{% block crumb %}
+<div class="nav-crumb d-none d-lg-flex">
+  <span class="nav-crumb__item">mis cultivos</span>
+  <span class="nav-crumb__sep">/</span>
+  <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="nav-crumb__item" style="text-decoration:none;">{{ cultivo.nombre }}</a>
+  <span class="nav-crumb__sep">/</span>
+  <span class="nav-crumb__item nav-crumb__item--last">tendencias</span>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.min.css">
+<style>
+  .tl-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "Geist Mono", monospace; font-size: 11px;
+    letter-spacing: .1em; color: var(--cream-soft);
+    text-decoration: none; margin-bottom: 20px;
+  }
+  .tl-back:hover { color: var(--green); }
+
+  .tl-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 18px; margin-bottom: 22px; padding-bottom: 18px;
+    border-bottom: 1px solid var(--rule); flex-wrap: wrap;
+  }
+  .tl-title {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: 48px; font-weight: 700; letter-spacing: -.022em;
+    line-height: .95; color: var(--cream); margin: 0;
+  }
+  .tl-title__accent { color: var(--honey); font-style: italic; }
+
+  .td-rango {
+    display: flex; gap: 6px;
+  }
+  .td-rango button {
+    font-family: "Geist Mono", monospace; font-size: 11px;
+    letter-spacing: .1em; text-transform: uppercase;
+    padding: 7px 14px; border: 1px solid var(--rule);
+    background: transparent; color: var(--cream-soft);
+    cursor: pointer; transition: border-color .12s, color .12s, background .12s;
+  }
+  .td-rango button:hover { border-color: var(--green); color: var(--green); }
+  .td-rango button.active { border-color: var(--green); color: var(--green); background: var(--green-wash); }
+
+  .td-chart-panel { margin-bottom: 22px; }
+  .td-chart-head {
+    display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px;
+  }
+  .td-chart-title {
+    font-family: "Geist Mono", monospace; font-size: 10px;
+    letter-spacing: .22em; text-transform: uppercase; color: var(--fine);
+  }
+  .td-chart-legend {
+    font-family: "Geist Mono", monospace; font-size: 10px; color: var(--fine);
+    display: flex; gap: 12px; margin-left: auto;
+  }
+  .td-chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .td-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+
+  .td-empty {
+    text-align: center; padding: 48px 24px;
+    color: var(--fine); font-family: "Geist Mono", monospace; font-size: 12px;
+  }
+  .td-empty__icon { font-size: 28px; opacity: .3; display: block; margin-bottom: 14px; }
+
+  .u-legend { display: none; } /* usamos leyenda propia arriba de cada gráfico */
+  .uplot { font-family: "Geist Mono", monospace; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="tl-back">
+  <i class="bi bi-chevron-left"></i> {{ cultivo.nombre }}
+</a>
+
+<div class="tl-header">
+  <h1 class="tl-title">tendencias <span class="tl-title__accent">// {{ cultivo.nombre }}</span></h1>
+  <div class="td-rango" id="tdRango">
+    <button type="button" data-dias="7">7 días</button>
+    <button type="button" data-dias="30" class="active">30 días</button>
+    <button type="button" data-dias="0">todo</button>
+  </div>
+</div>
+
+<div id="tdContenido">
+  <div class="td-empty"><i class="bi bi-hourglass-split td-empty__icon"></i>Cargando…</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.iife.min.js"></script>
+<script>
+(function () {
+  const url = "{% url 'growlog:cultivo_tendencias_json' cultivo.slug %}";
+  const contenedor = document.getElementById('tdContenido');
+  const botones = document.querySelectorAll('#tdRango button');
+  let instancias = [];
+
+  const COLOR = {
+    cream: getComputedStyle(document.documentElement).getPropertyValue('--cream-soft').trim() || '#94a586',
+    honey: getComputedStyle(document.documentElement).getPropertyValue('--honey').trim() || '#d49a3e',
+    slate: getComputedStyle(document.documentElement).getPropertyValue('--slate').trim() || '#6a8aa8',
+    green: getComputedStyle(document.documentElement).getPropertyValue('--green').trim() || '#8aab68',
+    rust: getComputedStyle(document.documentElement).getPropertyValue('--rust').trim() || '#c46a3e',
+    fine: getComputedStyle(document.documentElement).getPropertyValue('--fine').trim() || '#525e48',
+  };
+
+  function destruirInstancias() {
+    instancias.forEach(u => u.destroy());
+    instancias = [];
+  }
+
+  function bandaSeries(x, min, max) {
+    return [x.map(() => min), x.map(() => max)];
+  }
+
+  function opcionesBase(titulo) {
+    return {
+      width: contenedor.clientWidth || 800,
+      height: 190,
+      title: '',
+      padding: [12, 12, 8, 8],
+      cursor: { points: { size: 5 } },
+      axes: [
+        { stroke: COLOR.fine, grid: { stroke: 'rgba(255,255,255,.05)' }, font: '11px monospace' },
+        { stroke: COLOR.fine, grid: { stroke: 'rgba(255,255,255,.05)' }, font: '11px monospace' },
+      ],
+      scales: { x: { time: true } },
+    };
+  }
+
+  function chartSimple(host, titulo, x, y, colorLinea, rango, minKey, maxKey) {
+    const data = [x, y];
+    const series = [
+      {},
+      { label: titulo, stroke: colorLinea, width: 1.6, points: { show: false } },
+    ];
+    let bands;
+    if (rango) {
+      const [minLine, maxLine] = bandaSeries(x, rango[minKey], rango[maxKey]);
+      data.push(minLine, maxLine);
+      series.push(
+        { label: 'ideal min', stroke: 'rgba(138,171,104,.35)', width: 1, dash: [4, 4], points: { show: false } },
+        { label: 'ideal max', stroke: 'rgba(138,171,104,.35)', width: 1, dash: [4, 4], points: { show: false } },
+      );
+      bands = [{ series: [2, 3], fill: 'rgba(138,171,104,.10)' }];
+    }
+    const opts = Object.assign(opcionesBase(titulo), { series }, bands ? { bands } : {});
+    const u = new uPlot(opts, data, host);
+    instancias.push(u);
+  }
+
+  function chartVpd(host, x, vpd, vpdEstado, rango) {
+    const ideal = vpd.map((v, i) => vpdEstado[i] === 'ideal' ? v : null);
+    const alto = vpd.map((v, i) => vpdEstado[i] === 'alto' ? v : null);
+    const bajo = vpd.map((v, i) => vpdEstado[i] === 'bajo' ? v : null);
+    const data = [x, vpd, ideal, alto, bajo];
+    const series = [
+      {},
+      { label: 'VPD', stroke: COLOR.cream, width: 1, points: { show: false } },
+      { label: 'ideal', stroke: COLOR.green, width: 0, points: { show: true, size: 5, fill: COLOR.green, stroke: COLOR.green } },
+      { label: 'alto', stroke: COLOR.rust, width: 0, points: { show: true, size: 5, fill: COLOR.rust, stroke: COLOR.rust } },
+      { label: 'bajo', stroke: COLOR.slate, width: 0, points: { show: true, size: 5, fill: COLOR.slate, stroke: COLOR.slate } },
+    ];
+    let bands;
+    if (rango) {
+      const [minLine, maxLine] = bandaSeries(x, rango.vpd_min, rango.vpd_max);
+      data.push(minLine, maxLine);
+      series.push(
+        { label: 'ideal min', stroke: 'rgba(138,171,104,.35)', width: 1, dash: [4, 4], points: { show: false } },
+        { label: 'ideal max', stroke: 'rgba(138,171,104,.35)', width: 1, dash: [4, 4], points: { show: false } },
+      );
+      bands = [{ series: [5, 6], fill: 'rgba(138,171,104,.10)' }];
+    }
+    const opts = Object.assign(opcionesBase('VPD'), { series }, bands ? { bands } : {});
+    const u = new uPlot(opts, data, host);
+    instancias.push(u);
+  }
+
+  function render(payload) {
+    destruirInstancias();
+    const mediciones = payload.mediciones;
+    if (!mediciones.length) {
+      contenedor.innerHTML = '<div class="td-empty"><i class="bi bi-graph-up td-empty__icon"></i>No hay mediciones en este rango.</div>';
+      return;
+    }
+    const x = mediciones.map(m => new Date(m.timestamp).getTime() / 1000);
+    const temp = mediciones.map(m => m.temp);
+    const hr = mediciones.map(m => m.hr);
+    const vpd = mediciones.map(m => m.vpd);
+    const vpdEstado = mediciones.map(m => m.vpd_estado);
+    const rango = payload.rango_ideal;
+
+    contenedor.innerHTML = `
+      <div class="td-chart-panel">
+        <div class="td-chart-head">
+          <span class="td-chart-title">// temperatura (°C)</span>
+        </div>
+        <div class="panel" id="chartTemp"></div>
+      </div>
+      <div class="td-chart-panel">
+        <div class="td-chart-head">
+          <span class="td-chart-title">// humedad relativa (%)</span>
+        </div>
+        <div class="panel" id="chartHr"></div>
+      </div>
+      <div class="td-chart-panel">
+        <div class="td-chart-head">
+          <span class="td-chart-title">// vpd (kpa)</span>
+          <span class="td-chart-legend">
+            <span><span class="td-dot" style="background:${COLOR.green}"></span>ideal</span>
+            <span><span class="td-dot" style="background:${COLOR.rust}"></span>alto</span>
+            <span><span class="td-dot" style="background:${COLOR.slate}"></span>bajo</span>
+          </span>
+        </div>
+        <div class="panel" id="chartVpd"></div>
+      </div>
+      ${rango ? '' : '<div class="td-empty" style="padding:16px;"><i class="bi bi-info-circle"></i> No hay parámetros ideales cargados para la etapa actual — se muestran los datos sin banda de referencia.</div>'}
+    `;
+
+    chartSimple(document.getElementById('chartTemp'), 'Temp', x, temp, COLOR.honey, rango, 'temp_min', 'temp_max');
+    chartSimple(document.getElementById('chartHr'), 'HR', x, hr, COLOR.slate, rango, 'hr_min', 'hr_max');
+    chartVpd(document.getElementById('chartVpd'), x, vpd, vpdEstado, rango);
+  }
+
+  function cargar(dias) {
+    fetch(`${url}?dias=${dias}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(r => r.json())
+      .then(render)
+      .catch(() => {
+        contenedor.innerHTML = '<div class="td-empty"><i class="bi bi-exclamation-triangle td-empty__icon"></i>No se pudo cargar.</div>';
+      });
+  }
+
+  botones.forEach(btn => {
+    btn.addEventListener('click', () => {
+      botones.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      cargar(btn.dataset.dias);
+    });
+  });
+
+  cargar(30);
+  window.addEventListener('resize', () => cargar(document.querySelector('#tdRango button.active').dataset.dias));
+})();
+</script>
+
+{% endblock %}
