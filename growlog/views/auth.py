@@ -10,9 +10,16 @@ from ..models import PushSubscription
 
 
 def _get_client_ip(request):
-    x_forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded:
-        return x_forwarded.split(",")[0].strip()
+    """IP real del cliente detrás de los proxies de confianza.
+
+    Cada proxy agrega la IP que vio al final de X-Forwarded-For; lo que está a
+    la izquierda lo puede escribir el cliente. Tomar la primera entrada permitía
+    saltear el bloqueo de login cambiando el header en cada intento.
+    """
+    hops = getattr(settings, "TRUSTED_PROXY_HOPS", 1)
+    entradas = [ip.strip() for ip in request.META.get("HTTP_X_FORWARDED_FOR", "").split(",") if ip.strip()]
+    if hops and len(entradas) >= hops:
+        return entradas[-hops]
     return request.META.get("REMOTE_ADDR", "")
 
 
@@ -28,7 +35,7 @@ def login_view(request):
         lockout_secs = getattr(settings, "LOGIN_LOCKOUT_SECONDS", 3600)
 
         if failures >= max_attempts:
-            error = "Demasiados intentos fallidos. Esperá 1 hora antes de reintentar."
+            error = f"Demasiados intentos fallidos. Esperá {max(1, lockout_secs // 60)} minutos antes de reintentar."
         else:
             user = authenticate(
                 request,

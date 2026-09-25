@@ -1,6 +1,7 @@
 """Plantas, sus mediciones y cambios de etapa."""
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -55,9 +56,19 @@ def planta_eliminar(request, pk):
     cultivo = planta.cultivo
     if request.method == "POST":
         nombre = planta.apodo
-        planta.delete()
-        messages.success(request, f"Planta «{nombre}» eliminada.")
+        if planta.eliminar_o_archivar():
+            messages.success(request, f"Planta «{nombre}» eliminada.")
+        else:
+            messages.success(request, f"Planta «{nombre}» archivada. Sus riegos, mediciones y etapas se conservan; "
+                                      "podés restaurarla editándola.")
         return redirect("growlog:cultivo_detail", cultivo.slug)
+    if planta.tiene_historial():
+        return render(request, "growlog/crud_delete.html", {
+            "title": "Archivar planta", "object_name": planta.apodo,
+            "warn": "tiene historial: se archiva y se conservan sus riegos, fotos y etapas",
+            "confirm_label": "archivar planta", "confirm_icon": "bi-archive",
+            "back_url": reverse("growlog:planta_detail", args=[pk]),
+        })
     return render(request, "growlog/crud_delete.html", {
         "title": "Eliminar planta", "object_name": planta.apodo,
         "back_url": reverse("growlog:planta_detail", args=[pk]),
@@ -161,8 +172,9 @@ def planta_etapa_list(request, pk):
                 cambio.save()
                 messages.success(request, f"Etapa {cambio.get_etapa_display()} guardada.")
                 return redirect("growlog:planta_etapa_list", pk=pk)
-            except Exception as e:
-                form.add_error(None, str(e))
+            except ValidationError as e:
+                for mensaje in e.messages:
+                    form.add_error(None, mensaje)
     else:
         form = CambioEtapaPlantaForm(initial={"fecha_inicio": timezone.localdate()})
 
@@ -186,8 +198,9 @@ def cambio_etapa_planta_editar(request, pk):
             obj.save()
             messages.success(request, "Etapa actualizada.")
             return redirect("growlog:planta_etapa_list", pk=planta.pk)
-        except Exception as e:
-            form.add_error(None, str(e))
+        except ValidationError as e:
+            for mensaje in e.messages:
+                form.add_error(None, mensaje)
     return render(request, "growlog/crud_form.html", {
         "form": form,
         "title": f"Editar etapa — {planta.apodo}",

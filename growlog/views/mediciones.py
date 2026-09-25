@@ -1,6 +1,7 @@
 """Mediciones de EC/pH y cambios de fotoperiodo."""
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -83,8 +84,9 @@ def fotoperiodo_list(request, slug):
                 cambio.save()
                 messages.success(request, f"Fotoperiodo {cambio.fotoperiodo} guardado.")
                 return redirect("growlog:fotoperiodo_list", slug=slug)
-            except Exception as e:
-                form.add_error(None, str(e))
+            except ValidationError as e:
+                for mensaje in e.messages:
+                    form.add_error(None, mensaje)
     else:
         form = CambioFotoperiodoForm(initial={"fecha_inicio": timezone.localdate()})
 
@@ -107,8 +109,9 @@ def cambio_fotoperiodo_editar(request, pk):
             obj.save()
             messages.success(request, "Fotoperiodo actualizado.")
             return redirect("growlog:fotoperiodo_list", slug=cultivo.slug)
-        except Exception as e:
-            form.add_error(None, str(e))
+        except ValidationError as e:
+            for mensaje in e.messages:
+                form.add_error(None, mensaje)
     return render(request, "growlog/crud_form.html", {
         "form": form,
         "title": f"Editar fotoperiodo — {cultivo.nombre}",

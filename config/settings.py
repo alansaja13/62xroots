@@ -169,9 +169,16 @@ CSRF_TRUSTED_ORIGINS += ["https://62xroots.up.railway.app"]
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
-# H-5: Rate limiting via cache (implementado manualmente en views.py)
+# H-5: Rate limiting via cache (views/auth.py y la API). La caché vive en la
+# base: en memoria se reiniciaba con cada deploy y no se compartía entre workers.
+# La tabla la crea la migración growlog 0028 (createcachetable).
+CACHES = {
+    "default": {"BACKEND": "django.core.cache.backends.db.DatabaseCache", "LOCATION": "growlog_cache"},
+}
 LOGIN_MAX_ATTEMPTS = 10
 LOGIN_LOCKOUT_SECONDS = 1800  # 30 minutos
+# Proxies delante de gunicorn que agregan su entrada a X-Forwarded-For (Railway: 1).
+TRUSTED_PROXY_HOPS = int(os.environ.get("TRUSTED_PROXY_HOPS", "1"))
 
 # Web Push (notificaciones del navegador) — claves VAPID
 VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")

@@ -155,49 +155,22 @@ class BitacoraRegressionTests(TestCase):
         riego.refresh_from_db()
         self.assertEqual(riego.notas, "Observación corregida")
 
-    def test_medicion_invalida_conserva_notas_y_no_guarda(self):
-        response = self.client.post(reverse("growlog:quick", args=[self.cultivo.slug]), {
-            "temperatura_c": "25", "humedad_relativa": "150", "notas": "Revisar, mañana",
-        })
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("humedad_relativa", response.context["form"].errors)
-        self.assertEqual(response.context["form"]["notas"].value(), "Revisar, mañana")
-        self.assertFalse(MedicionAmbiente.objects.exists())
+    def test_carga_rapida_vieja_redirige_a_registrar(self):
+        # Registrar es la única pantalla de carga; los marcadores viejos siguen andando.
+        response = self.client.get(f"/cultivo/{self.cultivo.slug}/quick/")
+        self.assertRedirects(response, f"{reverse('growlog:registrar')}?cultivo={self.cultivo.pk}", fetch_redirect_response=False)
 
-    def test_error_en_ec_conserva_pestana_valores_y_error(self):
-        response = self.client.post(reverse("growlog:quick_ec", args=[self.cultivo.slug]), {
-            "tipo": "solucion", "ph": "abc", "ec": "1.20", "notas": "Revisar, mañana",
-        })
+    def test_tarea_rapida_del_panel_sin_prioridad_usa_normal(self):
+        url = reverse("growlog:tarea_rapida", args=[self.cultivo.slug])
+        response = self.client.post(url, {"titulo": "Revisar sensor", "categoria": "observacion"}, HTTP_HX_REQUEST="true")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["active_tab"], "ec")
-        self.assertTrue(response.context["ec_form"].errors["ph"])
-        self.assertEqual(response.context["ec_form"]["notas"].value(), "Revisar, mañana")
-        self.assertFalse(MedicionEC.objects.exists())
+        self.assertEqual(response["HX-Redirect"], reverse("growlog:cultivo_detail", args=[self.cultivo.slug]))
+        tarea = Tarea.objects.get()
+        self.assertEqual((tarea.prioridad, tarea.creado_por), ("normal", self.editor))
 
-    def test_ec_vacio_rechazado_y_ec_cero_aceptado(self):
-        url = reverse("growlog:quick_ec", args=[self.cultivo.slug])
-        response = self.client.post(url, {"tipo": "entrada"})
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.context["ec_form"].non_field_errors())
-        self.assertFalse(MedicionEC.objects.exists())
-        response = self.client.post(url, {"tipo": "entrada", "ec": "0"})
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(MedicionEC.objects.get().ec, Decimal("0"))
-
-    def test_evento_y_tarea_invalidos_conservan_contexto(self):
-        for route, tab, key, data in (
-            ("quick_evento", "evento", "evento_form", {"tipo": "invalido", "descripcion": "Texto, con coma"}),
-            ("quick_tarea", "tarea", "tarea_form", {"titulo": "Pendiente", "categoria": "invalida", "prioridad": "normal"}),
-        ):
-            with self.subTest(tab=tab):
-                response = self.client.post(reverse(f"growlog:{route}", args=[self.cultivo.slug]), data)
-                self.assertEqual(response.status_code, 200)
-                self.assertEqual(response.context["active_tab"], tab)
-                self.assertTrue(response.context[key].errors)
-        self.assertFalse(Evento.objects.exists())
+    def test_tarea_rapida_invalida_muestra_error_sin_guardar(self):
+        url = reverse("growlog:tarea_rapida", args=[self.cultivo.slug])
+        response = self.client.post(url, {"titulo": "", "categoria": "invalida"}, HTTP_HX_REQUEST="true")
+        self.assertContains(response, "field-error")
         self.assertFalse(Tarea.objects.exists())
-
-    def test_formularios_rapidos_tienen_acciones_propias(self):
-        response = self.client.get(reverse("growlog:quick", args=[self.cultivo.slug]))
-        for route in ("quick", "quick_evento", "quick_tarea", "quick_ec"):
-            self.assertContains(response, f'action="{reverse(f"growlog:{route}", args=[self.cultivo.slug])}"')
+        self.assertEqual(self.client.get(url).status_code, 405)

@@ -8,3 +8,6 @@ class MaintenanceAdminConfig(AdminConfig):
 
 class GrowlogConfig(AppConfig):
     name = 'growlog'
+
+    def ready(self):
+        from . import signals  # noqa: F401

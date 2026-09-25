@@ -2,12 +2,14 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django_htmx.http import HttpResponseClientRedirect
 
-from ..forms import TareaForm
+from ..forms import TareaForm, TareaRapidaForm
 from ..models import Cultivo, Tarea
 from ..permissions import objeto_del_cultivo
 
@@ -110,3 +112,26 @@ def tareas_list(request, slug):
 
 
 # ---------------------------------------------------------------------------
+
+
+@login_required
+@require_POST
+def tarea_rapida(request, slug):
+    """Alta en una línea desde el panel de tareas del detalle del cultivo."""
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
+    form = TareaRapidaForm(request.POST)
+    if form.is_valid():
+        d = form.cleaned_data
+        tarea = Tarea.objects.create(
+            cultivo=cultivo, titulo=d["titulo"], categoria=d["categoria"],
+            prioridad=d["prioridad"] or "normal", fecha_objetivo=d.get("fecha_objetivo"),
+            creado_por=request.user,
+        )
+        if request.htmx:
+            return HttpResponseClientRedirect(reverse("growlog:cultivo_detail", args=[cultivo.slug]))
+        messages.success(request, f"Tarea «{tarea.titulo}» creada.")
+        return redirect("growlog:cultivo_detail", slug=cultivo.slug)
+    if request.htmx:
+        return HttpResponse('<p class="field-error">Revisá el título y la categoría de la tarea.</p>')
+    messages.error(request, "Revisá los datos de la tarea.")
+    return redirect("growlog:cultivo_detail", slug=cultivo.slug)

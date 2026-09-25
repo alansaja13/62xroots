@@ -49,7 +49,7 @@ def contexto(request):
         },
         "csrf": get_token(request),
         "cultivos": [{"id": c.pk, "slug": c.slug, "nombre": c.nombre, "archivado": c.archivado,
-                      "plantas": [{"id": p.pk, "nombre": p.apodo} for p in c.plantas.all() if not p.archivado]} for c in cultivos],
+                      "plantas": [{"id": p.pk, "nombre": p.apodo} for p in c.plantas.all() if not p.archivado and p.estado == "activa"]} for c in cultivos],
         "nutrientes": list(Nutriente.objects.values("id", "nombre", "marca")),
         "opciones": {"eventos": Evento.TIPO_CHOICES, "ec": MedicionEC.TIPO_CHOICES,
                      "categorias": Tarea.CATEGORIA_CHOICES, "prioridades": Tarea.PRIORIDAD_CHOICES},

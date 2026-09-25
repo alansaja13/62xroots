@@ -35,8 +35,8 @@ def cultivo_detail(request, slug):
     tareas_pendientes = cultivo.tareas.filter(completada=False).order_by("fecha_objetivo", "-prioridad")[:10]
     tareas_completadas = cultivo.tareas.filter(completada=True).order_by("-completada_en")[:5]
     ultimos_registros = build_timeline(cultivo, limit=8)
-    plantas_count = cultivo.plantas.filter(estado="activa").count()
-    plantas = list(cultivo.plantas.all())
+    plantas_count = cultivo.plantas.activas().count()
+    plantas = list(cultivo.plantas.filter(archivado=False).prefetch_related("cambios_etapa"))
     etapa_display_map = dict(CambioEtapaPlanta.ETAPA_CHOICES)
     for p in plantas:
         p.etapa_actual = etapa_efectiva_planta(p)
@@ -119,6 +119,7 @@ def cultivo_tendencias_json(request, slug):
         dias = int(request.GET.get("dias", 30))
     except ValueError:
         dias = 30
+    dias = max(0, min(dias, 3650))  # 0 = todo; un valor enorme desbordaría timedelta
 
     mediciones_qs = cultivo.mediciones.order_by("timestamp")
     if dias > 0:
@@ -219,3 +220,9 @@ def cultivo_finalizar(request, slug):
         cultivo.save()
         messages.success(request, f"Cultivo «{cultivo.nombre}» finalizado.")
     return redirect("growlog:cultivo_detail", cultivo.slug)
+
+
+@login_required
+def registrar_en_cultivo(request, slug):
+    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
+    return redirect(f"{reverse('growlog:registrar')}?cultivo={cultivo.pk}")

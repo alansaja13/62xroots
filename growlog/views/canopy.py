@@ -3,6 +3,7 @@ import json
 import math
 
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
@@ -87,58 +88,71 @@ def canopy_view(request, slug):
 @require_POST
 def canopy_guardar(request, slug):
     cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
+    def error(mensaje):
+        return JsonResponse({'ok': False, 'error': mensaje}, status=400)
+
     try:
         body = json.loads(request.body or '{}')
-    except json.JSONDecodeError:
-        return JsonResponse({'ok': False, 'error': 'JSON inválido'}, status=400)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return error('JSON inválido')
+    if not isinstance(body, dict):
+        return error('El cuerpo debe ser un objeto JSON')
 
-    scrog_fill_pct = body.get('scrog_fill_pct', 0)
     try:
-        scrog_fill_pct = max(0, min(100, int(scrog_fill_pct)))
-    except (ValueError, TypeError):
-        return JsonResponse({'ok': False, 'error': 'scrog_fill_pct inválido'}, status=400)
+        scrog_fill_pct = max(0, min(100, int(body.get('scrog_fill_pct', 0))))
+    except (ValueError, TypeError, OverflowError):
+        return error('scrog_fill_pct inválido')
 
     colas_raw = body.get('colas', [])
     if not isinstance(colas_raw, list):
-        return JsonResponse({'ok': False, 'error': 'colas debe ser lista'}, status=400)
+        return error('colas debe ser lista')
 
-    plantas_qs = cultivo.plantas.filter(archivado=False)
-    planta_map = {str(p.uuid): p for p in plantas_qs}
-
-    colas_validated = []
+    planta_map = {str(p.uuid): p for p in cultivo.plantas.filter(archivado=False)}
+    colas_validated, vistas = [], set()
     for item in colas_raw:
+        if not isinstance(item, dict):
+            return error('Cada cola debe ser un objeto')
         uuid_str = str(item.get('planta_uuid', ''))
         planta = planta_map.get(uuid_str)
         if not planta:
-            return JsonResponse({'ok': False, 'error': f'UUID desconocido: {uuid_str}'}, status=400)
+            return error(f'UUID desconocido: {uuid_str}')
         try:
             indice = int(item['indice'])
             x = float(item['x'])
             y = float(item['y'])
-        except (KeyError, ValueError, TypeError):
-            return JsonResponse({'ok': False, 'error': 'Cola requiere indice, x, y'}, status=400)
+        except (KeyError, ValueError, TypeError, OverflowError):
+            return error('Cola requiere indice, x, y')
+        if not 0 <= indice <= 32767:
+            return error('indice fuera de rango')
         if not (0.0 <= x <= 1.0 and 0.0 <= y <= 1.0):
-            return JsonResponse({'ok': False, 'error': 'x e y deben estar en [0,1]'}, status=400)
+            return error('x e y deben estar en [0,1]')
+        if (planta.pk, indice) in vistas:
+            return error(f'Cola repetida: {planta.apodo} #{indice}')
+        vistas.add((planta.pk, indice))
         colas_validated.append((planta, indice, x, y))
 
     scrog_cells_raw = body.get('scrog_cells', [])
-    if isinstance(scrog_cells_raw, list):
-        scrog_cells = [int(i) for i in scrog_cells_raw if 0 <= int(i) < 36]
-        if scrog_cells:
-            scrog_fill_pct = round(len(scrog_cells) / 36 * 100)
-    else:
-        scrog_cells = []
+    if not isinstance(scrog_cells_raw, list):
+        return error('scrog_cells debe ser lista')
+    try:
+        scrog_cells = sorted({int(i) for i in scrog_cells_raw if not isinstance(i, bool)})
+    except (ValueError, TypeError, OverflowError):
+        return error('scrog_cells debe contener números de celda')
+    scrog_cells = [i for i in scrog_cells if 0 <= i < 36]
+    if scrog_cells:
+        scrog_fill_pct = round(len(scrog_cells) / 36 * 100)
 
-    snapshot = CanopySnapshot.objects.create(
-        cultivo=cultivo,
-        scrog_fill_pct=scrog_fill_pct,
-        scrog_cells=scrog_cells,
-        notas=str(body.get('notas', ''))[:500],
-    )
-    ColaPosicion.objects.bulk_create([
-        ColaPosicion(snapshot=snapshot, planta=planta, indice=indice, x=x, y=y)
-        for planta, indice, x, y in colas_validated
-    ])
+    with transaction.atomic():
+        snapshot = CanopySnapshot.objects.create(
+            cultivo=cultivo,
+            scrog_fill_pct=scrog_fill_pct,
+            scrog_cells=scrog_cells,
+            notas=str(body.get('notas', ''))[:500],
+        )
+        ColaPosicion.objects.bulk_create([
+            ColaPosicion(snapshot=snapshot, planta=planta, indice=indice, x=x, y=y)
+            for planta, indice, x, y in colas_validated
+        ])
 
     return JsonResponse({
         'ok': True,

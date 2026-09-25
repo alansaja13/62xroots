@@ -56,13 +56,13 @@
   <div class="del-glyph"><i class="bi bi-exclamation-triangle-fill"></i></div>
   <h1 class="del-title">{{ title }}</h1>
   <div class="del-name">{{ object_name }}</div>
-  <p class="del-warn">// esta acción no se puede deshacer</p>
+  <p class="del-warn">// {{ warn|default:"esta acción no se puede deshacer" }}</p>
 
   <div class="d-flex gap-3 justify-content-center flex-wrap">
     <form method="post" style="display: inline;">
       {% csrf_token %}
       <button type="submit" class="btn-danger-brand">
-        <i class="bi bi-trash3"></i> confirmar eliminación
+        <i class="bi {{ confirm_icon|default:'bi-trash3' }}"></i> {{ confirm_label|default:"confirmar eliminación" }}
       </button>
     </form>
     <a href="{{ back_url }}" class="btn-ghost">cancelar</a>

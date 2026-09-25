@@ -91,10 +91,9 @@ urlpatterns = [
     path("cultivo/<slug:slug>/finalizar/", views.cultivo_finalizar, name="cultivo_finalizar"),
     path("cultivo/<slug:slug>/tendencias/", views.cultivo_tendencias, name="cultivo_tendencias"),
     path("cultivo/<slug:slug>/tendencias.json", views.cultivo_tendencias_json, name="cultivo_tendencias_json"),
-    path("cultivo/<slug:slug>/quick/", views.quick_entry, name="quick"),
-    path("cultivo/<slug:slug>/quick/evento/", views.quick_evento, name="quick_evento"),
-    path("cultivo/<slug:slug>/quick/tarea/", views.quick_tarea, name="quick_tarea"),
-    path("cultivo/<slug:slug>/quick/ec/", views.quick_medicion_ec, name="quick_ec"),
+    # Enlaces viejos a la carga rápida: Registrar es la única entrada de datos.
+    path("cultivo/<slug:slug>/quick/", views.registrar_en_cultivo, name="registrar_en_cultivo"),
+    path("cultivo/<slug:slug>/tareas/rapida/", views.tarea_rapida, name="tarea_rapida"),
     path("cultivo/<slug:slug>/timeline/", views.timeline, name="timeline"),
     path("cultivo/<slug:slug>/reporte/", views.cultivo_reporte, name="reporte"),
     path("cultivo/<slug:slug>/canopy/", views.canopy_view, name="canopy"),

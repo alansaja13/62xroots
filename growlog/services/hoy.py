@@ -12,7 +12,7 @@ def resumen_hoy(usuario, *, ahora=None):
     hoy = timezone.localdate(ahora)
     ultima = MedicionAmbiente.objects.filter(cultivo_id=OuterRef("pk")).order_by("-timestamp", "-pk")
     cultivos = list(cultivos_visibles(usuario).annotate(
-        plantas_count=Count("plantas", filter=Q(plantas__estado="activa"), distinct=True),
+        plantas_count=Count("plantas", filter=Q(plantas__estado="activa", plantas__archivado=False), distinct=True),
         ultima_id=Subquery(ultima.values("pk")[:1]),
     ).order_by("-fecha_inicio", "-pk"))
     editables = set(cultivos_visibles(usuario, editar=True).values_list("pk", flat=True))

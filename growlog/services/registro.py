@@ -86,7 +86,7 @@ def recibir_registro(usuario, payload):
         if not isinstance(plantas, list) or not isinstance(nutrientes, list) or len(plantas) > 200 or len(nutrientes) > 100:
             raise RegistroError("El desglose del riego no es válido.")
         solucion = validar(SolucionForm, datos)
-        disponibles = {p.pk: p for p in cultivo.plantas.filter(archivado=False)}
+        disponibles = {p.pk: p for p in cultivo.plantas.activas()}
         detalles = []
         for row in plantas:
             values = validar(VolumenForm, row)

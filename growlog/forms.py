@@ -23,21 +23,6 @@ from .services.validacion import validar_solucion
 DT_FMT = "%Y-%m-%dT%H:%M"
 
 
-class QuickEntryForm(forms.Form):
-    temperatura_c = forms.DecimalField(
-        label="Temperatura (°C)", max_digits=5, decimal_places=2, min_value=0, max_value=60,
-        widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "decimal", "step": "0.1", "placeholder": "24.5", "autofocus": True}),
-    )
-    humedad_relativa = forms.DecimalField(
-        label="Humedad relativa (%)", max_digits=5, decimal_places=2, min_value=0, max_value=100,
-        widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "decimal", "step": "0.1", "placeholder": "60"}),
-    )
-    rego = forms.BooleanField(label="¿Regué hoy?", required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
-    notas = forms.CharField(label="Notas", required=False,
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Observaciones rápidas..."}))
-
-
 class NuevoCultivoForm(forms.ModelForm):
     class Meta:
         model = Cultivo
@@ -193,9 +178,10 @@ def riego_planta_formset(cultivo, data=None, riego=None):
     existentes = {}
     if riego is not None:
         existentes = {rp.planta_id: rp for rp in riego.detalle_plantas.all()}
-    # Las plantas archivadas siguen formando parte del registro histórico.
+    # Se riegan las plantas activas; al editar, las que ya estaban en el riego
+    # (aunque hoy estén archivadas o cosechadas) siguen formando parte del registro.
     plantas = list(cultivo.plantas.filter(
-        Q(archivado=False) | Q(pk__in=existentes),
+        Q(archivado=False, estado="activa") | Q(pk__in=existentes),
     ).order_by("apodo"))
     initial = []
     for p in plantas:
@@ -266,33 +252,6 @@ class NutrienteAplicadoForm(forms.ModelForm):
         }
 
 
-class QuickECForm(forms.Form):
-    tipo = forms.ChoiceField(
-        choices=MedicionEC.TIPO_CHOICES,
-        widget=forms.Select(attrs={"class": "form-select form-select-lg"}),
-    )
-    ph = forms.DecimalField(
-        label="pH", max_digits=4, decimal_places=2, required=False, min_value=0, max_value=14,
-        widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "decimal", "step": "0.01", "placeholder": "6.2"}),
-    )
-    ec = forms.DecimalField(
-        label="EC (mS/cm)", max_digits=5, decimal_places=2, required=False, min_value=0,
-        widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "decimal", "step": "0.01", "placeholder": "1.8"}),
-    )
-    temp_agua = forms.DecimalField(
-        label="Temp. agua (°C)", max_digits=4, decimal_places=1, required=False,
-        widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "decimal", "step": "0.1", "placeholder": "20.0"}),
-    )
-    notas = forms.CharField(label="Notas", required=False,
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Observaciones..."}))
-
-    def clean(self):
-        data = super().clean()
-        if not self.errors and data.get("ph") is None and data.get("ec") is None:
-            raise forms.ValidationError("Ingresá al menos un valor de pH o EC.")
-        return data
-
-
 class MedicionECForm(forms.ModelForm):
     class Meta:
         model = MedicionEC
@@ -330,20 +289,7 @@ class CambioEtapaPlantaForm(forms.ModelForm):
         }
 
 
-class QuickEventoForm(forms.Form):
-    tipo = forms.ChoiceField(
-        choices=Evento.TIPO_CHOICES,
-        widget=forms.Select(attrs={"class": "form-select form-select-lg"}),
-    )
-    descripcion = forms.CharField(
-        widget=forms.Textarea(attrs={
-            "class": "form-control", "rows": 4,
-            "placeholder": "Describí qué pasó, qué observaste...",
-        }),
-    )
-
-
-class QuickTareaForm(forms.Form):
+class TareaRapidaForm(forms.Form):
     titulo = forms.CharField(
         max_length=200,
         widget=forms.TextInput(attrs={
@@ -357,7 +303,7 @@ class QuickTareaForm(forms.Form):
     )
     prioridad = forms.ChoiceField(
         choices=Tarea.PRIORIDAD_CHOICES,
-        initial="normal",
+        required=False,  # el panel inline no la envía
         widget=forms.Select(attrs={"class": "form-select"}),
     )
     fecha_objetivo = forms.DateField(

@@ -1,9 +1,0 @@
-<div style="padding: 6px 18px 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px;
-            color: var(--green); letter-spacing: .1em; border-bottom: 1px solid var(--rule-soft);">
-  ✓ {{ tarea.titulo }}
-</div>
-
-{# OOB: si #tareas-lista existe en la página, prependeamos la nueva tarea #}
-<div hx-swap-oob="afterbegin:#tareas-lista">
-{% include "growlog/partials/tarea_row.html" with tarea=tarea %}
-</div>

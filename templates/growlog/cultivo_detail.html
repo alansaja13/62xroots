@@ -400,11 +400,9 @@
       </form>
       {% endif %}
     </div>
-    {% if can_edit_cultivo %}
     {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="btn-brand btn-brand--lg">
-      <i class="bi bi-plus-lg"></i> anotar
+      <i class="bi bi-pencil-square"></i> registrar
     </a>{% endif %}
-    {% endif %}
   </div>
 </div>
 
@@ -711,7 +709,7 @@
 
       {% if can_edit_cultivo %}
       <form class="tarea-quick-form"
-            hx-post="{% url 'growlog:quick_tarea' cultivo.slug %}"
+            hx-post="{% url 'growlog:tarea_rapida' cultivo.slug %}"
             hx-target="#tarea-inline-result"
             hx-swap="innerHTML"
             hx-on::after-request="if(event.detail.successful) this.querySelector('input').value=''">

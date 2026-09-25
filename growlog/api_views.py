@@ -39,6 +39,25 @@ def api_error(message, status=400):
     return JsonResponse({'ok': False, 'error': message}, status=status)
 
 
+class ApiInputError(ValueError):
+    """Dato de entrada inválido: require_token lo convierte en un 400."""
+
+
+_VERDADEROS = {'true', '1', 'si', 'sí', 'yes', 'on'}
+_FALSOS = {'false', '0', 'no', 'off', ''}
+
+
+def _flag(value, campo):
+    """bool('false') es True: interpretar el valor en vez de su 'truthiness'."""
+    if isinstance(value, bool) or value is None:
+        return bool(value)
+    if isinstance(value, int) and value in (0, 1):
+        return bool(value)
+    if isinstance(value, str) and value.strip().lower() in _VERDADEROS | _FALSOS:
+        return value.strip().lower() in _VERDADEROS
+    raise ApiInputError(f'{campo} debe ser true o false')
+
+
 def require_token(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
@@ -70,7 +89,10 @@ def require_token(view_func):
             cultivo = planta.cultivo
         if cultivo and request.method not in SAFE_METHODS and not puede_editar(token.user, cultivo):
             return api_error('Tenés acceso de solo lectura a este cultivo', 403)
-        return view_func(request, *args, **kwargs)
+        try:
+            return view_func(request, *args, **kwargs)
+        except ApiInputError as exc:
+            return api_error(str(exc))
     return wrapper
 
 
@@ -304,7 +326,7 @@ def cultivo_riegos(request, slug):
             except (InvalidOperation, TypeError):
                 return api_error('ec_solucion debe ser un número')
 
-        buscar_runoff = bool(body.get('buscar_runoff', False))
+        buscar_runoff = _flag(body.get('buscar_runoff', False), 'buscar_runoff')
         notas = str(body.get('notas', ''))[:500]
 
         # detalle_plantas: [{planta_uuid, volumen_ml, runoff_observado?, ph_runoff?, ec_runoff?, notas?}, ...]
@@ -312,7 +334,7 @@ def cultivo_riegos(request, slug):
         detalle_raw = body.get('detalle_plantas', [])
         if not isinstance(detalle_raw, list) or not detalle_raw:
             return api_error('detalle_plantas es requerido: lista de {planta_uuid, volumen_ml}')
-        plantas_map = {str(p.uuid): p for p in c.plantas.filter(archivado=False)}
+        plantas_map = {str(p.uuid): p for p in c.plantas.activas()}
         detalle_validated = []
         for item in detalle_raw:
             if not isinstance(item, dict):
@@ -341,7 +363,7 @@ def cultivo_riegos(request, slug):
                     return api_error(f'ec_runoff inválido para planta {uuid_str}')
             detalle_validated.append({
                 'planta': planta, 'volumen_ml': volumen_ml,
-                'runoff_observado': bool(item.get('runoff_observado', False)),
+                'runoff_observado': _flag(item.get('runoff_observado', False), 'runoff_observado'),
                 'ph_runoff': ph_runoff, 'ec_runoff': ec_runoff,
                 'notas': str(item.get('notas', ''))[:500],
             })
@@ -430,7 +452,7 @@ def cultivo_riego_detail(request, slug, riego_id):
                     return api_error('ec_solucion debe ser un número')
 
         if 'buscar_runoff' in body:
-            riego.buscar_runoff = bool(body['buscar_runoff'])
+            riego.buscar_runoff = _flag(body['buscar_runoff'], 'buscar_runoff')
         if 'notas' in body:
             riego.notas = str(body['notas'])[:500]
 
@@ -473,8 +495,8 @@ def cultivo_riego_plantas(request, slug, riego_id):
 
         uuid_str = str(body.get('planta_uuid', ''))
         try:
-            planta = c.plantas.get(uuid=uuid_str, archivado=False)
-        except Planta.DoesNotExist:
+            planta = c.plantas.activas().get(uuid=uuid_str)
+        except (Planta.DoesNotExist, ValidationError):
             return api_error(f'planta_uuid desconocido o archivado: {uuid_str}')
         if riego.detalle_plantas.filter(planta=planta).exists():
             return api_error('Esa planta ya tiene un detalle en este riego — usá PATCH para modificarlo')
@@ -500,7 +522,7 @@ def cultivo_riego_plantas(request, slug, riego_id):
 
         rp = RiegoPlanta.objects.create(
             riego=riego, planta=planta, volumen_ml=volumen_ml,
-            runoff_observado=bool(body.get('runoff_observado', False)),
+            runoff_observado=_flag(body.get('runoff_observado', False), 'runoff_observado'),
             ph_runoff=ph_runoff, ec_runoff=ec_runoff,
             notas=str(body.get('notas', ''))[:500],
         )
@@ -589,7 +611,7 @@ def riego_planta_detail(request, slug, riego_id, rp_id):
             except (ValueError, TypeError):
                 return api_error('volumen_ml debe ser entero positivo')
         if 'runoff_observado' in body:
-            rp.runoff_observado = bool(body['runoff_observado'])
+            rp.runoff_observado = _flag(body['runoff_observado'], 'runoff_observado')
         if 'ph_runoff' in body:
             if body['ph_runoff'] is None:
                 rp.ph_runoff = None
@@ -781,7 +803,7 @@ def planta_mediciones(request, planta_uuid):
             try:
                 from datetime import date
                 fecha = date.fromisoformat(body['fecha'])
-            except ValueError:
+            except (ValueError, TypeError):
                 return api_error('fecha debe ser YYYY-MM-DD')
 
         aspecto_general = body.get('aspecto_general', 'bueno')
@@ -1040,7 +1062,7 @@ def cultivo_eventos(request, slug):
             try:
                 from datetime import date
                 follow_up_fecha = date.fromisoformat(body['follow_up_fecha'])
-            except ValueError:
+            except (ValueError, TypeError):
                 return api_error('follow_up_fecha debe ser YYYY-MM-DD')
 
         plantas_afectadas = []
@@ -1110,12 +1132,12 @@ def cultivo_evento_detail(request, slug, evento_id):
                 try:
                     from datetime import date
                     e.follow_up_fecha = date.fromisoformat(body['follow_up_fecha'])
-                except ValueError:
+                except (ValueError, TypeError):
                     return api_error('follow_up_fecha debe ser YYYY-MM-DD')
         if 'follow_up_descripcion' in body:
             e.follow_up_descripcion = str(body['follow_up_descripcion'])[:500]
         if 'follow_up_resuelto' in body:
-            e.follow_up_resuelto = bool(body['follow_up_resuelto'])
+            e.follow_up_resuelto = _flag(body['follow_up_resuelto'], 'follow_up_resuelto')
         if 'plantas_afectadas' in body:
             plantas_uuids = body['plantas_afectadas']
             if not isinstance(plantas_uuids, list):
@@ -1206,7 +1228,7 @@ def cultivo_tareas(request, slug):
             try:
                 from datetime import date
                 fecha_objetivo = date.fromisoformat(body['fecha_objetivo'])
-            except ValueError:
+            except (ValueError, TypeError):
                 return api_error('fecha_objetivo debe ser YYYY-MM-DD')
 
         t = Tarea.objects.create(
@@ -1269,10 +1291,10 @@ def cultivo_tarea_detail(request, slug, tarea_id):
                 try:
                     from datetime import date
                     t.fecha_objetivo = date.fromisoformat(body['fecha_objetivo'])
-                except ValueError:
+                except (ValueError, TypeError):
                     return api_error('fecha_objetivo debe ser YYYY-MM-DD')
         if 'completada' in body:
-            completada = bool(body['completada'])
+            completada = _flag(body['completada'], 'completada')
             t.completada = completada
             t.completada_en = timezone.now() if completada else None
 
@@ -1675,7 +1697,7 @@ def planta_detail(request, planta_uuid):
         if 'notas_genetica' in body:
             p.notas_genetica = str(body['notas_genetica'])[:2000]
         if 'archivado' in body:
-            p.archivado = bool(body['archivado'])
+            p.archivado = _flag(body['archivado'], 'archivado')
 
         p.save()
         return api_ok(_planta_full(p))
@@ -1685,8 +1707,9 @@ def planta_detail(request, planta_uuid):
         if rl:
             return rl
         uuid_deleted = str(p.uuid)
-        p.delete()
-        return api_ok({'deleted': uuid_deleted})
+        if p.eliminar_o_archivar():
+            return api_ok({'deleted': uuid_deleted})
+        return api_ok({'archived': uuid_deleted})
 
     return api_error('Method not allowed', 405)
 
@@ -1785,7 +1808,7 @@ def equipos_list(request):
         equipo = Equipo.objects.create(
             propietario=request.api_user,
             nombre=nombre[:120], watts=watts, horas_dia=horas_dia, categoria=categoria,
-            activo=bool(body.get('activo', True)),
+            activo=_flag(body.get('activo', True), 'activo'),
             notas=str(body.get('notas', ''))[:500],
         )
         return api_ok(_ser_equipo(equipo), status=201)
@@ -1829,7 +1852,7 @@ def equipo_detail(request, equipo_id):
             equipo.categoria = body['categoria']
 
         if 'activo' in body:
-            equipo.activo = bool(body['activo'])
+            equipo.activo = _flag(body['activo'], 'activo')
 
         if 'horas_dia' in body:
             try:
@@ -2275,7 +2298,7 @@ def costo_detail(request, slug, costo_id):
                 try:
                     from datetime import date
                     ce.fecha_hasta = date.fromisoformat(str(body['fecha_hasta']).strip())
-                except ValueError:
+                except (ValueError, TypeError):
                     return api_error('fecha_hasta debe ser YYYY-MM-DD')
 
         ce.save()

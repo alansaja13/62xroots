@@ -1,7 +1,6 @@
 import math
 import uuid
 import secrets
-from django.core.cache import cache
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -62,7 +61,8 @@ class Cultivo(models.Model):
         if self._state.adding and self.propietario_id is None:
             self.propietario_id = self.creado_por_id
         if not self.slug:
-            base = slugify(self.nombre)
+            # Un nombre sin letras ni números ("🌱🌱") daría un slug vacío y rompería las URLs.
+            base = slugify(self.nombre) or "cultivo"
             slug, n = base, 2
             while Cultivo.objects.filter(slug=slug).exclude(pk=self.pk).exists():
                 slug = f"{base}-{n}"
@@ -72,8 +72,9 @@ class Cultivo(models.Model):
 
     @property
     def dias_desde_inicio(self):
-        """Día 1 = fecha_inicio (mismo criterio 1-indexado que dia_flora)."""
-        return (timezone.localdate() - self.fecha_inicio).days + 1
+        """Día 1 = fecha_inicio (mismo criterio 1-indexado que dia_flora).
+        Un cultivo que todavía no empezó está en el día 0, nunca negativo."""
+        return max(0, (timezone.localdate() - self.fecha_inicio).days + 1)
 
     @property
     def dia_flora(self):
@@ -98,6 +99,12 @@ class CultivoMiembro(models.Model):
 
     def __str__(self):
         return f"{self.usuario} · {self.cultivo} · {self.get_rol_display()}"
+
+
+class PlantaQuerySet(models.QuerySet):
+    def activas(self):
+        """Plantas que cuentan como activas y pueden recibir riegos o mediciones nuevas."""
+        return self.filter(archivado=False, estado="activa")
 
 
 class Planta(models.Model):
@@ -139,6 +146,8 @@ class Planta(models.Model):
     archivado = models.BooleanField(default=False)
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='plantas_creadas')
 
+    objects = PlantaQuerySet.as_manager()
+
     class Meta:
         ordering = ["apodo"]
         verbose_name = "Planta"
@@ -146,6 +155,22 @@ class Planta(models.Model):
 
     def __str__(self):
         return f"{self.apodo} ({self.strain or 'sin strain'})"
+
+    def tiene_historial(self):
+        """Datos que se perderían en cascada con un borrado físico."""
+        return any(rel.exists() for rel in (
+            self.riegos_detalle, self.mediciones, self.cambios_etapa, self.posiciones_cola, self.eventos,
+        ))
+
+    def eliminar_o_archivar(self):
+        """Borrar una planta con historial se llevaría sus riegos, fotos y etapas:
+        en ese caso se archiva. Devuelve True si se borró, False si se archivó."""
+        if self.tiene_historial():
+            self.archivado = True
+            self.save(update_fields=["archivado"])
+            return False
+        self.delete()
+        return True
 
 
 class CambioEtapaPlanta(models.Model):
@@ -268,16 +293,14 @@ class MedicionAmbiente(models.Model):
         Única fuente de verdad (ver también evaluar_ambiente en views/helpers.py) — si no hay
         ParametroIdeal cargado para la etapa, no se puede clasificar.
         """
-        from .utils import etapa_efectiva_cultivo
+        from .utils import etapa_efectiva_cultivo, parametro_ideal_de
         v = self.vpd
-        etapa = etapa_efectiva_cultivo(self.cultivo)
+        # La etapa vigente cuando se midió: una lectura del vegetativo no se
+        # juzga con los rangos de flora de hoy.
+        etapa = etapa_efectiva_cultivo(self.cultivo, timezone.localdate(self.timestamp))
         if etapa is None:
             return None
-        param = cache.get_or_set(
-            f"parametro_ideal:{etapa}",
-            lambda: ParametroIdeal.objects.filter(etapa=etapa).first(),
-            300,
-        )
+        param = parametro_ideal_de(self.cultivo, etapa)
         if param is None:
             return None
         if float(param.vpd_min) <= v <= float(param.vpd_max):

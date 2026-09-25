@@ -15,13 +15,8 @@ from .cultivos import (  # noqa: F401
     cultivo_tendencias_json,
     dashboard,
     nuevo_cultivo,
+    registrar_en_cultivo,
     timeline,
-)
-from .carga_rapida import (  # noqa: F401
-    quick_entry,
-    quick_evento,
-    quick_medicion_ec,
-    quick_tarea,
 )
 from .plantas import (  # noqa: F401
     cambio_etapa_planta_editar,
@@ -41,6 +36,7 @@ from .tareas import (  # noqa: F401
     tarea_descompletar,
     tarea_editar,
     tarea_eliminar,
+    tarea_rapida,
     tareas_list,
 )
 from .eventos import (  # noqa: F401
