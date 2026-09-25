@@ -12,26 +12,11 @@
 </div>
 {% endblock %}
 
-{% block bottom_nav %}
-<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="bottom-nav__item">
-  <i class="bi bi-arrow-left"></i>
-  <span>Volver</span>
-</a>
-{% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="bottom-nav__item">
-  <i class="bi bi-lightning-charge-fill"></i>
-  <span>Registrar</span>
-</a>{% endif %}
-<a href="{% url 'growlog:timeline' cultivo.slug %}" class="bottom-nav__item">
-  <i class="bi bi-clock-history"></i>
-  <span>Timeline</span>
-</a>
-{% endblock %}
-
 {% block extra_head %}
 <style>
   .pd-back {
     display: inline-flex; align-items: center; gap: 6px;
-    font-family: "Geist Mono", monospace; font-size: 11px;
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
     color: var(--cream-soft); text-decoration: none;
     margin-bottom: 14px; letter-spacing: .1em;
   }
@@ -60,7 +45,7 @@
   }
   .pd-meta {
     display: flex; align-items: center; gap: 14px; margin-top: 14px; flex-wrap: wrap;
-    font-family: "Geist Mono", monospace; font-size: 12px; color: var(--cream-soft);
+    font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--cream-soft);
   }
 
   .pd-actions { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
@@ -82,7 +67,7 @@
     letter-spacing: -.022em;
   }
   .pd-meta-card__val--none { color: var(--fine); font-size: 22px; }
-  .pd-meta-card__unit { font-family: "Geist Mono", monospace; font-size: 14px; color: var(--cream-soft); }
+  .pd-meta-card__unit { font-family: "JetBrains Mono", monospace; font-size: 14px; color: var(--cream-soft); }
 
   .pd-genetics-notes {
     background: var(--card); border: 1px solid var(--rule);
@@ -90,7 +75,7 @@
     padding: 12px 18px 14px; margin-bottom: 18px;
   }
   .pd-genetics-notes__body {
-    font-family: "Geist", sans-serif; font-size: 13.5px;
+    font-family: "Manrope", sans-serif; font-size: 13.5px;
     color: var(--cream); line-height: 1.55; margin-top: 6px;
   }
 
@@ -101,7 +86,7 @@
     display: inline-block; padding: 2px 9px;
     border-left: 2px solid currentColor;
     background: rgba(255,255,255,.04);
-    font-family: "Geist Mono", monospace;
+    font-family: "JetBrains Mono", monospace;
     font-size: 10px; font-weight: 700;
     letter-spacing: .15em; text-transform: uppercase;
   }
@@ -132,7 +117,7 @@
     position: absolute; bottom: 0; left: 0; right: 0;
     padding: 18px 10px 7px;
     background: linear-gradient(transparent, rgba(0,0,0,.72));
-    font-family: "Geist Mono", monospace; font-size: 10px;
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
     letter-spacing: .14em; text-transform: uppercase;
     color: rgba(255,255,255,.75);
   }
@@ -145,7 +130,7 @@
   #modal-foto-img { width: 100%; display: block; max-height: 85vh; object-fit: contain; }
   #modal-foto-fecha {
     padding: 10px 16px;
-    font-family: "Geist Mono", monospace; font-size: 10px;
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
     letter-spacing: .18em; text-transform: uppercase; color: var(--fine);
   }
   #modal-close-btn {

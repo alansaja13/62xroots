@@ -11,26 +11,11 @@
 </div>
 {% endblock %}
 
-{% block bottom_nav %}
-<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="bottom-nav__item">
-  <i class="bi bi-arrow-left"></i>
-  <span>Volver</span>
-</a>
-<a href="{% url 'growlog:timeline' cultivo.slug %}" class="bottom-nav__item">
-  <i class="bi bi-clock-history"></i>
-  <span>Timeline</span>
-</a>
-<a href="{% url 'growlog:tareas_list' cultivo.slug %}" class="bottom-nav__item">
-  <i class="bi bi-check2-square"></i>
-  <span>Tareas</span>
-</a>
-{% endblock %}
-
 {% block extra_head %}
 <style>
   .qe-back {
     display: inline-flex; align-items: center; gap: 6px;
-    font-family: "Geist Mono", monospace; font-size: 11px;
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
     color: var(--cream-soft); text-decoration: none;
     margin-bottom: 14px; letter-spacing: .1em;
   }
@@ -49,7 +34,7 @@
   }
   .qe-meta {
     display: flex; align-items: center; gap: 14px; margin-top: 14px; flex-wrap: wrap;
-    font-family: "Geist Mono", monospace; font-size: 12px; color: var(--cream-soft);
+    font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--cream-soft);
   }
 
   /* ── TABS ── */
@@ -63,7 +48,7 @@
     border: none; border-bottom: 2px solid transparent;
     margin-bottom: -1px;
     padding: 11px 22px;
-    font-family: "Geist Mono", monospace;
+    font-family: "JetBrains Mono", monospace;
     font-size: 11px; font-weight: 700;
     letter-spacing: .18em; text-transform: uppercase;
     color: var(--fine); cursor: pointer;
@@ -97,7 +82,7 @@
   }
   .qe-vital-input__suffix {
     position: absolute; right: 18px; bottom: 14px;
-    font-family: "Geist Mono", monospace; font-size: 14px;
+    font-family: "JetBrains Mono", monospace; font-size: 14px;
     color: var(--cream-soft); letter-spacing: .1em; pointer-events: none;
   }
 
@@ -111,15 +96,15 @@
     letter-spacing: -.02em; line-height: 1.05; padding: 10px 14px;
   }
   #quick-form textarea {
-    font-family: "Geist", sans-serif; font-size: 13.5px; font-weight: 500;
+    font-family: "Manrope", sans-serif; font-size: 13.5px; font-weight: 500;
     color: var(--cream); line-height: 1.5;
   }
 
-  .qe-shortcut { font-family: "Geist Mono", monospace; font-size: 11px; color: var(--cream-soft); }
+  .qe-shortcut { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--cream-soft); }
   .qe-shortcut kbd {
     background: var(--bg-alt); border: 1px solid var(--rule);
     padding: 1px 6px; font-size: 10px; color: var(--fine);
-    font-family: "Geist Mono", monospace; border-radius: 0;
+    font-family: "JetBrains Mono", monospace; border-radius: 0;
   }
 
   @media (max-width: 900px) { .qe-header { grid-template-columns: 1fr; } .qe-title { font-size: 48px; } }

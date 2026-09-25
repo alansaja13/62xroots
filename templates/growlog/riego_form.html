@@ -15,7 +15,7 @@
 <style>
   .rf-back {
     display: inline-flex; align-items: center; gap: 6px;
-    font-family: "Geist Mono", monospace; font-size: 11px;
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
     color: var(--cream-soft); text-decoration: none;
     margin-bottom: 14px; letter-spacing: .1em;
   }
@@ -58,7 +58,7 @@
     background: var(--green-wash); border: 1px solid var(--green-deep);
     display: flex; align-items: center; justify-content: center;
     color: var(--green);
-    font-family: "Geist Mono", monospace; font-size: 11px; font-weight: 700;
+    font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700;
   }
   .rf-na-row__name {
     font-family: "Bricolage Grotesque", sans-serif;
@@ -73,13 +73,13 @@
   }
   .rf-na-row__del {
     background: transparent; border: none; color: var(--fine);
-    font-family: "Geist Mono", monospace; font-size: 14px;
+    font-family: "JetBrains Mono", monospace; font-size: 14px;
     cursor: pointer; padding: 4px;
   }
   .rf-na-row__del:hover { color: var(--rust); }
   .rf-na-empty {
     padding: 24px 16px; text-align: center; color: var(--fine);
-    font-family: "Geist Mono", monospace; font-size: 12px;
+    font-family: "JetBrains Mono", monospace; font-size: 12px;
   }
 
   /* Desglose de riego por planta */
@@ -111,7 +111,7 @@
   }
 
   .rf-delete-link {
-    font-family: "Geist Mono", monospace; font-size: 11px;
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
     color: var(--fine); text-decoration: none;
     display: inline-flex; align-items: center; gap: 6px;
     letter-spacing: .1em;
@@ -306,7 +306,7 @@
             <div class="rf-na-row__dosis">{{ na.dosis_g_por_litro }}<span class="mono c-soft" style="font-size: 11px; margin-left: 4px;">g/L</span></div>
             <form method="post" action="{% url 'growlog:nutriente_aplicado_eliminar' na.pk %}"
                   style="display: inline; text-align: right;"
-                  onsubmit="return confirm('¿Eliminar {{ na.nutriente }}?')">
+                  onsubmit="return confirm('¿Eliminar {{ na.nutriente|escapejs }}?')">
               {% csrf_token %}
               <button type="submit" class="rf-na-row__del" title="Eliminar">
                 <i class="bi bi-x-lg"></i>

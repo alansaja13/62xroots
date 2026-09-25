@@ -11,26 +11,11 @@
 </div>
 {% endblock %}
 
-{% block bottom_nav %}
-<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="bottom-nav__item">
-  <i class="bi bi-arrow-left"></i>
-  <span>Volver</span>
-</a>
-{% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="bottom-nav__item">
-  <i class="bi bi-lightning-charge-fill"></i>
-  <span>Registrar</span>
-</a>{% endif %}
-<a href="{% url 'growlog:timeline' cultivo.slug %}" class="bottom-nav__item">
-  <i class="bi bi-clock-history"></i>
-  <span>Timeline</span>
-</a>
-{% endblock %}
-
 {% block extra_head %}
 <style>
   .tl-back {
     display: inline-flex; align-items: center; gap: 6px;
-    font-family: "Geist Mono", monospace; font-size: 11px;
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
     letter-spacing: .1em; color: var(--cream-soft);
     text-decoration: none; margin-bottom: 20px;
   }
@@ -56,7 +41,7 @@
     margin-bottom: 18px;
   }
   .tl-filter-btn {
-    font-family: "Geist Mono", monospace; font-size: 10px;
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
     letter-spacing: .18em; text-transform: uppercase;
     padding: 6px 14px; border: 1px solid var(--rule);
     background: transparent; color: var(--fine);
@@ -71,7 +56,7 @@
   }
   .tl-filter-sep { color: var(--fine); font-size: 11px; }
   .tl-filter-select {
-    font-family: "Geist Mono", monospace; font-size: 10px;
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
     letter-spacing: .1em; text-transform: uppercase;
     padding: 6px 32px 6px 12px; border: 1px solid var(--rule);
     background: var(--bg-alt); color: var(--fine); width: auto;
@@ -80,7 +65,7 @@
   /* Tabla */
   .tl-table { width: 100%; border-collapse: separate; border-spacing: 0; }
   .tl-table thead th {
-    font-family: "Geist Mono", monospace; font-size: 9.5px;
+    font-family: "JetBrains Mono", monospace; font-size: 9.5px;
     letter-spacing: .22em; text-transform: uppercase;
     color: var(--fine); font-weight: 600;
     background: var(--card-alt); border-bottom: 1px solid var(--rule);
@@ -106,12 +91,12 @@
   .tl-desc { font-size: 11px; color: var(--fine); margin-top: 3px; }
 
   .tl-cat {
-    font-family: "Geist Mono", monospace; font-size: 9.5px;
+    font-family: "JetBrains Mono", monospace; font-size: 9.5px;
     letter-spacing: .12em; text-transform: uppercase;
     color: var(--fine); white-space: nowrap;
   }
   .tl-fecha {
-    font-family: "Geist Mono", monospace; font-size: 10.5px;
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px;
     color: var(--fine); white-space: nowrap;
   }
   .tl-fecha--vencida { color: var(--rust); }
@@ -132,7 +117,7 @@
     margin-top: 22px;
   }
   .tl-pag__btn {
-    font-family: "Geist Mono", monospace; font-size: 11px;
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
     padding: 7px 14px; border: 1px solid var(--rule);
     background: transparent; color: var(--fine);
     text-decoration: none; transition: border-color .12s, color .12s;
@@ -144,7 +129,7 @@
   /* Estado vacío */
   .tl-empty {
     text-align: center; padding: 60px 24px;
-    color: var(--fine); font-family: "Geist Mono", monospace; font-size: 12px;
+    color: var(--fine); font-family: "JetBrains Mono", monospace; font-size: 12px;
   }
   .tl-empty__icon { font-size: 28px; opacity: .3; display: block; margin-bottom: 14px; }
 </style>
@@ -265,7 +250,7 @@
           {% elif tarea.prioridad == 'baja' %}
             <span class="tc tc--baja">baja</span>
           {% else %}
-            <span class="c-fine" style="font-family:'Geist Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase;">normal</span>
+            <span class="c-fine" style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase;">normal</span>
           {% endif %}
         </td>
 

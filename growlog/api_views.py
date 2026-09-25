@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET
 
 from .models import (
     APIToken, CambioFotoperiodo, CanopySnapshot, ColaPosicion,
@@ -18,6 +18,7 @@ from .models import (
     MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente, NutrienteAplicado,
     ParametroIdeal, Planta, POSICION_TENT_COORDS, Riego, RiegoPlanta, Tarea, TarifaElectrica,
 )
+from .services.energia import calcular_meses, ciclo_activo
 from .services.riegos import guardar_riego
 from .permissions import (SAFE_METHODS, cultivos_visibles, puede_editar, recursos_visibles, tarifas_del_cultivo, equipos_asignables)
 
@@ -1692,67 +1693,12 @@ def planta_detail(request, planta_uuid):
 
 # ── Módulo energético ─────────────────────────────────────────────────────────
 
-def _next_month(d):
-    """Primer día del mes siguiente."""
-    if d.month == 12:
-        return d.replace(year=d.year + 1, month=1, day=1)
-    return d.replace(month=d.month + 1, day=1)
-
 
 def _tarifa_vigente(hoy, *, cultivo=None, usuario=None):
     tarifas = tarifas_del_cultivo(cultivo) if cultivo else TarifaElectrica.objects.filter(propietario=usuario)
     if cultivo and usuario and cultivo.propietario_id == usuario.pk:
         tarifas = TarifaElectrica.objects.filter(Q(propietario=usuario) | Q(costos__cultivo=cultivo)).distinct()
     return tarifas.filter(fecha_desde__lte=hoy).order_by('-fecha_desde').first()
-
-
-def _ciclo_activo(cultivo, hoy):
-    """Fotoperiodo activo según CambioFotoperiodo o estado del cultivo."""
-    cf = cultivo.cambios_fotoperiodo.filter(fecha_inicio__lte=hoy).order_by('-fecha_inicio').first()
-    if cf:
-        return cf.fotoperiodo
-    return '12/12' if cultivo.estado == 'floracion' else '18/6'
-
-
-def _calcular_meses(cultivo_inicio, costos, tarifas, hoy):
-    """Lista de dicts por mes desde cultivo_inicio hasta hoy con kWh y costo estimados."""
-    import calendar
-    meses = []
-    mes = cultivo_inicio.replace(day=1)
-
-    while mes <= hoy:
-        tarifa_mes = next((t for t in tarifas if t.fecha_desde <= mes), None)
-
-        last_day = calendar.monthrange(mes.year, mes.month)[1]
-        mes_fin = mes.replace(day=last_day)
-
-        dia_inicio = max(mes, cultivo_inicio)
-        dia_fin = min(mes_fin, hoy)
-        dias = (dia_fin - dia_inicio).days + 1
-
-        if dias > 0:
-            kwh_mes_val = 0.0
-            for ce in costos:
-                ce_hasta = ce.fecha_hasta
-                if ce.fecha_desde <= dia_fin and (ce_hasta is None or ce_hasta >= dia_inicio):
-                    equipo_inicio = max(dia_inicio, ce.fecha_desde)
-                    equipo_fin = min(dia_fin, ce_hasta) if ce_hasta else dia_fin
-                    dias_equipo = (equipo_fin - equipo_inicio).days + 1
-                    kwh_mes_val += float(ce.equipo.watts) / 1000 * float(ce.equipo.horas_dia) * dias_equipo
-            kwh_mes_val = round(kwh_mes_val, 2)
-            costo_mes_val = round(kwh_mes_val * float(tarifa_mes.precio_kwh), 2) if tarifa_mes else 0.0
-
-            meses.append({
-                'mes': mes.strftime('%Y-%m'),
-                'dias': dias,
-                'kwh_estimado': kwh_mes_val,
-                'costo_estimado': costo_mes_val,
-                'tarifa': str(tarifa_mes.precio_kwh) if tarifa_mes else None,
-            })
-
-        mes = _next_month(mes)
-
-    return meses
 
 
 def _ser_equipo(e, precio_kwh=None):
@@ -1952,7 +1898,7 @@ def cultivo_costos(request, slug):
         if precio_kwh:
             total_costo_mes += ce.equipo.kwh_mes * float(precio_kwh)
 
-    meses = _calcular_meses(c.fecha_inicio, todos_costos, tarifas, hoy)
+    meses = calcular_meses(c.fecha_inicio, todos_costos, tarifas, hoy)
     kwh_acumulado = round(sum(m['kwh_estimado'] for m in meses), 2)
     costo_acumulado = round(sum(m['costo_estimado'] for m in meses), 2)
 
@@ -1965,7 +1911,7 @@ def cultivo_costos(request, slug):
     return api_ok({
         'cultivo': c.slug,
         'tarifa_vigente': _ser_tarifa(tarifa) if tarifa else None,
-        'ciclo': _ciclo_activo(c, hoy),
+        'ciclo': ciclo_activo(c, hoy),
         'equipos': equipos_data,
         'totales': {
             'kwh_mes': round(total_kwh_mes, 2),
@@ -1990,7 +1936,7 @@ def cultivo_costos_historico(request, slug):
         c.costos_energeticos.select_related('equipo').order_by('fecha_desde')
     )
 
-    meses = _calcular_meses(c.fecha_inicio, todos_costos, tarifas, hoy)
+    meses = calcular_meses(c.fecha_inicio, todos_costos, tarifas, hoy)
     kwh_total = round(sum(m['kwh_estimado'] for m in meses), 2)
     costo_total = round(sum(m['costo_estimado'] for m in meses), 2)
 
@@ -2022,7 +1968,7 @@ def cultivo_costos_comparacion(request, slug):
         c.costos_energeticos.select_related('equipo').order_by('fecha_desde')
     )
 
-    meses = _calcular_meses(c.fecha_inicio, todos_costos, tarifas, hoy)
+    meses = calcular_meses(c.fecha_inicio, todos_costos, tarifas, hoy)
     kwh_estimado = round(sum(m['kwh_estimado'] for m in meses), 2)
     costo_estimado = round(sum(m['costo_estimado'] for m in meses), 2)
 

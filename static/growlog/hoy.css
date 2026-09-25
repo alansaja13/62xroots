@@ -1,10 +1,121 @@
-.hoy{max-width:1200px;margin:auto;color:var(--cream)}
-.hoy-header,.hoy-section-head,.hoy-actions,.hoy-tasks li,.hoy-history li{display:flex;justify-content:space-between;align-items:center;gap:16px}
-.hoy-header{margin:12px 0 28px;align-items:flex-start}.hoy-header h1{font-size:clamp(38px,6vw,64px);line-height:1.1;margin:8px 0 14px}.hoy-header p{margin-bottom:8px}.hoy-eyebrow{font-size:13px;letter-spacing:.04em;color:var(--green)}
-.hoy-actions{justify-content:flex-start;flex-wrap:wrap}.hoy a{text-underline-offset:4px}.hoy .btn-brand,.hoy .btn-ghost{min-height:46px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;letter-spacing:0;text-transform:none;border-radius:10px}.hoy a:focus-visible,.hoy summary:focus-visible{outline:3px solid var(--green);outline-offset:4px}
-.hoy-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:24px}.hoy-summary a{padding:18px 20px;border:1px solid var(--rule);border-radius:14px;background:var(--card);text-decoration:none;color:var(--cream);display:flex;flex-direction:column;gap:4px}.hoy-summary strong{font-size:30px;color:var(--green);line-height:1.2}.hoy-summary span{font-size:14px}
-.hoy-panel{border:1px solid var(--rule);border-radius:16px;background:var(--card);padding:24px;margin-bottom:24px}.hoy h2{font-size:24px;margin:0 0 16px}.hoy-section-head{margin-bottom:18px;flex-wrap:wrap}.hoy-section-head h2{margin:0}.hoy-section-head>span,.hoy-note{font-size:14px;color:var(--cream-soft)}
-.hoy-tasks{list-style:none;margin:0 0 16px;padding:0}.hoy-tasks li{border-top:1px solid var(--rule);padding:18px 0}.hoy-tasks li>div{min-width:0}.hoy-tasks h3{font-size:17px;line-height:1.4;margin:8px 0;overflow-wrap:anywhere}.hoy-tasks p{font-size:14px;color:var(--cream-soft);margin:0}.hoy-tasks a{flex-shrink:0}.hoy-tag{display:inline-block;font-size:12px;border:1px solid var(--rule);padding:4px 9px;border-radius:20px;color:var(--cream-soft)}.hoy-tag--warning{color:var(--honey);border-color:var(--honey)}
-.hoy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.hoy-cultivo{display:flex;flex-direction:column;margin:0}.hoy-cultivo h3{font-size:25px;margin-bottom:8px;overflow-wrap:anywhere}.hoy-cultivo h3 a{color:var(--cream)}.hoy-readings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;border-top:1px solid var(--rule);padding-top:18px;margin:4px 0 16px}.hoy-readings dt{font-size:13px;font-weight:400;color:var(--cream-soft);margin-bottom:5px}.hoy-readings dd{font-size:23px;font-variant-numeric:tabular-nums;margin:0}.hoy-readings small{font-size:12px}.hoy-freshness{font-size:14px;color:var(--cream-soft)}.hoy-freshness--old{color:var(--honey)}.hoy-missing{padding:22px 0}.hoy-missing p{font-size:14px;margin-top:6px}.hoy-cultivo .hoy-actions{margin-top:auto}.hoy-links{display:flex;gap:20px;flex-wrap:wrap;margin-top:16px;font-size:14px}.hoy-links a{color:var(--green);padding:8px 0}
-.hoy-history{margin-top:30px}.hoy-history summary{font-size:22px;cursor:pointer;padding:12px 0}.hoy-history ul{list-style:none;padding:0}.hoy-history li{padding:16px 0;border-bottom:1px solid var(--rule);flex-wrap:wrap}.hoy-history li a{font-size:18px;color:var(--cream);overflow-wrap:anywhere}.hoy-history li span{font-size:14px;color:var(--cream-soft)}
-@media(max-width:700px){.hoy-header{flex-direction:column}.hoy-grid{grid-template-columns:1fr}.hoy-panel{padding:18px}.hoy-summary{gap:8px}.hoy-summary a{padding:12px}.hoy-summary span{font-size:12px}.hoy-tasks li{align-items:flex-start;flex-direction:column}.hoy-tasks a{align-self:flex-end}.hoy-section-head{gap:8px}.hoy-readings dd{font-size:21px}}
+/* Hoy · resumen diario, en el lenguaje VERDE (ver verde.css) */
+.hoy { max-width: 1200px; margin: auto; color: var(--cream); }
+
+/* ── Encabezado ── */
+.hoy-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin: 4px 0 26px; }
+.hoy-eyebrow {
+  font-family: "JetBrains Mono", monospace; font-size: 10px; font-weight: 500;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--green); margin: 0;
+}
+.hoy-eyebrow::before { content: "// "; color: var(--fine); }
+.hoy-header h1, .hoy-cultivo h3, .hoy-readings dd {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 85, "opsz" 96;
+}
+.hoy-header h1 {
+  font-weight: 800; letter-spacing: -.035em; line-height: .95;
+  font-size: clamp(44px, 8vw, 72px); margin: 10px 0 12px;
+}
+.hoy-header p { color: var(--cream-soft); margin: 0; }
+.hoy-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.hoy-note { font-size: 13px; color: var(--cream-soft); }
+.hoy-note a, .hoy-links a { text-underline-offset: 4px; }
+
+/* ── Contadores: lectura de terminal ── */
+.hoy-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 22px; }
+.hoy-summary a {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 16px 18px; border: 1px solid var(--rule); border-radius: 14px;
+  background: var(--card); color: var(--cream); text-decoration: none;
+  transition: border-color .15s;
+}
+.hoy-summary a:hover { border-color: var(--green-deep); opacity: 1; }
+.hoy-summary strong {
+  font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums;
+  font-size: 34px; font-weight: 600; line-height: 1; color: var(--green);
+}
+.hoy-summary a.is-alert strong { color: var(--honey); }
+.hoy-summary span {
+  font-family: "JetBrains Mono", monospace; font-size: 10px;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--fine); line-height: 1.5;
+}
+
+/* ── Paneles ── */
+.hoy-panel { border: 1px solid var(--rule); border-radius: 14px; background: var(--card); padding: 20px 22px; margin-bottom: 18px; }
+.hoy h2 { font-size: 20px; font-weight: 800; letter-spacing: -.02em; margin: 0 0 14px; }
+.hoy-section-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 14px; }
+.hoy-section-head h2 { margin: 0; }
+.hoy-section-head > span {
+  font-family: "JetBrains Mono", monospace; font-size: 10px;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--fine);
+}
+
+/* ── Para revisar ── */
+.hoy-tasks { list-style: none; margin: 0 0 12px; padding: 0; }
+.hoy-tasks li { display: flex; justify-content: space-between; align-items: center; gap: 16px; border-top: 1px solid var(--rule-soft); padding: 16px 0; }
+.hoy-tasks li > div { min-width: 0; }
+.hoy-tasks h3 { font-size: 15px; font-weight: 600; line-height: 1.45; margin: 8px 0 4px; overflow-wrap: anywhere; }
+.hoy-tasks p { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fine); margin: 0; }
+.hoy-tasks a { flex-shrink: 0; }
+.hoy-tag {
+  display: inline-block; padding: 2px 9px; border-radius: 999px;
+  border: 1px solid var(--rule); color: var(--cream-soft);
+  font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .06em;
+}
+.hoy-tag--warning { color: var(--honey); border-color: rgba(212,154,62,.45); background: rgba(212,154,62,.10); }
+
+/* ── Mis cultivos ── */
+.hoy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.hoy-cultivo { display: flex; flex-direction: column; margin: 0; }
+.hoy-cultivo .hoy-section-head { margin-bottom: 10px; }
+.hoy-cultivo h3 { font-size: 22px; font-weight: 800; letter-spacing: -.025em; line-height: 1.15; margin: 0 0 6px; overflow-wrap: anywhere; }
+.hoy-cultivo h3 a { color: var(--cream); }
+.hoy-readings {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+  border-top: 1px solid var(--rule-soft); padding-top: 16px; margin: 12px 0 10px;
+}
+.hoy-readings dt {
+  font-family: "JetBrains Mono", monospace; font-size: 9px; font-weight: 500;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--fine); margin-bottom: 6px;
+}
+.hoy-readings dd {
+  font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums;
+  font-size: 28px; line-height: 1; margin: 0;
+}
+.hoy-readings small { font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 500; letter-spacing: 0; color: var(--cream-soft); }
+.hoy-freshness { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--cream-soft); }
+.hoy-freshness--old { color: var(--honey); }
+.hoy-missing { padding: 18px 0; }
+.hoy-missing p { font-size: 13px; color: var(--cream-soft); margin-top: 4px; }
+.hoy-cultivo .hoy-actions { margin-top: auto; padding-top: 6px; }
+.hoy-links { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; }
+.hoy-links a {
+  font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--cream-soft); padding: 8px 0;
+}
+.hoy-links a:hover { color: var(--green); }
+
+/* ── Historial ── */
+.hoy-history { margin-top: 26px; }
+.hoy-history summary { font-size: 18px; font-weight: 800; cursor: pointer; padding: 10px 0; }
+.hoy-history ul { list-style: none; padding: 0; }
+.hoy-history li { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px 16px; padding: 14px 0; border-bottom: 1px solid var(--rule-soft); }
+.hoy-history li a { font-size: 16px; font-weight: 600; color: var(--cream); overflow-wrap: anywhere; }
+.hoy-history li span { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fine); }
+
+.hoy a:focus-visible, .hoy summary:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; border-radius: 6px; }
+
+@media (max-width: 700px) {
+  .hoy-header { flex-direction: column; align-items: flex-start; margin-bottom: 20px; }
+  /* En el celular, Registrar y Nuevo ya están en la barra inferior */
+  .hoy-header .hoy-actions { display: none; }
+  .hoy-grid { grid-template-columns: 1fr; }
+  .hoy-panel { padding: 16px; }
+  .hoy-summary { gap: 8px; }
+  .hoy-summary a { padding: 12px; }
+  .hoy-summary strong { font-size: 28px; }
+  .hoy-summary span { font-size: 9px; letter-spacing: .08em; }
+  .hoy-tasks li { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .hoy-tasks a { align-self: flex-start; }
+  .hoy-readings dd { font-size: 24px; }
+}

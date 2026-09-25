@@ -265,7 +265,7 @@ class MedicionAmbiente(models.Model):
         efectiva del cultivo (la más avanzada entre sus plantas activas — ver
         etapa_efectiva_cultivo en utils.py).
 
-        Única fuente de verdad (ver también _evaluar_ambiente en views.py) — si no hay
+        Única fuente de verdad (ver también evaluar_ambiente en views/helpers.py) — si no hay
         ParametroIdeal cargado para la etapa, no se puede clasificar.
         """
         from .utils import etapa_efectiva_cultivo

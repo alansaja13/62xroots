@@ -14,7 +14,7 @@
   {% else %}
   {% if activos %}
   <div class="hoy-summary" aria-label="Resumen de cultivos activos">
-    <a href="#atencion"><strong>{{ atencion_total }}</strong><span>para revisar</span></a>
+    <a href="#atencion"{% if atencion_total %} class="is-alert"{% endif %}><strong>{{ atencion_total }}</strong><span>para revisar</span></a>
     <a href="#cultivos"><strong>{{ activos|length }}</strong><span>cultivos activos</span></a>
     <a href="#cultivos"><strong>{{ sin_medicion_hoy }}</strong><span>sin medición de ambiente de hoy</span></a>
   </div>

@@ -12,21 +12,6 @@
 </div>
 {% endblock %}
 
-{% block bottom_nav %}
-<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="bottom-nav__item">
-  <i class="bi bi-arrow-left"></i>
-  <span>Volver</span>
-</a>
-{% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="bottom-nav__item">
-  <i class="bi bi-lightning-charge-fill"></i>
-  <span>Registrar</span>
-</a>{% endif %}
-<a href="{% url 'growlog:timeline' cultivo.slug %}" class="bottom-nav__item">
-  <i class="bi bi-clock-history"></i>
-  <span>Timeline</span>
-</a>
-{% endblock %}
-
 {% block extra_head %}
 <style>
   .canopy-page { max-width: 1200px; margin: 0 auto; }
@@ -69,7 +54,7 @@
     height: 100%;
   }
   .ctrl-section-title {
-    font-family: "Geist Mono", monospace;
+    font-family: "JetBrains Mono", monospace;
     font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
     color: var(--fine); margin-bottom: 12px; display: block;
   }
@@ -79,7 +64,7 @@
   }
   .planta-stepper:last-child { border-bottom: none; }
   .planta-name {
-    font-family: "Geist Mono", monospace; font-size: 12px; font-weight: 700;
+    font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 700;
     display: flex; align-items: center; gap: 8px;
   }
   .planta-dot {
@@ -97,7 +82,7 @@
   }
   .stepper-btn:hover { border-color: var(--green); background: var(--green-wash); color: var(--green); }
   .stepper-count {
-    font-family: "Geist Mono", monospace; font-size: 16px; font-weight: 700;
+    font-family: "JetBrains Mono", monospace; font-size: 16px; font-weight: 700;
     color: var(--cream); min-width: 20px; text-align: center;
   }
 
@@ -118,7 +103,7 @@
     border: none; border-radius: 0; cursor: pointer;
   }
   .scrog-pct {
-    font-family: "Geist Mono", monospace; font-size: 22px; font-weight: 700;
+    font-family: "JetBrains Mono", monospace; font-size: 22px; font-weight: 700;
     color: var(--green);
   }
 
@@ -130,11 +115,11 @@
   }
   .stat-item { display: flex; flex-direction: column; gap: 2px; }
   .stat-label {
-    font-family: "Geist Mono", monospace; font-size: 9px;
+    font-family: "JetBrains Mono", monospace; font-size: 9px;
     letter-spacing: .2em; text-transform: uppercase; color: var(--fine);
   }
   .stat-value {
-    font-family: "Geist Mono", monospace; font-size: 18px; font-weight: 700;
+    font-family: "JetBrains Mono", monospace; font-size: 18px; font-weight: 700;
     color: var(--cream);
   }
   .stat-value--ok    { color: var(--green); }
@@ -143,7 +128,7 @@
 
   .diag-bar {
     flex: 1; min-width: 200px;
-    font-family: "Geist", sans-serif; font-size: 12px;
+    font-family: "Manrope", sans-serif; font-size: 12px;
     color: var(--cream-soft); padding: 6px 12px;
     border-left: 1px solid var(--rule);
   }
@@ -157,7 +142,7 @@
     align-items: center; flex-wrap: wrap;
   }
   .btn-guardar {
-    font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: .12em;
+    font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .12em;
     text-transform: uppercase; padding: 10px 24px;
     background: var(--green); color: #16110b; font-weight: 700;
     border: none; cursor: pointer; transition: opacity .15s;
@@ -165,19 +150,19 @@
   .btn-guardar:hover { opacity: .85; }
   .btn-guardar:disabled { opacity: .4; cursor: not-allowed; }
   .save-msg {
-    font-family: "Geist Mono", monospace; font-size: 12px;
+    font-family: "JetBrains Mono", monospace; font-size: 12px;
     color: var(--green);
   }
 
   /* Snapshot selector */
   .snapshot-sel {
     background: var(--card-alt); border: 1px solid var(--rule);
-    color: var(--cream); font-family: "Geist Mono", monospace; font-size: 12px;
+    color: var(--cream); font-family: "JetBrains Mono", monospace; font-size: 12px;
     padding: 6px 10px; cursor: pointer;
   }
   .notas-input {
     background: var(--card-alt); border: 1px solid var(--rule);
-    color: var(--cream); font-family: "Geist", sans-serif; font-size: 12px;
+    color: var(--cream); font-family: "Manrope", sans-serif; font-size: 12px;
     padding: 8px 12px; resize: vertical; width: 100%;
     min-height: 52px;
   }
@@ -185,7 +170,7 @@
 
   .back-link {
     display: inline-flex; align-items: center; gap: 6px;
-    font-family: "Geist Mono", monospace; font-size: 11px;
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
     letter-spacing: .1em; color: var(--cream-soft);
     text-decoration: none; margin-bottom: 14px;
   }
@@ -238,7 +223,7 @@
                  x-effect="renderSVG()">
             </svg>
           </div>
-          <div class="d-flex justify-content-between mt-2" style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--fine);letter-spacing:.1em">
+          <div class="d-flex justify-content-between mt-2" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fine);letter-spacing:.1em">
             <span>FONDO ▲</span>
             <span>↔ IZQ / DER</span>
             <span>▼ PUERTA</span>
@@ -294,10 +279,10 @@
             <span class="ctrl-section-title">// red scrog llena</span>
             <div class="d-flex align-items-baseline gap-2 mb-2">
               <span class="scrog-pct" x-text="scrog_fill_pct + '%'"></span>
-              <span style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--fine);"
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fine);"
                     x-text="`${filledCells}/36 celdas`"></span>
             </div>
-            <p style="font-family:'Geist Mono',monospace;font-size:9px;color:var(--fine);margin:0 0 8px">
+            <p style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--fine);margin:0 0 8px">
               Hacé click en las celdas del SVG para activarlas. El slider llena en bloque.
             </p>
             <input type="range" class="scrog-slider" :disabled="!editable"
@@ -310,7 +295,7 @@
               <button class="stepper-btn" style="font-size:10px;width:auto;padding:2px 8px;border-color:var(--green);color:var(--green)"
                       :disabled="!editable" @click="cellStates = Array(36).fill(true)">llenar</button>
             </div>
-            <div class="mt-1" style="font-family:'Geist Mono',monospace;font-size:9px;color:var(--fine);display:flex;justify-content:space-between">
+            <div class="mt-1" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--fine);display:flex;justify-content:space-between">
               <span>0%</span>
               <span style="color:var(--honey)">60% flip</span>
               <span style="color:var(--green)">80% óptimo</span>
@@ -520,7 +505,7 @@ function canopyApp(cfg) {
                          style="cursor:grab;touch-action:none"/>`;
           h += `<text x="${cola.x}" y="${cola.y}"
                        text-anchor="middle" dominant-baseline="central"
-                       font-family="Geist Mono,monospace" font-size="9"
+                       font-family="JetBrains Mono,monospace" font-size="9"
                        font-weight="700" fill="#0f0c07"
                        pointer-events="none">${cola.indice + 1}</text>`;
         });
@@ -531,7 +516,7 @@ function canopyApp(cfg) {
         const fontSize = labelLen <= 3 ? 10 : labelLen <= 5 ? 9 : 7;
         h += `<text x="${p.cx}" y="${p.cy}"
                      text-anchor="middle" dominant-baseline="central"
-                     font-family="Geist Mono,monospace" font-size="${fontSize}"
+                     font-family="JetBrains Mono,monospace" font-size="${fontSize}"
                      font-weight="800" fill="#0f0c07"
                      pointer-events="none">${this._esc(p.apodo)}</text>`;
       });
@@ -547,10 +532,10 @@ function canopyApp(cfg) {
       });
 
       // Direction labels
-      h += `<text x="200" y="12" text-anchor="middle" font-size="10" font-family="Geist Mono,monospace" fill="rgba(177,209,96,0.35)" letter-spacing="3">FONDO</text>`;
-      h += `<text x="200" y="396" text-anchor="middle" font-size="10" font-family="Geist Mono,monospace" fill="rgba(177,209,96,0.35)" letter-spacing="3">PUERTA</text>`;
-      h += `<text x="8" y="200" text-anchor="middle" font-size="10" font-family="Geist Mono,monospace" fill="rgba(177,209,96,0.35)" transform="rotate(-90,8,200)">IZQ</text>`;
-      h += `<text x="393" y="200" text-anchor="middle" font-size="10" font-family="Geist Mono,monospace" fill="rgba(177,209,96,0.35)" transform="rotate(90,393,200)">DER</text>`;
+      h += `<text x="200" y="12" text-anchor="middle" font-size="10" font-family="JetBrains Mono,monospace" fill="rgba(177,209,96,0.35)" letter-spacing="3">FONDO</text>`;
+      h += `<text x="200" y="396" text-anchor="middle" font-size="10" font-family="JetBrains Mono,monospace" fill="rgba(177,209,96,0.35)" letter-spacing="3">PUERTA</text>`;
+      h += `<text x="8" y="200" text-anchor="middle" font-size="10" font-family="JetBrains Mono,monospace" fill="rgba(177,209,96,0.35)" transform="rotate(-90,8,200)">IZQ</text>`;
+      h += `<text x="393" y="200" text-anchor="middle" font-size="10" font-family="JetBrains Mono,monospace" fill="rgba(177,209,96,0.35)" transform="rotate(90,393,200)">DER</text>`;
 
       svg.innerHTML = h;
     },

@@ -9,11 +9,7 @@
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Manrope:wght@300..800&family=JetBrains+Mono:wght@300..700&display=swap"
-    rel="stylesheet">
+  {% include "growlog/partials/fonts.html" %}
 
   <style>
     /* ═══ VERDE · LOGIN TOKENS ═══════════════════════════════ */
@@ -26,7 +22,7 @@
       --rule-soft: #1a201a;
       --cream: #ece2c8;
       --cream-soft: #94a586;
-      --fine: #525e48;
+      --fine: #7a886d;
       --green: #8aab68;
       --green-deep: #4a5f30;
       --green-wash: rgba(138, 171, 104, .10);
@@ -306,7 +302,7 @@
 
 <body>
 
-  <img src="{% static 'growlog/logo.png' %}" alt="" class="login-watermark" aria-hidden="true">
+  <img src="{% static 'growlog/icons/icon-512x512.png' %}" alt="" class="login-watermark" aria-hidden="true">
 
   <svg class="login-sprig" viewBox="0 0 200 200" fill="none" aria-hidden="true">
     <path d="M30 170 Q60 140 90 110 Q120 80 160 40" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
@@ -319,7 +315,7 @@
   </svg>
 
   <div class="login-brand">
-    <img src="{% static 'growlog/logo.png' %}" alt="62xroots">
+    <img src="{% static 'growlog/icons/icon-512x512.png' %}" alt="62xroots">
     <div>
       <div class="login-brand__name">62×ROOTS</div>
       <div class="login-brand__sub">grower's terminal · v0.3</div>

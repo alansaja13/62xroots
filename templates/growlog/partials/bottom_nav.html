@@ -1,0 +1,31 @@
+{% with actual=request.resolver_match.url_name %}
+{% if cultivo.slug %}
+<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="bottom-nav__item{% if actual == 'cultivo_detail' %} active{% endif %}"{% if actual == 'cultivo_detail' %} aria-current="page"{% endif %}>
+  <i class="bi bi-flower1" aria-hidden="true"></i><span>Cultivo</span>
+</a>
+{% if can_edit_cultivo %}
+<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="bottom-nav__item bottom-nav__item--cta">
+  <i class="bi bi-pencil-square" aria-hidden="true"></i><span>Registrar</span>
+</a>
+{% endif %}
+<a href="{% url 'growlog:timeline' cultivo.slug %}" class="bottom-nav__item{% if actual == 'timeline' %} active{% endif %}"{% if actual == 'timeline' %} aria-current="page"{% endif %}>
+  <i class="bi bi-clock-history" aria-hidden="true"></i><span>Timeline</span>
+</a>
+<a href="{% url 'growlog:tareas_list' cultivo.slug %}" class="bottom-nav__item{% if actual == 'tareas_list' %} active{% endif %}"{% if actual == 'tareas_list' %} aria-current="page"{% endif %}>
+  <i class="bi bi-check2-square" aria-hidden="true"></i><span>Tareas</span>
+</a>
+{% else %}
+<a href="{% url 'growlog:dashboard' %}" class="bottom-nav__item{% if actual == 'dashboard' %} active{% endif %}"{% if actual == 'dashboard' %} aria-current="page"{% endif %}>
+  <i class="bi bi-grid-1x2" aria-hidden="true"></i><span>Hoy</span>
+</a>
+<a href="{% url 'growlog:registrar' %}" class="bottom-nav__item bottom-nav__item--cta">
+  <i class="bi bi-pencil-square" aria-hidden="true"></i><span>Registrar</span>
+</a>
+<a href="{% url 'growlog:nuevo_cultivo' %}" class="bottom-nav__item{% if actual == 'nuevo_cultivo' %} active{% endif %}"{% if actual == 'nuevo_cultivo' %} aria-current="page"{% endif %}>
+  <i class="bi bi-plus-circle" aria-hidden="true"></i><span>Nuevo</span>
+</a>
+<a href="{% url 'growlog:invitados_panel' %}" class="bottom-nav__item{% if actual == 'invitados_panel' %} active{% endif %}"{% if actual == 'invitados_panel' %} aria-current="page"{% endif %}>
+  <i class="bi bi-people" aria-hidden="true"></i><span>Compartir</span>
+</a>
+{% endif %}
+{% endwith %}
