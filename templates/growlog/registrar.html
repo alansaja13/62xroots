@@ -2,10 +2,8 @@
 <html lang="es">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0e120c"><title>Registrar · 62×ROOTS</title>
-  <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/png" href="{% static 'growlog/icons/icon-96x96.png' %}">
-  <link rel="apple-touch-icon" href="{% static 'growlog/icons/apple-touch-icon.png' %}">
+  <title>Registrar · 62×ROOTS</title>
+  {% include "growlog/partials/pwa_head.html" %}
   {# Sin conexión las fuentes caen al sistema; el layout no depende de ellas. #}
   {% include "growlog/partials/fonts.html" %}
   <link rel="stylesheet" href="{% static 'growlog/verde.css' %}">

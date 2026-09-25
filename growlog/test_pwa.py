@@ -37,3 +37,27 @@ class PwaTests(TestCase):
         html = self.client.get("/registrar/").content.decode()
         for asset in assets[1:]:
             self.assertIn(f'"{asset}"', html)
+
+
+class PwaHeadTests(TestCase):
+    """Safari y Chrome solo leen la página desde la que se instala la app."""
+
+    def test_paginas_independientes_son_instalables(self):
+        from django.contrib.auth.models import User
+        paginas = {"/login/": self.client.get("/login/"), "/registrar/": self.client.get("/registrar/")}
+        self.client.force_login(User.objects.create_user("pwa"))
+        paginas["/ (base)"] = self.client.get("/")
+        for nombre, response in paginas.items():
+            with self.subTest(pagina=nombre):
+                for fragmento in ('rel="manifest"', 'rel="apple-touch-icon"', 'name="apple-mobile-web-app-capable"',
+                                  "serviceWorker.register('/sw.js'"):
+                    self.assertContains(response, fragmento, count=1)
+
+    def test_login_recuerda_la_sesion_por_defecto(self):
+        self.assertContains(self.client.get("/login/"), 'name="remember" checked')
+
+    def test_ningun_comentario_de_template_se_filtra_al_html(self):
+        # {# #} de Django es de una sola línea; uno multilínea se muestra como texto.
+        for url in ("/login/", "/registrar/"):
+            with self.subTest(url=url):
+                self.assertNotContains(self.client.get(url), "{#")
