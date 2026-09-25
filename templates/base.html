@@ -734,10 +734,11 @@
         <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
              href="{% url 'growlog:dashboard' %}">
-            cultivos
+            hoy
           </a>
         </li>
-        {% if user.is_staff %}
+        {% if user.is_authenticated %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'growlog:registrar' %}">registrar</a></li>
         <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.url_name == 'nuevo_cultivo' %}active{% endif %}"
              href="{% url 'growlog:nuevo_cultivo' %}">
@@ -750,6 +751,8 @@
             invitados
           </a>
         </li>
+        {% endif %}
+        {% if user.is_superuser %}
         <li class="nav-item">
           <a class="nav-link" href="/admin/">
             admin
@@ -769,13 +772,14 @@
         <i class="bi bi-bell" id="push-toggle-icon"></i>
       </button>
       <div class="nav-user">
-        <span class="nav-user__dot{% if not user.is_staff %} nav-user__dot--guest{% endif %}"></span>
+        <span class="nav-user__dot{% if request.cultivo_actual and not can_edit_cultivo %} nav-user__dot--guest{% endif %}"></span>
         <span class="nav-user__name">{{ user.username }}</span>
-        {% if not user.is_staff %}
+        {% if request.cultivo_actual and not can_edit_cultivo %}
           <span class="nav-user__guest-tag">solo lectura</span>
         {% endif %}
-        <form method="post" action="{% url 'growlog:logout' %}" style="display:inline;margin:0;">
+        <form method="post" action="{% url 'growlog:logout' %}" id="logout-form" style="display:inline;margin:0;">
           {% csrf_token %}
+          <input type="hidden" name="push_endpoint" id="logout-push-endpoint">
           <button type="submit" class="nav-user__logout" title="Cerrar sesión"
                   style="background:none;border:none;padding:0;cursor:pointer;">
             <i class="bi bi-box-arrow-right"></i>
@@ -806,7 +810,7 @@
   <a href="{% url 'growlog:dashboard' %}"
      class="bottom-nav__item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
     <i class="bi bi-grid-1x2"></i>
-    <span>Cultivos</span>
+    <span>Hoy</span>
   </a>
   {% endblock %}
 </nav>
@@ -817,10 +821,15 @@
 <script>
   document.body.addEventListener('htmx:configRequest', function(evt) {
     evt.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
-    // Sanitizar comas en parámetros numéricos antes de enviar via HTMX
+    // Normalizar sólo controles numéricos: las comas de notas/títulos son texto.
     var params = evt.detail.parameters;
-    Object.keys(params).forEach(function(k) {
-      if (typeof params[k] === 'string') params[k] = params[k].replace(',', '.');
+    var source = evt.detail.elt;
+    var form = source && (source.closest('form') || source);
+    if (!form) return;
+    form.querySelectorAll('input[type="number"], input[data-decimal]').forEach(function(input) {
+      if (input.name && typeof params[input.name] === 'string') {
+        params[input.name] = params[input.name].replace(',', '.');
+      }
     });
   });
 </script>
@@ -962,7 +971,19 @@ if ('serviceWorker' in navigator) {
 
   function refreshState() {
     navigator.serviceWorker.ready.then(function (reg) {
-      reg.pushManager.getSubscription().then(function (sub) { updateIcon(!!sub); });
+      reg.pushManager.getSubscription().then(function (sub) {
+        if (!sub) { updateIcon(false); return; }
+        // Vincula esta suscripción a la sesión actual; jamás reasignar una ajena.
+        postJSON('{% url "growlog:push_subscribe" %}', sub.toJSON()).then(function (response) {
+          if (response.ok) {
+            document.getElementById('logout-push-endpoint').value = sub.endpoint;
+            updateIcon(true);
+          } else {
+            if (response.status === 409) sub.unsubscribe();
+            updateIcon(false);
+          }
+        }).catch(function () { updateIcon(false); });
+      });
     });
   }
 
@@ -988,7 +1009,11 @@ if ('serviceWorker' in navigator) {
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
           }).then(function (newSub) {
             postJSON('{% url "growlog:push_subscribe" %}', newSub.toJSON())
-              .then(function () { updateIcon(true); });
+              .then(function (response) {
+                if (!response.ok) { newSub.unsubscribe(); updateIcon(false); return; }
+                document.getElementById('logout-push-endpoint').value = newSub.endpoint;
+                updateIcon(true);
+              });
           }).catch(function (err) {
             console.error('Error al suscribirse a notificaciones push:', err);
           });
@@ -1020,6 +1045,14 @@ if ('serviceWorker' in navigator) {
   tick();
   setInterval(tick, 1000);
 })();
+</script>
+<script>
+// Bloquear otras pestañas inmediatamente al cerrar sesión. Los pendientes
+// cifrados se conservan y solo se recuperan al entrar con la misma cuenta.
+document.getElementById('logout-form')?.addEventListener('submit', function () {
+  document.cookie = 'growlog_offline=; Max-Age=0; Path=/; SameSite=Lax';
+  try { localStorage.setItem('62xroots-session-change', String(Date.now())); } catch (_) {}
+});
 </script>
 </body>
 </html>

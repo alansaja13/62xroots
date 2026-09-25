@@ -17,10 +17,10 @@
   <i class="bi bi-arrow-left"></i>
   <span>Volver</span>
 </a>
-<a href="{% url 'growlog:quick' cultivo.slug %}" class="bottom-nav__item">
+{% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="bottom-nav__item">
   <i class="bi bi-lightning-charge-fill"></i>
-  <span>Quick</span>
-</a>
+  <span>Registrar</span>
+</a>{% endif %}
 <a href="{% url 'growlog:timeline' cultivo.slug %}" class="bottom-nav__item">
   <i class="bi bi-clock-history"></i>
   <span>Timeline</span>
@@ -190,7 +190,7 @@
   </div>
 
   <div class="pd-actions">
-    {% if request.user.is_staff %}
+    {% if can_edit_cultivo %}
     <a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="btn-brand">
       <i class="bi bi-plus-lg"></i> medir
     </a>
@@ -260,9 +260,9 @@
     {% for med in fotos %}
     <a class="pd-foto-tile"
        data-bs-toggle="modal" data-bs-target="#modal-foto"
-       data-src="{{ med.foto.url }}"
+       data-src="{% url 'protected_media' med.foto.name %}"
        data-fecha="{{ med.fecha|date:'d/m/Y' }}{% if med.altura_cm %} · {{ med.altura_cm }}cm{% endif %}">
-      <img src="{{ med.foto.url }}" alt="Foto {{ med.fecha }}" loading="lazy">
+      <img src="{% url 'protected_media' med.foto.name %}" alt="Foto {{ med.fecha }}" loading="lazy">
       <div class="pd-foto-tile__date">{{ med.fecha|date:"d/m/y" }}</div>
     </a>
     {% endfor %}
@@ -278,7 +278,7 @@
       <span class="label-eyebrow panel__title">riegos · histórico</span>
       <span class="mono c-fine" style="font-size:10px;">· {{ riegos_planta|length }}</span>
     </div>
-    {% if request.user.is_staff %}<a href="{% url 'growlog:riego_crear' cultivo.slug %}" class="panel__action panel__action--green">+ nuevo riego</a>{% endif %}
+    {% if can_edit_cultivo %}<a href="{% url 'growlog:riego_crear' cultivo.slug %}" class="panel__action panel__action--green">+ nuevo riego</a>{% endif %}
   </div>
   <table class="table">
     <thead>
@@ -356,7 +356,7 @@
       <span class="label-eyebrow panel__title">mediciones · histórico</span>
       <span class="mono c-fine" style="font-size:10px;">· {{ mediciones|length }}</span>
     </div>
-    {% if request.user.is_staff %}<a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="panel__action panel__action--green">+ nueva medición</a>{% endif %}
+    {% if can_edit_cultivo %}<a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="panel__action panel__action--green">+ nueva medición</a>{% endif %}
   </div>
   <table class="table">
     <thead>
@@ -395,7 +395,7 @@
           {% if med.foto %}
           <a class="c-fine" style="margin-right:8px;" title="Ver foto"
              data-bs-toggle="modal" data-bs-target="#modal-foto"
-             data-src="{{ med.foto.url }}"
+             data-src="{% url 'protected_media' med.foto.name %}"
              data-fecha="{{ med.fecha|date:'d/m/Y' }}{% if med.altura_cm %} · {{ med.altura_cm }}cm{% endif %}">
             <i class="bi bi-camera"></i>
           </a>

@@ -1,9 +1,24 @@
 from django.contrib import admin
 from .models import (
-    CambioFotoperiodo, CostoEnergetico, Cultivo, Equipo, LecturaMedidor,
+    CambioFotoperiodo, CostoEnergetico, Cultivo, CultivoMiembro, Equipo, LecturaMedidor,
     MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente, NutrienteAplicado,
     Evento, Planta, PushSubscription, Tarea, TarifaElectrica, ParametroIdeal, Riego,
 )
+
+
+class OwnedResourceAdmin(admin.ModelAdmin):
+    def save_model(self, request, obj, form, change):
+        if not change and not obj.propietario_id:
+            obj.propietario = request.user
+        if not change and isinstance(obj, Cultivo) and not obj.creado_por_id:
+            obj.creado_por = request.user
+        super().save_model(request, obj, form, change)
+
+
+class CultivoMiembroInline(admin.TabularInline):
+    model = CultivoMiembro
+    extra = 0
+    fields = ["usuario", "rol"]
 
 
 class CostoEnergeticoInline(admin.TabularInline):
@@ -48,14 +63,14 @@ class TareaInline(admin.TabularInline):
 
 
 @admin.register(Cultivo)
-class CultivoAdmin(admin.ModelAdmin):
+class CultivoAdmin(OwnedResourceAdmin):
     list_display = ["nombre", "estado", "fecha_inicio", "dias_desde_inicio", "archivado"]
     list_filter = ["estado", "archivado"]
     search_fields = ["nombre", "sustrato"]
-    inlines = [PlantaInline, MedicionAmbienteInline, RiegoInline, TareaInline, CostoEnergeticoInline, LecturaMedidorInline]
+    inlines = [CultivoMiembroInline, PlantaInline, MedicionAmbienteInline, RiegoInline, TareaInline, CostoEnergeticoInline, LecturaMedidorInline]
     readonly_fields = ["dias_desde_inicio", "creado_en"]
     fieldsets = [
-        (None, {"fields": ["nombre", "estado", "fecha_inicio", "fecha_inicio_flora", "fecha_fin", "archivado"]}),
+        (None, {"fields": ["nombre", "propietario", "estado", "fecha_inicio", "fecha_inicio_flora", "fecha_fin", "archivado"]}),
         ("Setup", {"fields": ["carpa_dimensiones", "sustrato", "lampara_modelo", "lampara_watts_reales"]}),
         ("Info", {"fields": ["notas", "dias_desde_inicio", "creado_en"]}),
     ]
@@ -143,7 +158,7 @@ class MedicionECAdmin(admin.ModelAdmin):
 # ── Módulo energético ─────────────────────────────────────────────────────────
 
 @admin.register(Equipo)
-class EquipoAdmin(admin.ModelAdmin):
+class EquipoAdmin(OwnedResourceAdmin):
     list_display = ["nombre", "categoria", "watts", "horas_dia", "kwh_mes_display", "activo"]
     list_filter = ["categoria", "activo"]
     list_editable = ["activo", "horas_dia"]
@@ -155,7 +170,7 @@ class EquipoAdmin(admin.ModelAdmin):
 
 
 @admin.register(TarifaElectrica)
-class TarifaElectricaAdmin(admin.ModelAdmin):
+class TarifaElectricaAdmin(OwnedResourceAdmin):
     list_display = ["distribuidora", "precio_kwh", "fecha_desde", "notas"]
     ordering = ["-fecha_desde"]
 

@@ -172,7 +172,7 @@
       <span class="panel__sigil panel__sigil--honey">§</span>
       <span class="label-eyebrow panel__title">equipos activos · {{ equipos_rows|length }}</span>
     </div>
-    {% if request.user.is_staff %}
+    {% if can_edit_cultivo %}
     <a href="/admin/growlog/costoenergetico/add/" class="btn-ghost" style="font-size:11px;padding:5px 10px;">
       <i class="bi bi-plug"></i> vincular equipo
     </a>
@@ -221,7 +221,7 @@
   {% else %}
   <div style="padding:28px 20px;text-align:center;color:var(--fine);font-size:12px;">
     No hay equipos vinculados a este cultivo.
-    {% if request.user.is_staff %}
+    {% if can_edit_cultivo %}
     <br><a href="/admin/growlog/costoenergetico/add/" class="c-honey" style="margin-top:8px;display:inline-block;">
       Vincular desde el admin →
     </a>
@@ -333,7 +333,7 @@
   {% endif %}
 
   <!-- Formulario nueva lectura -->
-  {% if request.user.is_staff %}
+  {% if can_edit_cultivo %}
   <div class="en-form">
     <div class="label-eyebrow">+ nueva lectura</div>
     <form method="post">

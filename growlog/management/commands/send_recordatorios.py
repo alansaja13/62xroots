@@ -1,66 +1,34 @@
 from django.core.management.base import BaseCommand
+from django.urls import reverse
 from django.utils import timezone
 
-from growlog.models import Cultivo, Evento, Tarea
-from growlog.push import send_push_to_all
+from growlog.models import Cultivo
+from growlog.push import send_push_to_users
 
 
 class Command(BaseCommand):
-    help = (
-        "Manda push a los usuarios suscriptos: cultivos sin medición hoy, "
-        "follow-ups de eventos vencidos, y tareas vencidas."
-    )
+    help = "Envía pendientes de cada cultivo a su propietario y colaboradores editores activos."
 
     def handle(self, *args, **options):
         hoy = timezone.localdate()
-        self._recordar_medicion(hoy)
-        self._recordar_followups_vencidos(hoy)
-        self._recordar_tareas_vencidas(hoy)
-
-    def _recordar_medicion(self, hoy):
-        activos = Cultivo.objects.filter(archivado=False).exclude(estado="finalizado")
-        sin_medicion = [c for c in activos if not c.mediciones.filter(timestamp__date=hoy).exists()]
-
-        if not sin_medicion:
-            self.stdout.write("Todos los cultivos activos ya tienen medición hoy — no se manda nada.")
-            return
-
-        nombres = ", ".join(c.nombre for c in sin_medicion)
-        titulo = "¿Ya chequeaste las plantas?"
-        cuerpo = f"Hoy no tomaste medición en: {nombres}."
-        enviados = send_push_to_all(titulo, cuerpo, url="/")
-        self.stdout.write(self.style.SUCCESS(f"Recordatorio de medición enviado a {enviados} suscripción(es)."))
-
-    def _recordar_followups_vencidos(self, hoy):
-        vencidos = Evento.objects.filter(
-            cultivo__archivado=False,
-            follow_up_fecha__lte=hoy,
-            follow_up_resuelto=False,
-        )
-        if not vencidos.exists():
-            self.stdout.write("No hay follow-ups de eventos vencidos.")
-            return
-
-        n = vencidos.count()
-        plural = "s" if n != 1 else ""
-        titulo = "Follow-up pendiente"
-        cuerpo = f"Tenés {n} evento{plural} con follow-up vencido sin resolver."
-        enviados = send_push_to_all(titulo, cuerpo, url="/")
-        self.stdout.write(self.style.SUCCESS(f"Recordatorio de follow-ups enviado a {enviados} suscripción(es)."))
-
-    def _recordar_tareas_vencidas(self, hoy):
-        vencidas = Tarea.objects.filter(
-            cultivo__archivado=False,
-            fecha_objetivo__lte=hoy,
-            completada=False,
-        )
-        if not vencidas.exists():
-            self.stdout.write("No hay tareas vencidas.")
-            return
-
-        n = vencidas.count()
-        plural = "s" if n != 1 else ""
-        titulo = "Tareas vencidas"
-        cuerpo = f"Tenés {n} tarea{plural} vencida{plural} sin completar."
-        enviados = send_push_to_all(titulo, cuerpo, url="/")
-        self.stdout.write(self.style.SUCCESS(f"Recordatorio de tareas enviado a {enviados} suscripción(es)."))
+        enviados = 0
+        for cultivo in Cultivo.objects.filter(archivado=False).exclude(estado="finalizado"):
+            pendientes = []
+            if not cultivo.mediciones.filter(timestamp__date=hoy).exists():
+                pendientes.append("registrar ambiente de hoy")
+            eventos = cultivo.eventos.filter(follow_up_fecha__lte=hoy, follow_up_resuelto=False).count()
+            tareas = cultivo.tareas.filter(fecha_objetivo__lte=hoy, completada=False).count()
+            if eventos:
+                pendientes.append(f"{eventos} seguimientos pendientes")
+            if tareas:
+                pendientes.append(f"{tareas} tareas pendientes")
+            if not pendientes:
+                continue
+            destinatarios = set(cultivo.miembros.filter(rol="editor").values_list("usuario_id", flat=True))
+            if cultivo.propietario_id:
+                destinatarios.add(cultivo.propietario_id)
+            enviados += send_push_to_users(
+                destinatarios, f"Pendientes · {cultivo.nombre}", "; ".join(pendientes),
+                url=reverse("growlog:cultivo_detail", args=[cultivo.slug]),
+            )
+        self.stdout.write(self.style.SUCCESS(f"Recordatorios enviados a {enviados} suscripciones."))

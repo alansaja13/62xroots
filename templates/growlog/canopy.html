@@ -17,10 +17,10 @@
   <i class="bi bi-arrow-left"></i>
   <span>Volver</span>
 </a>
-<a href="{% url 'growlog:quick' cultivo.slug %}" class="bottom-nav__item">
+{% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="bottom-nav__item">
   <i class="bi bi-lightning-charge-fill"></i>
-  <span>Quick</span>
-</a>
+  <span>Registrar</span>
+</a>{% endif %}
 <a href="{% url 'growlog:timeline' cultivo.slug %}" class="bottom-nav__item">
   <i class="bi bi-clock-history"></i>
   <span>Timeline</span>
@@ -279,11 +279,11 @@
                 <div class="stepper-btns">
                   <button class="stepper-btn"
                           @click="removerCola(pi)"
-                          :disabled="p.colas.length <= 1">−</button>
+                          :disabled="!editable || p.colas.length <= 1">−</button>
                   <span class="stepper-count" x-text="p.colas.length"></span>
                   <button class="stepper-btn"
                           @click="agregarCola(pi)"
-                          :disabled="p.colas.length >= 10">+</button>
+                          :disabled="!editable || p.colas.length >= 10">+</button>
                 </div>
               </div>
             </template>
@@ -300,15 +300,15 @@
             <p style="font-family:'Geist Mono',monospace;font-size:9px;color:var(--fine);margin:0 0 8px">
               Hacé click en las celdas del SVG para activarlas. El slider llena en bloque.
             </p>
-            <input type="range" class="scrog-slider"
+            <input type="range" class="scrog-slider" :disabled="!editable"
                    min="0" max="100" step="5"
                    :value="scrog_fill_pct"
                    @input="fillUpTo(parseInt($event.target.value))">
             <div class="d-flex justify-content-between mt-1">
               <button class="stepper-btn" style="font-size:10px;width:auto;padding:2px 8px"
-                      @click="cellStates = Array(36).fill(false)">limpiar</button>
+                      :disabled="!editable" @click="cellStates = Array(36).fill(false)">limpiar</button>
               <button class="stepper-btn" style="font-size:10px;width:auto;padding:2px 8px;border-color:var(--green);color:var(--green)"
-                      @click="cellStates = Array(36).fill(true)">llenar</button>
+                      :disabled="!editable" @click="cellStates = Array(36).fill(true)">llenar</button>
             </div>
             <div class="mt-1" style="font-family:'Geist Mono',monospace;font-size:9px;color:var(--fine);display:flex;justify-content:space-between">
               <span>0%</span>
@@ -321,7 +321,7 @@
           <div class="mt-3">
             <span class="ctrl-section-title">// notas del snapshot</span>
             <textarea class="notas-input" placeholder="Opcional — describe el estado actual..."
-                      x-model="notas" rows="2"></textarea>
+                      x-model="notas" :readonly="!editable" rows="2"></textarea>
           </div>
 
         </div>
@@ -364,14 +364,14 @@
     </div>
 
     <!-- ── Save bar ───────────────────────────────────────── -->
-    <div class="save-bar">
+    {% if can_edit_cultivo %}<div class="save-bar">
       <button class="btn-guardar"
               @click="guardarSnapshot()"
               :disabled="guardando"
               x-text="guardando ? 'Guardando…' : 'Guardar snapshot'">
       </button>
       <span class="save-msg" x-show="mensajeGuardado" x-text="mensajeGuardado"></span>
-    </div>
+    </div>{% else %}<p>Tenés acceso de solo lectura a este cultivo.</p>{% endif %}
 
   </div><!-- /x-data -->
 </div><!-- /canopy-page -->
@@ -380,6 +380,7 @@
 function canopyApp(cfg) {
   return {
     // ── State ────────────────────────────────────────────────────────
+    editable:          cfg.editable,
     slug:              cfg.slug,
     watts:             cfg.watts,
     plantas:           cfg.plantas,
@@ -576,6 +577,7 @@ function canopyApp(cfg) {
     },
 
     onMouseDown(e) {
+      if (!this.editable) return;
       const el = e.target;
       const pi = el.getAttribute('data-pi');
       const ci = el.getAttribute('data-ci');
@@ -598,6 +600,7 @@ function canopyApp(cfg) {
     },
 
     onSVGClick(e) {
+      if (!this.editable) return;
       if (this._didDrag) return;   // fue un drag, no un click
       const cell = e.target.getAttribute('data-cell');
       if (cell === null) return;
@@ -606,6 +609,7 @@ function canopyApp(cfg) {
     },
 
     onTouchStart(e) {
+      if (!this.editable) return;
       if (e.touches.length !== 1) return;
       const t = e.touches[0];
       const el = document.elementFromPoint(t.clientX, t.clientY);
@@ -633,6 +637,7 @@ function canopyApp(cfg) {
 
     // ── Cola steppers ────────────────────────────────────────────────
     agregarCola(pi) {
+      if (!this.editable) return;
       const p = this.plantas[pi];
       if (p.colas.length >= 10) return;
       const indice = p.colas.length;
@@ -659,6 +664,7 @@ function canopyApp(cfg) {
     },
 
     removerCola(pi) {
+      if (!this.editable) return;
       const p = this.plantas[pi];
       if (p.colas.length <= 1) return;
       p.colas.pop();
@@ -698,6 +704,7 @@ function canopyApp(cfg) {
 
     // ── Save snapshot ────────────────────────────────────────────────
     async guardarSnapshot() {
+      if (!this.editable) return;
       this.guardando = true;
       this.mensajeGuardado = '';
       const colas = this.plantas.flatMap(p =>

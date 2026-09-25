@@ -1,5 +1,8 @@
 [build]
 buildCommand = "python manage.py collectstatic --noinput"
 
-[deploy]
-startCommand = "python manage.py migrate --noinput && gunicorn config.wsgi --log-file -"
+# Los comandos son específicos de cada servicio en Railway:
+# web: preDeployCommand = python manage.py migrate --noinput
+#      startCommand = gunicorn config.wsgi --log-file -
+# recordatorios: startCommand = python manage.py send_recordatorios
+# No definir startCommand aquí: sobrescribiría también el cron.

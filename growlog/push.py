@@ -7,8 +7,8 @@ from pywebpush import webpush, WebPushException
 logger = logging.getLogger(__name__)
 
 
-def send_push_to_all(title, body, url="/"):
-    """Manda una notificación push a todas las suscripciones activas.
+def send_push_to_users(user_ids, title, body, url="/"):
+    """Manda push únicamente a las cuentas activas destinatarias.
 
     Devuelve la cantidad de suscripciones a las que se les envió con éxito.
     Suscripciones vencidas (404/410) se borran solas.
@@ -21,7 +21,7 @@ def send_push_to_all(title, body, url="/"):
 
     payload = json.dumps({"title": title, "body": body, "url": url})
     enviados = 0
-    for sub in PushSubscription.objects.all():
+    for sub in PushSubscription.objects.filter(user_id__in=user_ids, user__is_active=True):
         try:
             webpush(
                 subscription_info={

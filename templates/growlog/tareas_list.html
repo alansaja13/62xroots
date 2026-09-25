@@ -16,10 +16,10 @@
   <i class="bi bi-arrow-left"></i>
   <span>Volver</span>
 </a>
-<a href="{% url 'growlog:quick' cultivo.slug %}" class="bottom-nav__item">
+{% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="bottom-nav__item">
   <i class="bi bi-lightning-charge-fill"></i>
-  <span>Quick</span>
-</a>
+  <span>Registrar</span>
+</a>{% endif %}
 <a href="{% url 'growlog:timeline' cultivo.slug %}" class="bottom-nav__item">
   <i class="bi bi-clock-history"></i>
   <span>Timeline</span>
@@ -158,7 +158,7 @@
 
 <div class="tl-header">
   <h1 class="tl-title">tareas <span class="tl-title__accent">// {{ cultivo.nombre }}</span></h1>
-  {% if request.user.is_staff %}
+  {% if can_edit_cultivo %}
   <a href="{% url 'growlog:tarea_crear' cultivo.slug %}" class="btn-brand" style="margin-left:auto;">
     <i class="bi bi-plus-lg"></i> nueva tarea
   </a>
@@ -213,19 +213,19 @@
   <table class="tl-table">
     <thead>
       <tr>
-        {% if request.user.is_staff and estado_filter != 'completada' %}<th style="width:32px;"></th>{% endif %}
+        {% if can_edit_cultivo and estado_filter != 'completada' %}<th style="width:32px;"></th>{% endif %}
         <th>tarea</th>
         <th>categoría</th>
         <th>fecha objetivo</th>
         <th>prioridad</th>
         {% if estado_filter == 'completada' or estado_filter == 'todas' %}<th>completada</th>{% endif %}
-        {% if request.user.is_staff %}<th style="width:80px;"></th>{% endif %}
+        {% if can_edit_cultivo %}<th style="width:80px;"></th>{% endif %}
       </tr>
     </thead>
     <tbody>
       {% for tarea in page_obj %}
       <tr id="row-{{ tarea.pk }}">
-        {% if request.user.is_staff and estado_filter != 'completada' %}
+        {% if can_edit_cultivo and estado_filter != 'completada' %}
         <td style="text-align:center;" data-col="check">
           {% if not tarea.completada %}
           <button class="tl-complete-btn"
@@ -279,7 +279,7 @@
         </td>
         {% endif %}
 
-        {% if request.user.is_staff %}
+        {% if can_edit_cultivo %}
         <td data-col="actions">
           <div class="tl-actions">
             <a href="{% url 'growlog:tarea_editar' tarea.pk %}" class="c-fine" style="font-size:12px;" title="Editar">

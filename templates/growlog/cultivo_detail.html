@@ -15,11 +15,11 @@
   <i class="bi bi-arrow-left"></i>
   <span>Cultivos</span>
 </a>
-<a href="{% url 'growlog:quick' cultivo.slug %}"
+{% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}"
    class="bottom-nav__item {% if request.resolver_match.url_name == 'quick' %}active{% endif %}">
   <i class="bi bi-lightning-charge-fill"></i>
-  <span>Quick</span>
-</a>
+  <span>Registrar</span>
+</a>{% endif %}
 <a href="{% url 'growlog:timeline' cultivo.slug %}"
    class="bottom-nav__item {% if request.resolver_match.url_name == 'timeline' %}active{% endif %}">
   <i class="bi bi-clock-history"></i>
@@ -387,7 +387,7 @@
         <span class="cd-day-box__label">// flora</span>
         <span class="cd-day-box__num">{{ dia_flora }}</span>
       </div>
-      {% elif request.user.is_staff %}
+      {% elif can_edit_cultivo %}
       <form method="post" action="{% url 'growlog:cultivo_marcar_flora' cultivo.slug %}" style="display:flex; align-items:center;">
         {% csrf_token %}
         <button type="submit" class="btn-ghost" style="font-size:11px;padding:6px 10px;white-space:nowrap;">
@@ -409,7 +409,7 @@
       <a href="{% url 'growlog:reporte' cultivo.slug %}" class="btn-ghost" style="font-size:12px;padding:8px 14px">
         <i class="bi bi-clipboard-data"></i> reporte
       </a>
-      {% if request.user.is_staff and cultivo.estado != 'finalizado' %}
+      {% if can_edit_cultivo and cultivo.estado != 'finalizado' %}
       <form method="post" action="{% url 'growlog:cultivo_finalizar' cultivo.slug %}"
             onsubmit="return confirm('¿Finalizar «{{ cultivo.nombre }}»? Pasará a estado finalizado con fecha de fin hoy.');">
         {% csrf_token %}
@@ -419,10 +419,10 @@
       </form>
       {% endif %}
     </div>
-    {% if request.user.is_staff %}
-    <a href="{% url 'growlog:quick' cultivo.slug %}" class="btn-brand btn-brand--lg">
+    {% if can_edit_cultivo %}
+    {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="btn-brand btn-brand--lg">
       <i class="bi bi-plus-lg"></i> anotar
-    </a>
+    </a>{% endif %}
     {% endif %}
   </div>
 </div>
@@ -481,7 +481,7 @@
 </div>
 {% endif %}
 
-{% if luz_estado_actual or cultivo.lampara_modelo or cultivo.sustrato or cultivo.carpa_dimensiones or fotoperiodo_activo or request.user.is_staff %}
+{% if luz_estado_actual or cultivo.lampara_modelo or cultivo.sustrato or cultivo.carpa_dimensiones or fotoperiodo_activo or can_edit_cultivo %}
 <div class="cd-luz-setup-row">
 
   <!-- 1/4 NEON LUZ -->
@@ -498,13 +498,13 @@
     <div class="cd-setup-strip__item">
       <span class="cd-setup-strip__key">fotoperiodo</span>
       {% if fotoperiodo_activo %}
-        {% if request.user.is_staff %}
+        {% if can_edit_cultivo %}
         <a href="{% url 'growlog:fotoperiodo_list' cultivo.slug %}" class="cd-setup-strip__val" style="text-decoration:none; color:inherit;">{{ fotoperiodo_activo.fotoperiodo }} · enc. {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }} <span class="c-fine" style="font-size:9px;">↗</span></a>
         {% else %}
         <span class="cd-setup-strip__val">{{ fotoperiodo_activo.fotoperiodo }} · enc. {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }}</span>
         {% endif %}
       {% else %}
-        {% if request.user.is_staff %}
+        {% if can_edit_cultivo %}
         <a href="{% url 'growlog:fotoperiodo_list' cultivo.slug %}" class="c-fine" style="font-size:11px; letter-spacing:.06em; text-decoration:none;">configurar →</a>
         {% else %}
         <span class="c-fine" style="font-size:11px;">no configurado</span>
@@ -529,7 +529,7 @@
       <span class="cd-setup-strip__val">{{ cultivo.carpa_dimensiones }}</span>
     </div>
     {% endif %}
-    {% if request.user.is_staff %}
+    {% if can_edit_cultivo %}
     <a href="{% url 'growlog:cultivo_editar' cultivo.slug %}" class="cd-setup-strip__edit">editar →</a>
     {% endif %}
   </div>
@@ -573,7 +573,7 @@
           <span class="mono c-fine" style="font-size:10px;">· {{ ultimos_registros|length }}</span>
         </div>
         <div style="display:flex; gap:14px; align-items:center;">
-          {% if request.user.is_staff %}
+          {% if can_edit_cultivo %}
           <a href="{% url 'growlog:evento_crear' cultivo.slug %}" class="panel__action">+ evento</a>
           <a href="{% url 'growlog:riego_crear' cultivo.slug %}" class="panel__action">+ riego</a>
           <a href="{% url 'growlog:medicion_ec_crear' cultivo.slug %}" class="panel__action">+ EC/pH</a>
@@ -663,7 +663,7 @@
           <tr>
             <td colspan="5" style="text-align:center; padding:36px 16px; color:var(--fine);">
               <i class="bi bi-journal-x" style="font-size:22px; display:block; margin-bottom:8px; opacity:.5;"></i>
-              Sin registros. <a href="{% url 'growlog:quick' cultivo.slug %}" class="c-green">Anotá el primero →</a>
+              Sin registros. {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="c-green">Anotá el primero →</a>{% endif %}
             </td>
           </tr>
           {% endfor %}
@@ -678,7 +678,7 @@
           <span class="panel__sigil">§</span>
           <span class="label-eyebrow panel__title">plantas · {{ plantas|length }}</span>
         </div>
-        {% if request.user.is_staff %}<a href="{% url 'growlog:planta_crear' cultivo.slug %}" class="panel__action">+ agregar</a>{% endif %}
+        {% if can_edit_cultivo %}<a href="{% url 'growlog:planta_crear' cultivo.slug %}" class="panel__action">+ agregar</a>{% endif %}
       </div>
       {% if plantas %}
       <div class="cd-plantas-grid">
@@ -722,13 +722,13 @@
         </div>
         <div style="display:flex; gap:12px; align-items:center;">
           <a href="{% url 'growlog:tareas_list' cultivo.slug %}" class="panel__action">ver todas →</a>
-          {% if request.user.is_staff %}
+          {% if can_edit_cultivo %}
           <a href="{% url 'growlog:tarea_crear' cultivo.slug %}" class="panel__action">+ nueva</a>
           {% endif %}
         </div>
       </div>
 
-      {% if request.user.is_staff %}
+      {% if can_edit_cultivo %}
       <form class="tarea-quick-form"
             hx-post="{% url 'growlog:quick_tarea' cultivo.slug %}"
             hx-target="#tarea-inline-result"
@@ -784,7 +784,7 @@
             <a href="{% url 'growlog:evento_editar' ev.pk %}" class="c-fine" style="font-size:11px;" title="Editar">
               <i class="bi bi-pencil"></i>
             </a>
-            {% if request.user.is_staff %}
+            {% if can_edit_cultivo %}
             <button
               hx-post="{% url 'growlog:evento_resolver_followup' ev.pk %}"
               hx-target="#followup-row-{{ ev.pk }}"
@@ -827,7 +827,7 @@
               <span class="c-fine">{{ tarea.get_categoria_display }}</span>
             </div>
           </div>
-          {% if request.user.is_staff %}
+          {% if can_edit_cultivo %}
           <button
             hx-post="{% url 'growlog:tarea_descompletar' tarea.pk %}"
             hx-target="#tarea-done-{{ tarea.pk }}"

@@ -1,5 +1,6 @@
 import math
 import uuid
+import secrets
 from django.core.cache import cache
 from django.db import models
 from django.contrib.auth.models import User
@@ -45,6 +46,9 @@ class Cultivo(models.Model):
     archivado = models.BooleanField(default=False)
     creado_en = models.DateTimeField(auto_now_add=True)
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='cultivos_creados')
+    propietario = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="cultivos_propios",
+    )
 
     class Meta:
         ordering = ["-fecha_inicio"]
@@ -55,6 +59,8 @@ class Cultivo(models.Model):
         return self.nombre
 
     def save(self, *args, **kwargs):
+        if self._state.adding and self.propietario_id is None:
+            self.propietario_id = self.creado_por_id
         if not self.slug:
             base = slugify(self.nombre)
             slug, n = base, 2
@@ -78,6 +84,20 @@ class Cultivo(models.Model):
         if self.fecha_inicio_flora > hoy:
             return None
         return (hoy - self.fecha_inicio_flora).days + 1
+
+
+class CultivoMiembro(models.Model):
+    ROLES = [("lector", "Solo lectura"), ("editor", "Puede registrar y editar")]
+    cultivo = models.ForeignKey(Cultivo, on_delete=models.CASCADE, related_name="miembros")
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name="membresias_cultivo")
+    rol = models.CharField(max_length=10, choices=ROLES, default="lector")
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["cultivo", "usuario"], name="cultivo_usuario_unico")]
+
+    def __str__(self):
+        return f"{self.usuario} · {self.cultivo} · {self.get_rol_display()}"
 
 
 class Planta(models.Model):
@@ -435,6 +455,31 @@ class Tarea(models.Model):
         return self.titulo
 
 
+def generar_clave_registro():
+    return secrets.token_urlsafe(32)
+
+
+class ClaveRegistroLocal(models.Model):
+    """Desbloqueo por cuenta, estable ante rotación de SECRET_KEY o contraseñas."""
+
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE)
+    clave = models.CharField(max_length=43, default=generar_clave_registro, editable=False)
+
+
+class RegistroRecibido(models.Model):
+    """Recibo durable: confirmar un reintento nunca vuelve a crear el registro."""
+
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    operacion_id = models.UUIDField()
+    cultivo = models.ForeignKey(Cultivo, on_delete=models.CASCADE)
+    contenido_hash = models.CharField(max_length=64)
+    resultado = models.JSONField(default=dict)
+    recibido_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["usuario", "operacion_id"], name="registro_usuario_operacion_unico")]
+
+
 class APIToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='api_tokens')
     token_hash = models.CharField(max_length=64, unique=True)
@@ -585,6 +630,7 @@ class Equipo(models.Model):
     categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES)
     activo = models.BooleanField(default=True)
     notas = models.TextField(blank=True)
+    propietario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="equipos_propios")
 
     class Meta:
         ordering = ['categoria', 'nombre']
@@ -604,6 +650,7 @@ class TarifaElectrica(models.Model):
     precio_kwh = models.DecimalField(max_digits=10, decimal_places=4)
     distribuidora = models.CharField(max_length=100, default='Edesur')
     notas = models.TextField(blank=True)
+    propietario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="tarifas_propias")
 
     class Meta:
         ordering = ['-fecha_desde']

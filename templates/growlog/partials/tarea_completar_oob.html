@@ -14,7 +14,7 @@
       <span class="c-fine">{{ tarea.get_categoria_display }}</span>
     </div>
   </div>
-  {% if request.user.is_staff %}
+  {% if can_edit_cultivo %}
   <a href="{% url 'growlog:tarea_editar' tarea.pk %}"
      style="color: var(--fine); font-size: 11px; text-decoration: none; padding: 4px;" title="Editar">
     <i class="bi bi-pencil"></i>

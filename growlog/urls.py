@@ -1,10 +1,14 @@
 from django.urls import path
 from . import views
 from . import api_views
+from . import registration_views
 
 app_name = "growlog"
 
 urlpatterns = [
+    path("registrar/", registration_views.registrar, name="registrar"),
+    path("registrar/contexto/", registration_views.contexto, name="registro_contexto"),
+    path("registrar/sincronizar/", registration_views.sincronizar, name="registro_sincronizar"),
     # ── API v1 ────────────────────────────────────────────────────────────────
     path("api/v1/cultivos/", api_views.cultivos_list),
     path("api/v1/cultivos/<slug:slug>/", api_views.cultivo_detail),
@@ -76,6 +80,8 @@ urlpatterns = [
     path("invitados/", views.invitados_panel, name="invitados_panel"),
     path("invitados/crear/", views.invitado_crear, name="invitado_crear"),
     path("invitados/<int:pk>/eliminar/", views.invitado_eliminar, name="invitado_eliminar"),
+
+    path("invitados/<int:pk>/rol/", views.invitado_rol, name="invitado_rol"),
 
     # Cultivo
     path("cultivo/nuevo/", views.nuevo_cultivo, name="nuevo_cultivo"),

@@ -23,14 +23,14 @@ _allowed = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [h.strip() for h in _allowed.split(",") if h.strip()]
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    "growlog.apps.MaintenanceAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_htmx",
-    "growlog",
+    "growlog.apps.GrowlogConfig",
 ]
 
 MIDDLEWARE = [
@@ -40,6 +40,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "growlog.middleware.PrivateBitacoraMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
@@ -123,23 +124,35 @@ R2_BUCKET = os.environ.get("R2_BUCKET")
 if R2_BUCKET:
     R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL", "").removeprefix("https://").removeprefix("http://").rstrip("/")
     STORAGES["default"] = {
-        "BACKEND": "storages.backends.s3.S3Storage",
+        "BACKEND": "growlog.storage.PrivateMediaStorage",
         "OPTIONS": {
             "bucket_name": R2_BUCKET,
             "endpoint_url": os.environ.get("R2_ENDPOINT"),
             "access_key": os.environ.get("R2_ACCESS_KEY"),
             "secret_key": os.environ.get("R2_SECRET_KEY"),
-            "custom_domain": R2_PUBLIC_URL,
+            "custom_domain": None,
             "region_name": "auto",
             "addressing_style": "path",
-            "querystring_auth": False,
+            "querystring_auth": True,
             "default_acl": None,
             "file_overwrite": False,
         },
     }
-    MEDIA_URL = f"https://{R2_PUBLIC_URL}/"
+    MEDIA_URL = "/media/"
 else:
     MEDIA_URL = "/media/"
+
+# Este directorio no tiene ninguna ruta HTTP. En un entorno efímero,
+# BACKUP_ROOT debe apuntar a almacenamiento persistente o configurarse un
+# backend privado independiente; nunca reutilizar el bucket público de media.
+STORAGES["backups"] = {
+    "BACKEND": "django.core.files.storage.FileSystemStorage",
+    "OPTIONS": {
+        "location": os.environ.get("BACKUP_ROOT", str(BASE_DIR / "backups")),
+        "file_permissions_mode": 0o600,
+        "directory_permissions_mode": 0o700,
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

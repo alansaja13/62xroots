@@ -4,7 +4,9 @@ from decimal import Decimal, InvalidOperation
 from functools import wraps
 
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.db.models import Q
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -16,6 +18,8 @@ from .models import (
     MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente, NutrienteAplicado,
     ParametroIdeal, Planta, POSICION_TENT_COORDS, Riego, RiegoPlanta, Tarea, TarifaElectrica,
 )
+from .services.riegos import guardar_riego
+from .permissions import (SAFE_METHODS, cultivos_visibles, puede_editar, recursos_visibles, tarifas_del_cultivo, equipos_asignables)
 
 EVENTO_TIPOS = {c[0] for c in Evento.TIPO_CHOICES}
 TAREA_PRIORIDADES = {c[0] for c in Tarea.PRIORIDAD_CHOICES}
@@ -48,7 +52,23 @@ def require_token(view_func):
             token = APIToken.objects.select_related('user').get(token_hash=token_hash)
         except APIToken.DoesNotExist:
             return api_error('Invalid token', 401)
+        if not token.user.is_active:
+            return api_error('Invalid token', 401)
         request.api_user = token.user
+        cultivo = None
+        if 'slug' in kwargs:
+            cultivo = cultivos_visibles(token.user).filter(slug=kwargs['slug']).first()
+            if cultivo is None:
+                return api_error('Cultivo no encontrado', 404)
+        elif 'planta_uuid' in kwargs:
+            planta = Planta.objects.select_related('cultivo').filter(
+                uuid=kwargs['planta_uuid'], cultivo__in=cultivos_visibles(token.user)
+            ).first()
+            if planta is None:
+                return api_error('Planta no encontrada', 404)
+            cultivo = planta.cultivo
+        if cultivo and request.method not in SAFE_METHODS and not puede_editar(token.user, cultivo):
+            return api_error('Tenés acceso de solo lectura a este cultivo', 403)
         return view_func(request, *args, **kwargs)
     return wrapper
 
@@ -56,15 +76,18 @@ def require_token(view_func):
 def _parse_json_body(request):
     """Parsea el body JSON y devuelve (data, error_response)."""
     try:
-        return json.loads(request.body or '{}'), None
-    except json.JSONDecodeError:
+        data = json.loads(request.body or '{}')
+    except (json.JSONDecodeError, UnicodeDecodeError):
         return None, api_error('Invalid JSON body', 400)
+    if not isinstance(data, dict):
+        return None, api_error('El cuerpo JSON debe ser un objeto', 400)
+    return data, None
 
 
 def _get_cultivo(slug, user):
     """Devuelve (cultivo, error_response) — scoped al usuario."""
     try:
-        return Cultivo.objects.get(slug=slug, creado_por=user), None
+        return cultivos_visibles(user).get(slug=slug), None
     except Cultivo.DoesNotExist:
         return None, api_error('Cultivo no encontrado', 404)
 
@@ -220,7 +243,7 @@ def _medicion_planta(m):
 @require_GET
 @require_token
 def cultivos_list(request):
-    cultivos = Cultivo.objects.filter(archivado=False, creado_por=request.api_user)
+    cultivos = cultivos_visibles(request.api_user).filter(archivado=False)
     return api_ok([_cultivo_base(c) for c in cultivos])
 
 
@@ -291,6 +314,8 @@ def cultivo_riegos(request, slug):
         plantas_map = {str(p.uuid): p for p in c.plantas.filter(archivado=False)}
         detalle_validated = []
         for item in detalle_raw:
+            if not isinstance(item, dict):
+                return api_error('Cada detalle de planta debe ser un objeto')
             uuid_str = str(item.get('planta_uuid', ''))
             planta = plantas_map.get(uuid_str)
             if not planta:
@@ -325,6 +350,8 @@ def cultivo_riegos(request, slug):
             return api_error('nutrientes debe ser una lista')
         nutrientes_validated = []
         for item in nutrientes_raw:
+            if not isinstance(item, dict):
+                return api_error('Cada nutriente debe ser un objeto')
             try:
                 nutriente_id = int(item['nutriente_id'])
                 dosis = Decimal(str(item['dosis_g_por_litro']))
@@ -336,7 +363,7 @@ def cultivo_riegos(request, slug):
                 return api_error(f'nutriente_id {nutriente_id} no existe')
             nutrientes_validated.append((nutriente, dosis))
 
-        riego = Riego.objects.create(
+        riego = Riego(
             cultivo=c,
             volumen_total_ml=sum(d['volumen_ml'] for d in detalle_validated),
             ph_agua=ph_agua,
@@ -345,12 +372,10 @@ def cultivo_riegos(request, slug):
             notas=notas,
             creado_por=request.api_user,
         )
-        RiegoPlanta.objects.bulk_create([RiegoPlanta(riego=riego, **d) for d in detalle_validated])
-        if nutrientes_validated:
-            NutrienteAplicado.objects.bulk_create([
-                NutrienteAplicado(riego=riego, nutriente=n, dosis_g_por_litro=d)
-                for n, d in nutrientes_validated
-            ])
+        try:
+            guardar_riego(riego=riego, detalles=detalle_validated, nutrientes=nutrientes_validated)
+        except ValidationError as exc:
+            return api_error('; '.join(exc.messages))
         return api_ok(_riego(riego), status=201)
 
     return api_error('Method not allowed', 405)
@@ -735,7 +760,7 @@ def planta_mediciones(request, planta_uuid):
     """GET lista / POST crea una MedicionPlanta. La foto no se acepta por este
     endpoint JSON — usar la interfaz web para subir fotos."""
     try:
-        p = Planta.objects.get(uuid=planta_uuid, cultivo__creado_por=request.api_user)
+        p = Planta.objects.get(uuid=planta_uuid, cultivo__in=cultivos_visibles(request.api_user))
     except Planta.DoesNotExist:
         return api_error('Planta no encontrada', 404)
 
@@ -795,7 +820,7 @@ def planta_mediciones(request, planta_uuid):
 @require_token
 def medicion_planta_detail(request, planta_uuid, medicion_id):
     try:
-        p = Planta.objects.get(uuid=planta_uuid, cultivo__creado_por=request.api_user)
+        p = Planta.objects.get(uuid=planta_uuid, cultivo__in=cultivos_visibles(request.api_user))
     except Planta.DoesNotExist:
         return api_error('Planta no encontrada', 404)
     try:
@@ -1592,7 +1617,7 @@ def planta_detail(request, planta_uuid):
     try:
         p = Planta.objects.select_related('cultivo').get(
             uuid=planta_uuid,
-            cultivo__creado_por=request.api_user,
+            cultivo__in=cultivos_visibles(request.api_user),
         )
     except Planta.DoesNotExist:
         return api_error('Planta no encontrada', 404)
@@ -1674,9 +1699,11 @@ def _next_month(d):
     return d.replace(month=d.month + 1, day=1)
 
 
-def _tarifa_vigente(hoy):
-    """TarifaElectrica con fecha_desde más reciente ≤ hoy, o None."""
-    return TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by('-fecha_desde').first()
+def _tarifa_vigente(hoy, *, cultivo=None, usuario=None):
+    tarifas = tarifas_del_cultivo(cultivo) if cultivo else TarifaElectrica.objects.filter(propietario=usuario)
+    if cultivo and usuario and cultivo.propietario_id == usuario.pk:
+        tarifas = TarifaElectrica.objects.filter(Q(propietario=usuario) | Q(costos__cultivo=cultivo)).distinct()
+    return tarifas.filter(fecha_desde__lte=hoy).order_by('-fecha_desde').first()
 
 
 def _ciclo_activo(cultivo, hoy):
@@ -1773,9 +1800,9 @@ EQUIPO_CATEGORIAS = {c[0] for c in Equipo.CATEGORIA_CHOICES}
 @require_token
 def equipos_list(request):
     if request.method == 'GET':
-        equipos = Equipo.objects.all()
+        equipos = recursos_visibles(Equipo, request.api_user)
         hoy = timezone.localdate()
-        tarifa = _tarifa_vigente(hoy)
+        tarifa = _tarifa_vigente(hoy, usuario=request.api_user)
         precio_kwh = tarifa.precio_kwh if tarifa else None
         return api_ok([_ser_equipo(e, precio_kwh) for e in equipos])
 
@@ -1810,6 +1837,7 @@ def equipos_list(request):
             return api_error('horas_dia es requerido y debe estar entre 0 y 24')
 
         equipo = Equipo.objects.create(
+            propietario=request.api_user,
             nombre=nombre[:120], watts=watts, horas_dia=horas_dia, categoria=categoria,
             activo=bool(body.get('activo', True)),
             notas=str(body.get('notas', ''))[:500],
@@ -1823,9 +1851,14 @@ def equipos_list(request):
 @require_token
 def equipo_detail(request, equipo_id):
     try:
-        equipo = Equipo.objects.get(pk=equipo_id)
+        equipo = recursos_visibles(Equipo, request.api_user).get(pk=equipo_id)
     except Equipo.DoesNotExist:
         return api_error('Equipo no encontrado', 404)
+
+    if request.method not in SAFE_METHODS and equipo.propietario_id != request.api_user.pk:
+        return api_error('Solo el propietario puede modificar este equipo', 403)
+    if request.method not in SAFE_METHODS and equipo.costos.exclude(cultivo__in=cultivos_visibles(request.api_user, editar=True)).exists():
+        return api_error('Este equipo está vinculado a un cultivo que no podés editar', 403)
 
     if request.method == 'GET':
         return api_ok(_ser_equipo(equipo))
@@ -1881,6 +1914,8 @@ def equipo_detail(request, equipo_id):
         if rl:
             return rl
         equipo_id_deleted = equipo.id
+        if equipo.costos.exists():
+            return api_error('No se puede eliminar un equipo con historial de costos; desactivalo', 409)
         equipo.delete()
         return api_ok({'deleted': equipo_id_deleted})
 
@@ -1897,7 +1932,7 @@ def cultivo_costos(request, slug):
         return err
 
     hoy = timezone.localdate()
-    tarifa = _tarifa_vigente(hoy)
+    tarifa = _tarifa_vigente(hoy, cultivo=c)
     precio_kwh = tarifa.precio_kwh if tarifa else None
 
     costos_actuales = list(
@@ -1906,7 +1941,7 @@ def cultivo_costos(request, slug):
     todos_costos = list(
         c.costos_energeticos.select_related('equipo').order_by('fecha_desde')
     )
-    tarifas = list(TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by('-fecha_desde'))
+    tarifas = list(tarifas_del_cultivo(c).filter(fecha_desde__lte=hoy).order_by('-fecha_desde'))
 
     equipos_data = []
     total_kwh_mes = 0.0
@@ -1950,7 +1985,7 @@ def cultivo_costos_historico(request, slug):
         return err
 
     hoy = timezone.localdate()
-    tarifas = list(TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by('-fecha_desde'))
+    tarifas = list(tarifas_del_cultivo(c).filter(fecha_desde__lte=hoy).order_by('-fecha_desde'))
     todos_costos = list(
         c.costos_energeticos.select_related('equipo').order_by('fecha_desde')
     )
@@ -1982,7 +2017,7 @@ def cultivo_costos_comparacion(request, slug):
         return api_error('No hay lecturas de medidor cargadas para este cultivo', 404)
 
     hoy = timezone.localdate()
-    tarifas = list(TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by('-fecha_desde'))
+    tarifas = list(tarifas_del_cultivo(c).filter(fecha_desde__lte=hoy).order_by('-fecha_desde'))
     todos_costos = list(
         c.costos_energeticos.select_related('equipo').order_by('fecha_desde')
     )
@@ -2115,7 +2150,7 @@ def lectura_medidor_detail(request, slug, lectura_id):
 @require_token
 def tarifas_list(request):
     if request.method == 'GET':
-        return api_ok([_ser_tarifa(t) for t in TarifaElectrica.objects.all()])
+        return api_ok([_ser_tarifa(t) for t in recursos_visibles(TarifaElectrica, request.api_user)])
 
     if request.method == 'POST':
         rl = _write_rate_limit(request)
@@ -2139,6 +2174,7 @@ def tarifas_list(request):
             return api_error('precio_kwh es requerido y debe ser positivo')
 
         tarifa = TarifaElectrica.objects.create(
+            propietario=request.api_user,
             fecha_desde=fecha_desde, precio_kwh=precio_kwh,
             distribuidora=str(body.get('distribuidora', 'Edesur'))[:100],
             notas=str(body.get('notas', ''))[:500],
@@ -2152,9 +2188,14 @@ def tarifas_list(request):
 @require_token
 def tarifa_detail(request, tarifa_id):
     try:
-        tarifa = TarifaElectrica.objects.get(pk=tarifa_id)
+        tarifa = recursos_visibles(TarifaElectrica, request.api_user).get(pk=tarifa_id)
     except TarifaElectrica.DoesNotExist:
         return api_error('Tarifa no encontrada', 404)
+
+    if request.method not in SAFE_METHODS and tarifa.propietario_id != request.api_user.pk:
+        return api_error('Solo el propietario puede modificar esta tarifa', 403)
+    if request.method not in SAFE_METHODS and tarifa.costos.exclude(cultivo__in=cultivos_visibles(request.api_user, editar=True)).exists():
+        return api_error('Esta tarifa está vinculada a un cultivo que no podés editar', 403)
 
     if request.method == 'GET':
         return api_ok(_ser_tarifa(tarifa))
@@ -2235,7 +2276,7 @@ def cultivo_costos_equipos(request, slug):
             return err
 
         try:
-            equipo = Equipo.objects.get(pk=int(body.get('equipo_id', '')))
+            equipo = equipos_asignables(request.api_user, c).get(pk=int(body.get('equipo_id', '')))
         except (Equipo.DoesNotExist, ValueError, TypeError):
             return api_error('equipo_id es requerido y debe existir')
 
@@ -2246,7 +2287,7 @@ def cultivo_costos_equipos(request, slug):
             return api_error('fecha_desde es requerida (YYYY-MM-DD)')
 
         hoy = timezone.localdate()
-        tarifa = _tarifa_vigente(hoy)
+        tarifa = _tarifa_vigente(hoy, cultivo=c, usuario=request.api_user)
         if not tarifa:
             return api_error('No hay tarifa eléctrica cargada — creá una en /api/v1/tarifas/ primero')
 

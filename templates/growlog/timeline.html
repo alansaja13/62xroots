@@ -16,10 +16,10 @@
   <i class="bi bi-arrow-left"></i>
   <span>Volver</span>
 </a>
-<a href="{% url 'growlog:quick' cultivo.slug %}" class="bottom-nav__item">
+{% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="bottom-nav__item">
   <i class="bi bi-lightning-charge-fill"></i>
-  <span>Quick</span>
-</a>
+  <span>Registrar</span>
+</a>{% endif %}
 <a href="{% url 'growlog:tareas_list' cultivo.slug %}" class="bottom-nav__item">
   <i class="bi bi-check2-square"></i>
   <span>Tareas</span>
@@ -110,9 +110,9 @@
     </div>
   </div>
   <div class="tl-actions">
-    <a href="{% url 'growlog:quick' cultivo.slug %}" class="btn-brand">
+    {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="btn-brand">
       <i class="bi bi-plus-lg"></i> anotar
-    </a>
+    </a>{% endif %}
   </div>
 </div>
 
@@ -251,7 +251,7 @@
         <td colspan="6" style="text-align:center; padding:60px 16px; color:var(--fine);">
           <i class="bi bi-journal-x" style="font-size:24px; display:block; margin-bottom:10px; opacity:.5;"></i>
           Todavía no hay registros.
-          <a href="{% url 'growlog:quick' cultivo.slug %}" class="c-green">Anotá el primero →</a>
+          {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="c-green">Anotá el primero →</a>{% endif %}
         </td>
       </tr>
       {% endfor %}

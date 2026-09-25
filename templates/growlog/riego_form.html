@@ -215,9 +215,14 @@
               {% for row, planta in rp_rows %}
               <div class="rf-plant-row" x-data="{ incluida: {{ row.incluida.value|yesno:'true,false' }} }">
                 {{ row.planta_id }}
+                {% if row.non_field_errors or row.planta_id.errors %}
+                <div class="form-errors" role="alert">
+                  {{ row.non_field_errors }}{{ row.planta_id.errors }}
+                </div>
+                {% endif %}
                 <label class="rf-plant-row__head">
                   {{ row.incluida }}
-                  <span class="rf-plant-row__name">{{ planta.apodo }}</span>
+                  <span class="rf-plant-row__name">{{ planta.apodo }}{% if planta.archivado %} · archivada{% endif %}</span>
                   {% if planta.strain %}<span class="mono c-fine" style="font-size: 10px;">{{ planta.strain }}</span>{% endif %}
                 </label>
                 <div x-show="incluida" class="rf-plant-row__detail">
@@ -238,10 +243,12 @@
                     <div class="col-6 col-sm-4">
                       <label for="{{ row.ph_runoff.id_for_label }}">pH runoff</label>
                       {{ row.ph_runoff }}
+                      {% if row.ph_runoff.errors %}<div class="field-error">{{ row.ph_runoff.errors.0 }}</div>{% endif %}
                     </div>
                     <div class="col-6 col-sm-4">
                       <label for="{{ row.ec_runoff.id_for_label }}">EC runoff</label>
                       {{ row.ec_runoff }}
+                      {% if row.ec_runoff.errors %}<div class="field-error">{{ row.ec_runoff.errors.0 }}</div>{% endif %}
                     </div>
                   </div>
                   <div class="mt-2">

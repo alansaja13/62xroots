@@ -155,7 +155,7 @@
 </div>
 
 <!-- TABS -->
-<div x-data="{ tab: 'medicion' }">
+<div x-data="{ tab: '{{ active_tab|default:'medicion' }}' }">
 
   <!-- Tab bar -->
   <div class="qe-tabs mb-0">
@@ -189,11 +189,8 @@
           </div>
           <div class="panel__body">
             <form id="quick-form" method="post"
-                  hx-post="{% url 'growlog:quick' cultivo.slug %}"
-                  hx-target="#result-medicion"
-                  hx-swap="innerHTML"
-                  x-data="{ rego: false }"
-                  hx-on::after-request="if(event.detail.successful){ this.reset(); this.__x.$data.rego = false; document.getElementById('id_temperatura_c').focus(); }">
+                  action="{% url 'growlog:quick' cultivo.slug %}"
+                  x-data="{ rego: {{ form.rego.value|yesno:'true,false' }} }">
               {% csrf_token %}
               <div class="row g-3">
                 <div class="col-6">
@@ -257,11 +254,7 @@
             </div>
           </div>
           <div class="panel__body">
-            <form method="post"
-                  hx-post="{% url 'growlog:quick_evento' cultivo.slug %}"
-                  hx-target="#result-evento"
-                  hx-swap="innerHTML"
-                  hx-on::after-request="if(event.detail.successful){ this.reset(); }">
+            <form method="post" action="{% url 'growlog:quick_evento' cultivo.slug %}">
               {% csrf_token %}
 
               {% if evento_form.non_field_errors %}
@@ -270,12 +263,12 @@
               </div>
               {% endif %}
               <div class="mb-3 {% if evento_form.tipo.errors %}has-error{% endif %}">
-                <label>tipo de evento</label>
+                <label for="{{ evento_form.tipo.id_for_label }}">tipo de evento</label>
                 {{ evento_form.tipo }}
                 {% if evento_form.tipo.errors %}<div class="field-error">{{ evento_form.tipo.errors.0 }}</div>{% endif %}
               </div>
               <div class="mb-3 {% if evento_form.descripcion.errors %}has-error{% endif %}">
-                <label>descripción</label>
+                <label for="{{ evento_form.descripcion.id_for_label }}">descripción</label>
                 {{ evento_form.descripcion }}
                 {% if evento_form.descripcion.errors %}<div class="field-error">{{ evento_form.descripcion.errors.0 }}</div>{% endif %}
               </div>
@@ -302,11 +295,7 @@
             </div>
           </div>
           <div class="panel__body">
-            <form method="post"
-                  hx-post="{% url 'growlog:quick_tarea' cultivo.slug %}"
-                  hx-target="#result-tarea"
-                  hx-swap="innerHTML"
-                  hx-on::after-request="if(event.detail.successful){ this.reset(); }">
+            <form method="post" action="{% url 'growlog:quick_tarea' cultivo.slug %}">
               {% csrf_token %}
 
               {% if tarea_form.non_field_errors %}
@@ -315,24 +304,24 @@
               </div>
               {% endif %}
               <div class="mb-3 {% if tarea_form.titulo.errors %}has-error{% endif %}">
-                <label>título de la tarea</label>
+                <label for="{{ tarea_form.titulo.id_for_label }}">título de la tarea</label>
                 {{ tarea_form.titulo }}
                 {% if tarea_form.titulo.errors %}<div class="field-error">{{ tarea_form.titulo.errors.0 }}</div>{% endif %}
               </div>
               <div class="row g-3 mb-3">
                 <div class="col-6 {% if tarea_form.categoria.errors %}has-error{% endif %}">
-                  <label>categoría</label>
+                  <label for="{{ tarea_form.categoria.id_for_label }}">categoría</label>
                   {{ tarea_form.categoria }}
                   {% if tarea_form.categoria.errors %}<div class="field-error">{{ tarea_form.categoria.errors.0 }}</div>{% endif %}
                 </div>
                 <div class="col-6 {% if tarea_form.prioridad.errors %}has-error{% endif %}">
-                  <label>prioridad</label>
+                  <label for="{{ tarea_form.prioridad.id_for_label }}">prioridad</label>
                   {{ tarea_form.prioridad }}
                   {% if tarea_form.prioridad.errors %}<div class="field-error">{{ tarea_form.prioridad.errors.0 }}</div>{% endif %}
                 </div>
               </div>
               <div class="mb-3 {% if tarea_form.fecha_objetivo.errors %}has-error{% endif %}">
-                <label>fecha objetivo (opcional)</label>
+                <label for="{{ tarea_form.fecha_objetivo.id_for_label }}">fecha objetivo (opcional)</label>
                 {{ tarea_form.fecha_objetivo }}
                 {% if tarea_form.fecha_objetivo.errors %}<div class="field-error">{{ tarea_form.fecha_objetivo.errors.0 }}</div>{% endif %}
               </div>
@@ -359,11 +348,7 @@
             </div>
           </div>
           <div class="panel__body">
-            <form method="post"
-                  hx-post="{% url 'growlog:quick_ec' cultivo.slug %}"
-                  hx-target="#result-ec"
-                  hx-swap="innerHTML"
-                  hx-on::after-request="if(event.detail.successful){ this.reset(); }">
+            <form method="post" action="{% url 'growlog:quick_ec' cultivo.slug %}">
               {% csrf_token %}
 
               {% if ec_form.non_field_errors %}
@@ -373,14 +358,14 @@
               {% endif %}
 
               <div class="mb-3 {% if ec_form.tipo.errors %}has-error{% endif %}">
-                <label>tipo de muestra</label>
+                <label for="{{ ec_form.tipo.id_for_label }}">tipo de muestra</label>
                 {{ ec_form.tipo }}
                 {% if ec_form.tipo.errors %}<div class="field-error">{{ ec_form.tipo.errors.0 }}</div>{% endif %}
               </div>
 
               <div class="row g-3 mb-3">
                 <div class="col-4 {% if ec_form.ph.errors %}has-error{% endif %}">
-                  <label>pH</label>
+                  <label for="{{ ec_form.ph.id_for_label }}">pH</label>
                   <div class="qe-vital-input">
                     {{ ec_form.ph }}
                     <span class="qe-vital-input__suffix" style="color:var(--green);">pH</span>
@@ -388,15 +373,15 @@
                   {% if ec_form.ph.errors %}<div class="field-error">{{ ec_form.ph.errors.0 }}</div>{% endif %}
                 </div>
                 <div class="col-4 {% if ec_form.ec.errors %}has-error{% endif %}">
-                  <label>EC</label>
+                  <label for="{{ ec_form.ec.id_for_label }}">EC</label>
                   <div class="qe-vital-input">
                     {{ ec_form.ec }}
-                    <span class="qe-vital-input__suffix" style="font-size:10px; color:var(--green);">mS</span>
+                    <span class="qe-vital-input__suffix" style="font-size:10px; color:var(--green);">mS/cm</span>
                   </div>
                   {% if ec_form.ec.errors %}<div class="field-error">{{ ec_form.ec.errors.0 }}</div>{% endif %}
                 </div>
                 <div class="col-4 {% if ec_form.temp_agua.errors %}has-error{% endif %}">
-                  <label>T° agua</label>
+                  <label for="{{ ec_form.temp_agua.id_for_label }}">T° agua</label>
                   <div class="qe-vital-input">
                     {{ ec_form.temp_agua }}
                     <span class="qe-vital-input__suffix">°C</span>
@@ -406,7 +391,7 @@
               </div>
 
               <div class="mb-3 {% if ec_form.notas.errors %}has-error{% endif %}">
-                <label>notas (opcional)</label>
+                <label for="{{ ec_form.notas.id_for_label }}">notas (opcional)</label>
                 {{ ec_form.notas }}
               </div>
 

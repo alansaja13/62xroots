@@ -1,7 +1,6 @@
 import json
 import secrets
 from datetime import timedelta
-from functools import wraps
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
@@ -9,10 +8,12 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
 from django.core.files.uploadedfile import UploadedFile
 from django.core.paginator import Paginator
-from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Sum
-from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Q, Sum
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django_htmx.http import HttpResponseClientRedirect
 from django.templatetags.static import static as static_url
 from django.utils import timezone
@@ -23,18 +24,8 @@ from django import forms
 from django.conf import settings
 
 
-def staff_required(view_func):
-    @wraps(view_func)
-    def _wrapped(request, *args, **kwargs):
-        if not request.user.is_staff:
-            return HttpResponseForbidden(
-                "<h2 style='font-family:monospace;padding:40px'>Acceso restringido — modo solo lectura.</h2>"
-            )
-        return view_func(request, *args, **kwargs)
-    return _wrapped
-
 from .models import (
-    CambioEtapaPlanta, CambioFotoperiodo, CanopySnapshot, ColaPosicion, CostoEnergetico, Cultivo, Equipo,
+    CambioEtapaPlanta, CambioFotoperiodo, CanopySnapshot, ColaPosicion, CostoEnergetico, Cultivo, CultivoMiembro, Equipo,
     LecturaMedidor, MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente,
     NutrienteAplicado, Evento, Planta, ParametroIdeal, PushSubscription, Riego, RiegoPlanta,
     Tarea, TarifaElectrica,
@@ -44,6 +35,10 @@ from .utils import (
     get_cambio_fotoperiodo_activo, calcular_luz_estado, get_flip_a_flora,
     etapa_efectiva_cultivo, etapa_efectiva_planta,
 )
+from .services.hoy import resumen_hoy
+from .services.riegos import guardar_riego
+from .services.validacion import validar_solucion
+from .permissions import cultivos_visibles, objeto_del_cultivo, tarifas_del_cultivo
 
 _DT_FMT = "%Y-%m-%dT%H:%M"
 
@@ -99,7 +94,10 @@ def login_view(request):
 
 @require_POST
 def logout_view(request):
-    # M-3: solo POST para evitar logout forzado via GET
+    # Revocar solo la suscripción de este navegador, conservando otros dispositivos.
+    endpoint = request.POST.get("push_endpoint") or request.session.get("push_endpoint")
+    if endpoint and request.user.is_authenticated:
+        PushSubscription.objects.filter(user=request.user, endpoint=endpoint).delete()
     logout(request)
     return redirect("growlog:login")
 
@@ -110,11 +108,11 @@ def logout_view(request):
 
 class QuickEntryForm(forms.Form):
     temperatura_c = forms.DecimalField(
-        label="Temperatura (°C)", max_digits=5, decimal_places=2,
+        label="Temperatura (°C)", max_digits=5, decimal_places=2, min_value=0, max_value=60,
         widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "decimal", "step": "0.1", "placeholder": "24.5", "autofocus": True}),
     )
     humedad_relativa = forms.DecimalField(
-        label="Humedad relativa (%)", max_digits=5, decimal_places=2,
+        label="Humedad relativa (%)", max_digits=5, decimal_places=2, min_value=0, max_value=100,
         widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "decimal", "step": "0.1", "placeholder": "60"}),
     )
     rego = forms.BooleanField(label="¿Regué hoy?", required=False,
@@ -199,6 +197,11 @@ class EventoForm(forms.ModelForm):
 class RiegoForm(forms.ModelForm):
     """Datos compartidos de la sesión de riego (solución madre). El volumen y el
     runoff se cargan por planta en RiegoPlantaEntryForm — ver _riego_planta_formset."""
+    def clean(self):
+        data = super().clean()
+        validar_solucion(ph=data.get("ph_agua"), ec=data.get("ec_solucion"))
+        return data
+
     class Meta:
         model = Riego
         fields = ["timestamp", "ph_agua", "ec_solucion", "buscar_runoff", "notas"]
@@ -244,19 +247,39 @@ class RiegoPlantaEntryForm(forms.Form):
         cleaned = super().clean()
         if cleaned.get("incluida") and not cleaned.get("volumen_ml"):
             self.add_error("volumen_ml", "Requerido para las plantas incluidas en el riego.")
+        if cleaned.get("incluida"):
+            validar_solucion(ph=cleaned.get("ph_runoff"), ec=cleaned.get("ec_runoff"))
         return cleaned
 
 
-RiegoPlantaFormSet = forms.formset_factory(RiegoPlantaEntryForm, extra=0)
+class BaseRiegoPlantaFormSet(forms.BaseFormSet):
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+        vistos = set()
+        for form in self.forms:
+            planta_id = form.cleaned_data.get("planta_id")
+            if planta_id in vistos:
+                raise forms.ValidationError("Una planta no puede aparecer dos veces en el mismo riego.")
+            vistos.add(planta_id)
+
+
+RiegoPlantaFormSet = forms.formset_factory(
+    RiegoPlantaEntryForm, formset=BaseRiegoPlantaFormSet, extra=0,
+)
 
 
 def _riego_planta_formset(cultivo, data=None, riego=None):
     """Arma el formset de desglose por planta, precargado con lo ya guardado si
     `riego` existe (edición) o con todo desmarcado (alta nueva)."""
-    plantas = list(cultivo.plantas.filter(archivado=False).order_by("apodo"))
     existentes = {}
     if riego is not None:
         existentes = {rp.planta_id: rp for rp in riego.detalle_plantas.all()}
+    # Las plantas archivadas siguen formando parte del registro histórico.
+    plantas = list(cultivo.plantas.filter(
+        Q(archivado=False) | Q(pk__in=existentes),
+    ).order_by("apodo"))
     initial = []
     for p in plantas:
         rp = existentes.get(p.id)
@@ -282,7 +305,7 @@ def _riego_planta_entries(rp_formset, plantas):
             continue
         planta = planta_by_id.get(d["planta_id"])
         if not planta:
-            continue
+            raise ValidationError("La planta seleccionada no pertenece a este formulario de riego.")
         entries.append({
             "planta": planta,
             "volumen_ml": d["volumen_ml"],
@@ -292,24 +315,6 @@ def _riego_planta_entries(rp_formset, plantas):
             "notas": d.get("notas", ""),
         })
     return entries
-
-
-def _sync_riego_plantas(riego, entries):
-    """Sincroniza RiegoPlanta con las filas incluidas del formset (crea/actualiza/borra)."""
-    incoming_ids = {e["planta"].id for e in entries}
-    riego.detalle_plantas.exclude(planta_id__in=incoming_ids).delete()
-    existentes = {rp.planta_id: rp for rp in riego.detalle_plantas.all()}
-    for e in entries:
-        rp = existentes.get(e["planta"].id)
-        if rp:
-            rp.volumen_ml = e["volumen_ml"]
-            rp.runoff_observado = e["runoff_observado"]
-            rp.ph_runoff = e["ph_runoff"]
-            rp.ec_runoff = e["ec_runoff"]
-            rp.notas = e["notas"]
-            rp.save()
-        else:
-            RiegoPlanta.objects.create(riego=riego, **e)
 
 
 class MedicionPlantaForm(forms.ModelForm):
@@ -350,11 +355,11 @@ class QuickECForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-select form-select-lg"}),
     )
     ph = forms.DecimalField(
-        label="pH", max_digits=4, decimal_places=2, required=False,
+        label="pH", max_digits=4, decimal_places=2, required=False, min_value=0, max_value=14,
         widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "decimal", "step": "0.01", "placeholder": "6.2"}),
     )
     ec = forms.DecimalField(
-        label="EC (mS/cm)", max_digits=5, decimal_places=2, required=False,
+        label="EC (mS/cm)", max_digits=5, decimal_places=2, required=False, min_value=0,
         widget=forms.NumberInput(attrs={"class": "form-control form-control-lg", "inputmode": "decimal", "step": "0.01", "placeholder": "1.8"}),
     )
     temp_agua = forms.DecimalField(
@@ -363,6 +368,12 @@ class QuickECForm(forms.Form):
     )
     notas = forms.CharField(label="Notas", required=False,
         widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Observaciones..."}))
+
+    def clean(self):
+        data = super().clean()
+        if not self.errors and data.get("ph") is None and data.get("ec") is None:
+            raise forms.ValidationError("Ingresá al menos un valor de pH o EC.")
+        return data
 
 
 class MedicionECForm(forms.ModelForm):
@@ -417,6 +428,7 @@ class QuickEventoForm(forms.Form):
 
 class QuickTareaForm(forms.Form):
     titulo = forms.CharField(
+        max_length=200,
         widget=forms.TextInput(attrs={
             "class": "form-control",
             "placeholder": "¿Qué hay que hacer?",
@@ -443,65 +455,12 @@ class QuickTareaForm(forms.Form):
 
 @login_required
 def dashboard(request):
-    activos = Cultivo.objects.filter(archivado=False).exclude(estado="finalizado").order_by("-fecha_inicio")
-    archivados = Cultivo.objects.filter(archivado=True).order_by("-fecha_inicio")
-    finalizados = Cultivo.objects.filter(estado="finalizado", archivado=False).order_by("-fecha_inicio")
-
-    def _enrich(qs):
-        result = []
-        for c in qs:
-            ultima = c.mediciones.first()
-            semaforo = None
-            if ultima:
-                etapa = etapa_efectiva_cultivo(c)
-                if etapa:
-                    try:
-                        param = ParametroIdeal.objects.get(etapa=etapa)
-                        semaforo = _evaluar_ambiente(ultima, param)
-                    except ParametroIdeal.DoesNotExist:
-                        pass
-            result.append({"cultivo": c, "ultima_medicion": ultima, "semaforo": semaforo,
-                            "plantas_count": c.plantas.filter(estado="activa").count()})
-        return result
-
-    activos_enriched = _enrich(activos)
-
-    # Energía — una query batch para todos los cultivos activos
-    hoy = timezone.localdate()
-    tarifa = TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by('-fecha_desde').first()
-    energia_items = []
-    if tarifa and activos_enriched:
-        cultivo_ids = [item['cultivo'].pk for item in activos_enriched]
-        costos_qs = CostoEnergetico.objects.filter(
-            cultivo_id__in=cultivo_ids,
-            fecha_hasta__isnull=True,
-        ).select_related('equipo')
-        costos_by_cultivo = {}
-        for ce in costos_qs:
-            costos_by_cultivo.setdefault(ce.cultivo_id, []).append(ce)
-        for item in activos_enriched:
-            c = item['cultivo']
-            costos = costos_by_cultivo.get(c.pk, [])
-            if costos:
-                total_kwh = round(sum(ce.equipo.kwh_mes for ce in costos), 1)
-                energia_items.append({
-                    'cultivo': c,
-                    'kwh_mes': total_kwh,
-                    'costo_mes': int(round(total_kwh * float(tarifa.precio_kwh), 0)),
-                })
-
-    return render(request, "growlog/dashboard.html", {
-        "activos": activos_enriched,
-        "archivados": _enrich(archivados),
-        "finalizados": _enrich(finalizados),
-        "energia_items": energia_items,
-        "tarifa": tarifa,
-    })
+    return render(request, "growlog/dashboard.html", resumen_hoy(request.user))
 
 
 @login_required
 def cultivo_detail(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
     ultima_medicion = cultivo.mediciones.first()
     ultima_medicion_ec = cultivo.mediciones_ec.first()
     tareas_pendientes = cultivo.tareas.filter(completada=False).order_by("fecha_objetivo", "-prioridad")[:10]
@@ -580,13 +539,13 @@ def cultivo_detail(request, slug):
 
 @login_required
 def cultivo_tendencias(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
     return render(request, "growlog/tendencias.html", {"cultivo": cultivo})
 
 
 @login_required
 def cultivo_tendencias_json(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
     try:
         dias = int(request.GET.get("dias", 30))
     except ValueError:
@@ -621,10 +580,9 @@ def cultivo_tendencias_json(request, slug):
 
 
 @login_required
-@staff_required
 def quick_entry(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
-    form = QuickEntryForm(request.POST or None)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
+    form = QuickEntryForm(request.POST if request.method == "POST" else None)
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
         medicion = MedicionAmbiente.objects.create(
@@ -642,20 +600,28 @@ def quick_entry(request, slug):
             return HttpResponseClientRedirect(reverse("growlog:cultivo_detail", args=[cultivo.slug]))
         messages.success(request, f"✓ Guardado — {medicion.temperatura_c}°C / {medicion.humedad_relativa}%HR / VPD {medicion.vpd} kPa")
         return redirect("growlog:cultivo_detail", slug=cultivo.slug)
-    return render(request, "growlog/quick.html", {
-        "form": form,
-        "evento_form": QuickEventoForm(),
-        "tarea_form": QuickTareaForm(),
-        "ec_form": QuickECForm(),
+    return _render_quick(request, cultivo, "medicion", form)
+
+
+def _render_quick(request, cultivo, tab, form):
+    """Conserva la entrada y la pestaña activa al mostrar errores de registro."""
+    context = {
+        "form": QuickEntryForm(),
+        "evento_form": QuickEventoForm(auto_id="id_evento_%s"),
+        "tarea_form": QuickTareaForm(auto_id="id_tarea_%s"),
+        "ec_form": QuickECForm(auto_id="id_ec_%s"),
         "cultivo": cultivo,
-    })
+        "active_tab": tab,
+    }
+    key = {"medicion": "form", "evento": "evento_form", "tarea": "tarea_form", "ec": "ec_form"}[tab]
+    context[key] = form
+    return render(request, "growlog/quick.html", context)
 
 
 @login_required
-@staff_required
 def quick_evento(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
-    form = QuickEventoForm(request.POST or None)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
+    form = QuickEventoForm(request.POST if request.method == "POST" else None, auto_id="id_evento_%s")
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
         evento = Evento.objects.create(
@@ -666,14 +632,13 @@ def quick_evento(request, slug):
             return HttpResponseClientRedirect(reverse("growlog:cultivo_detail", args=[cultivo.slug]))
         messages.success(request, f"Evento «{evento.get_tipo_display()}» registrado.")
         return redirect("growlog:cultivo_detail", slug=cultivo.slug)
-    return redirect("growlog:quick", cultivo.slug)
+    return _render_quick(request, cultivo, "evento", form)
 
 
 @login_required
-@staff_required
 def quick_medicion_ec(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
-    form = QuickECForm(request.POST or None)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
+    form = QuickECForm(request.POST if request.method == "POST" else None, auto_id="id_ec_%s")
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
         medicion = MedicionEC.objects.create(
@@ -685,14 +650,13 @@ def quick_medicion_ec(request, slug):
             return HttpResponseClientRedirect(reverse("growlog:cultivo_detail", args=[cultivo.slug]))
         messages.success(request, f"Medición EC/pH registrada — {medicion.get_tipo_display()}")
         return redirect("growlog:cultivo_detail", slug=cultivo.slug)
-    return redirect("growlog:quick", cultivo.slug)
+    return _render_quick(request, cultivo, "ec", form)
 
 
 @login_required
-@staff_required
 def quick_tarea(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
-    form = QuickTareaForm(request.POST or None)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
+    form = QuickTareaForm(request.POST if request.method == "POST" else None, auto_id="id_tarea_%s")
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
         tarea = Tarea.objects.create(
@@ -704,12 +668,12 @@ def quick_tarea(request, slug):
             return HttpResponseClientRedirect(reverse("growlog:cultivo_detail", args=[cultivo.slug]))
         messages.success(request, f"Tarea «{tarea.titulo}» creada.")
         return redirect("growlog:cultivo_detail", slug=cultivo.slug)
-    return redirect("growlog:quick", cultivo.slug)
+    return _render_quick(request, cultivo, "tarea", form)
 
 
 @login_required
 def timeline(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
     tipo = request.GET.get("tipo", "")
     todos = _build_timeline(cultivo, limit=200)
     VALID_TIPOS = {"medicion", "riego", "evento", "medicion_ec"}
@@ -729,12 +693,12 @@ def timeline(request, slug):
 
 
 @login_required
-@staff_required
 def nuevo_cultivo(request):
     form = NuevoCultivoForm(request.POST or None, initial={"fecha_inicio": timezone.localdate()})
     if request.method == "POST" and form.is_valid():
         cultivo = form.save(commit=False)
         cultivo.creado_por = request.user
+        cultivo.propietario = request.user
         cultivo.save()
         messages.success(request, f"Cultivo «{cultivo.nombre}» creado. ¡A cultivar!")
         return redirect("growlog:cultivo_detail", cultivo.slug)
@@ -742,9 +706,8 @@ def nuevo_cultivo(request):
 
 
 @login_required
-@staff_required
 def cultivo_editar(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
     form = NuevoCultivoForm(request.POST or None, instance=cultivo)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -758,9 +721,8 @@ def cultivo_editar(request, slug):
 
 
 @login_required
-@staff_required
 def cultivo_marcar_flora(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
     if request.method == "POST":
         cultivo.fecha_inicio_flora = timezone.localdate()
         if cultivo.estado == "vegetativo":
@@ -771,9 +733,8 @@ def cultivo_marcar_flora(request, slug):
 
 
 @login_required
-@staff_required
 def cultivo_finalizar(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
     if request.method == "POST":
         cultivo.estado = "finalizado"
         if not cultivo.fecha_fin:
@@ -788,9 +749,8 @@ def cultivo_finalizar(request, slug):
 # ---------------------------------------------------------------------------
 
 @login_required
-@staff_required
 def planta_crear(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
     form = PlantaForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         p = form.save(commit=False)
@@ -807,9 +767,8 @@ def planta_crear(request, slug):
 
 
 @login_required
-@staff_required
 def planta_editar(request, pk):
-    planta = get_object_or_404(Planta, pk=pk)
+    planta = objeto_del_cultivo(request, Planta, editar=True, pk=pk)
     form = PlantaForm(request.POST or None, instance=planta)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -824,9 +783,8 @@ def planta_editar(request, pk):
 
 
 @login_required
-@staff_required
 def planta_eliminar(request, pk):
-    planta = get_object_or_404(Planta, pk=pk)
+    planta = objeto_del_cultivo(request, Planta, editar=True, pk=pk)
     cultivo = planta.cultivo
     if request.method == "POST":
         nombre = planta.apodo
@@ -841,7 +799,7 @@ def planta_eliminar(request, pk):
 
 @login_required
 def planta_detail(request, pk):
-    planta = get_object_or_404(Planta, pk=pk)
+    planta = objeto_del_cultivo(request, Planta, pk=pk)
     mediciones = list(planta.mediciones.all())
     fotos = [m for m in mediciones if m.foto]
     riegos_planta = list(
@@ -865,9 +823,8 @@ def planta_detail(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
-@staff_required
 def tarea_crear(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
     form = TareaForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         t = form.save(commit=False)
@@ -884,9 +841,8 @@ def tarea_crear(request, slug):
 
 
 @login_required
-@staff_required
 def tarea_editar(request, pk):
-    tarea = get_object_or_404(Tarea, pk=pk)
+    tarea = objeto_del_cultivo(request, Tarea, editar=True, pk=pk)
     form = TareaForm(request.POST or None, instance=tarea)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -901,9 +857,8 @@ def tarea_editar(request, pk):
 
 
 @login_required
-@staff_required
 def tarea_eliminar(request, pk):
-    tarea = get_object_or_404(Tarea, pk=pk)
+    tarea = objeto_del_cultivo(request, Tarea, editar=True, pk=pk)
     cultivo = tarea.cultivo
     if request.method == "POST":
         tarea.delete()
@@ -917,9 +872,8 @@ def tarea_eliminar(request, pk):
 
 @require_POST
 @login_required
-@staff_required
 def tarea_completar(request, pk):
-    tarea = get_object_or_404(Tarea, pk=pk)
+    tarea = objeto_del_cultivo(request, Tarea, editar=True, pk=pk)
     tarea.completada = True
     tarea.completada_en = timezone.now()
     tarea.save()
@@ -930,9 +884,8 @@ def tarea_completar(request, pk):
 
 @require_POST
 @login_required
-@staff_required
 def tarea_descompletar(request, pk):
-    tarea = get_object_or_404(Tarea, pk=pk)
+    tarea = objeto_del_cultivo(request, Tarea, editar=True, pk=pk)
     tarea.completada = False
     tarea.completada_en = None
     tarea.save()
@@ -943,7 +896,7 @@ def tarea_descompletar(request, pk):
 
 @login_required
 def tareas_list(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
     qs = cultivo.tareas.all()
     categoria = request.GET.get("categoria", "")
     estado = request.GET.get("estado", "pendiente")
@@ -971,9 +924,8 @@ def tareas_list(request, slug):
 # ---------------------------------------------------------------------------
 
 @login_required
-@staff_required
 def evento_crear(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
     initial = {"timestamp": timezone.localtime().strftime(_DT_FMT)}
     form = EventoForm(request.POST or None, initial=initial)
     form.fields["plantas_afectadas"].queryset = cultivo.plantas.all()
@@ -993,9 +945,8 @@ def evento_crear(request, slug):
 
 
 @login_required
-@staff_required
 def evento_editar(request, pk):
-    evento = get_object_or_404(Evento, pk=pk)
+    evento = objeto_del_cultivo(request, Evento, editar=True, pk=pk)
     form = EventoForm(request.POST or None, instance=evento)
     form.fields["plantas_afectadas"].queryset = evento.cultivo.plantas.all()
     if request.method == "POST" and form.is_valid():
@@ -1011,9 +962,8 @@ def evento_editar(request, pk):
 
 
 @login_required
-@staff_required
 def evento_eliminar(request, pk):
-    evento = get_object_or_404(Evento, pk=pk)
+    evento = objeto_del_cultivo(request, Evento, editar=True, pk=pk)
     cultivo = evento.cultivo
     if request.method == "POST":
         evento.delete()
@@ -1026,10 +976,9 @@ def evento_eliminar(request, pk):
 
 
 @login_required
-@staff_required
 @require_POST
 def evento_resolver_followup(request, pk):
-    evento = get_object_or_404(Evento, pk=pk)
+    evento = objeto_del_cultivo(request, Evento, editar=True, pk=pk)
     evento.follow_up_resuelto = True
     evento.save(update_fields=["follow_up_resuelto"])
     return HttpResponse("")
@@ -1040,24 +989,22 @@ def evento_resolver_followup(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
-@staff_required
 def riego_crear(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
     initial = {"timestamp": timezone.localtime().strftime(_DT_FMT)}
     form = RiegoForm(request.POST or None, initial=initial)
     rp_formset, plantas = _riego_planta_formset(cultivo, request.POST or None)
 
     if request.method == "POST" and form.is_valid() and rp_formset.is_valid():
-        entries = _riego_planta_entries(rp_formset, plantas)
-        if not entries:
-            messages.error(request, "Seleccioná al menos una planta e indicá su volumen de riego.")
-        else:
+        try:
+            entries = _riego_planta_entries(rp_formset, plantas)
             r = form.save(commit=False)
             r.cultivo = cultivo
             r.creado_por = request.user
-            r.volumen_total_ml = sum(e["volumen_ml"] for e in entries)
-            r.save()
-            RiegoPlanta.objects.bulk_create([RiegoPlanta(riego=r, **e) for e in entries])
+            guardar_riego(riego=r, detalles=entries)
+        except ValidationError as exc:
+            form.add_error(None, exc.messages)
+        else:
             messages.success(request, "Riego registrado.")
             return redirect("growlog:riego_editar", pk=r.pk)
 
@@ -1073,22 +1020,20 @@ def riego_crear(request, slug):
 
 
 @login_required
-@staff_required
 def riego_editar(request, pk):
-    riego = get_object_or_404(Riego, pk=pk)
+    riego = objeto_del_cultivo(request, Riego, editar=True, pk=pk)
     cultivo = riego.cultivo
     form = RiegoForm(request.POST or None, instance=riego)
     rp_formset, plantas = _riego_planta_formset(cultivo, request.POST or None, riego=riego)
 
     if request.method == "POST" and form.is_valid() and rp_formset.is_valid():
-        entries = _riego_planta_entries(rp_formset, plantas)
-        if not entries:
-            messages.error(request, "Seleccioná al menos una planta e indicá su volumen de riego.")
-        else:
+        try:
+            entries = _riego_planta_entries(rp_formset, plantas)
             r = form.save(commit=False)
-            r.volumen_total_ml = sum(e["volumen_ml"] for e in entries)
-            r.save()
-            _sync_riego_plantas(r, entries)
+            guardar_riego(riego=r, detalles=entries)
+        except ValidationError as exc:
+            form.add_error(None, exc.messages)
+        else:
             messages.success(request, "Riego actualizado.")
             return redirect("growlog:riego_editar", pk=pk)
 
@@ -1108,9 +1053,8 @@ def riego_editar(request, pk):
 
 
 @login_required
-@staff_required
 def riego_eliminar(request, pk):
-    riego = get_object_or_404(Riego, pk=pk)
+    riego = objeto_del_cultivo(request, Riego, editar=True, pk=pk)
     cultivo = riego.cultivo
     if request.method == "POST":
         riego.delete()
@@ -1127,9 +1071,8 @@ def riego_eliminar(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
-@staff_required
 def nutriente_aplicado_crear(request, riego_pk):
-    riego = get_object_or_404(Riego, pk=riego_pk)
+    riego = objeto_del_cultivo(request, Riego, editar=True, pk=riego_pk)
     form = NutrienteAplicadoForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         na = form.save(commit=False)
@@ -1146,9 +1089,8 @@ def nutriente_aplicado_crear(request, riego_pk):
 
 @require_POST
 @login_required
-@staff_required
 def nutriente_aplicado_eliminar(request, pk):
-    na = get_object_or_404(NutrienteAplicado, pk=pk)
+    na = objeto_del_cultivo(request, NutrienteAplicado, editar=True, pk=pk)
     riego_pk = na.riego_id
     na.delete()
     messages.success(request, "Nutriente eliminado.")
@@ -1160,9 +1102,8 @@ def nutriente_aplicado_eliminar(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
-@staff_required
 def medicion_planta_crear(request, planta_pk):
-    planta = get_object_or_404(Planta, pk=planta_pk)
+    planta = objeto_del_cultivo(request, Planta, editar=True, pk=planta_pk)
     form = MedicionPlantaForm(request.POST or None, request.FILES or None,
                               initial={"fecha": timezone.localdate()})
     if request.method == "POST" and form.is_valid():
@@ -1181,9 +1122,8 @@ def medicion_planta_crear(request, planta_pk):
 
 
 @login_required
-@staff_required
 def medicion_planta_editar(request, pk):
-    medicion = get_object_or_404(MedicionPlanta, pk=pk)
+    medicion = objeto_del_cultivo(request, MedicionPlanta, editar=True, pk=pk)
     form = MedicionPlantaForm(request.POST or None, request.FILES or None, instance=medicion)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -1199,9 +1139,8 @@ def medicion_planta_editar(request, pk):
 
 
 @login_required
-@staff_required
 def medicion_planta_eliminar(request, pk):
-    medicion = get_object_or_404(MedicionPlanta, pk=pk)
+    medicion = objeto_del_cultivo(request, MedicionPlanta, editar=True, pk=pk)
     planta_pk = medicion.planta_id
     if request.method == "POST":
         medicion.delete()
@@ -1218,9 +1157,8 @@ def medicion_planta_eliminar(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
-@staff_required
 def medicion_ec_crear(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
     initial = {"timestamp": timezone.localtime().strftime(_DT_FMT)}
     form = MedicionECForm(request.POST or None, initial=initial)
     if request.method == "POST" and form.is_valid():
@@ -1238,9 +1176,8 @@ def medicion_ec_crear(request, slug):
 
 
 @login_required
-@staff_required
 def medicion_ec_editar(request, pk):
-    medicion = get_object_or_404(MedicionEC, pk=pk)
+    medicion = objeto_del_cultivo(request, MedicionEC, editar=True, pk=pk)
     form = MedicionECForm(request.POST or None, instance=medicion)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -1255,9 +1192,8 @@ def medicion_ec_editar(request, pk):
 
 
 @login_required
-@staff_required
 def medicion_ec_eliminar(request, pk):
-    medicion = get_object_or_404(MedicionEC, pk=pk)
+    medicion = objeto_del_cultivo(request, MedicionEC, editar=True, pk=pk)
     cultivo = medicion.cultivo
     if request.method == "POST":
         medicion.delete()
@@ -1274,9 +1210,8 @@ def medicion_ec_eliminar(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
-@staff_required
 def fotoperiodo_list(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
     historial = cultivo.cambios_fotoperiodo.order_by("-fecha_inicio")
 
     if request.method == "POST":
@@ -1302,9 +1237,8 @@ def fotoperiodo_list(request, slug):
 
 
 @login_required
-@staff_required
 def cambio_fotoperiodo_editar(request, pk):
-    cambio = get_object_or_404(CambioFotoperiodo, pk=pk)
+    cambio = objeto_del_cultivo(request, CambioFotoperiodo, editar=True, pk=pk)
     cultivo = cambio.cultivo
     form = CambioFotoperiodoForm(request.POST or None, instance=cambio)
     if form.is_valid():
@@ -1325,9 +1259,8 @@ def cambio_fotoperiodo_editar(request, pk):
 
 
 @login_required
-@staff_required
 def cambio_fotoperiodo_eliminar(request, pk):
-    cambio = get_object_or_404(CambioFotoperiodo, pk=pk)
+    cambio = objeto_del_cultivo(request, CambioFotoperiodo, editar=True, pk=pk)
     cultivo = cambio.cultivo
     if request.method == "POST":
         cambio.delete()
@@ -1345,9 +1278,8 @@ def cambio_fotoperiodo_eliminar(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
-@staff_required
 def planta_etapa_list(request, pk):
-    planta = get_object_or_404(Planta, pk=pk)
+    planta = objeto_del_cultivo(request, Planta, editar=True, pk=pk)
     historial = planta.cambios_etapa.order_by("-fecha_inicio")
 
     if request.method == "POST":
@@ -1374,9 +1306,8 @@ def planta_etapa_list(request, pk):
 
 
 @login_required
-@staff_required
 def cambio_etapa_planta_editar(request, pk):
-    cambio = get_object_or_404(CambioEtapaPlanta, pk=pk)
+    cambio = objeto_del_cultivo(request, CambioEtapaPlanta, editar=True, pk=pk)
     planta = cambio.planta
     form = CambioEtapaPlantaForm(request.POST or None, instance=cambio)
     if form.is_valid():
@@ -1397,9 +1328,8 @@ def cambio_etapa_planta_editar(request, pk):
 
 
 @login_required
-@staff_required
 def cambio_etapa_planta_eliminar(request, pk):
-    cambio = get_object_or_404(CambioEtapaPlanta, pk=pk)
+    cambio = objeto_del_cultivo(request, CambioEtapaPlanta, editar=True, pk=pk)
     planta = cambio.planta
     if request.method == "POST":
         cambio.delete()
@@ -1422,37 +1352,86 @@ _SUSTANTIVOS = ["arbol", "hoja", "raiz", "flor", "tallo", "brote", "fruto", "cam
                 "tronco", "limon", "roca", "viento", "bosque", "campo", "lirio", "cedro"]
 
 
+class CompartirCultivoForm(forms.Form):
+    cultivo = forms.ModelChoiceField(queryset=Cultivo.objects.none(), label="Cultivo")
+    usuario = forms.CharField(required=False, max_length=150, label="Usuario existente",
+                              help_text="Dejalo vacío para crear una cuenta nueva.")
+    rol = forms.ChoiceField(choices=CultivoMiembro.ROLES, initial="editor", label="Permiso")
+
+    def __init__(self, *args, usuario, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["cultivo"].queryset = Cultivo.objects.filter(propietario=usuario)
+        for field in self.fields.values():
+            field.widget.attrs["class"] = "form-select" if isinstance(field.widget, forms.Select) else "form-control"
+
+
+def _panel_invitados(request, *, form=None, nuevo=None, status=200):
+    response = render(request, "growlog/invitados.html", {
+        "form": form if form is not None else CompartirCultivoForm(usuario=request.user),
+        "invitados": CultivoMiembro.objects.filter(cultivo__propietario=request.user)
+            .select_related("cultivo", "usuario").order_by("cultivo__nombre", "usuario__username"),
+        "nuevo": nuevo,
+        "roles": CultivoMiembro.ROLES,
+    }, status=status)
+    response["Cache-Control"] = "no-store, private"
+    return response
+
+
 @login_required
-@staff_required
 def invitados_panel(request):
-    invitados = User.objects.filter(is_staff=False, is_superuser=False).order_by("date_joined")
-    return render(request, "growlog/invitados.html", {"invitados": invitados})
+    return _panel_invitados(request)
 
 
 @login_required
-@staff_required
 @require_POST
 def invitado_crear(request):
-    # M-5: renderizar directo para no persistir la contraseña en la sesión
-    username = f"{secrets.choice(_ADJETIVOS)}{secrets.choice(_SUSTANTIVOS)}{secrets.randbelow(90) + 10}"
-    while User.objects.filter(username=username).exists():
-        username = f"{secrets.choice(_ADJETIVOS)}{secrets.choice(_SUSTANTIVOS)}{secrets.randbelow(90) + 10}"
-    password = secrets.token_urlsafe(10)
-    User.objects.create_user(username=username, password=password, is_staff=False)
-    invitados = User.objects.filter(is_staff=False, is_superuser=False).order_by("date_joined")
-    return render(request, "growlog/invitados.html", {
-        "invitados": invitados,
-        "nuevo": {"username": username, "password": password},
-    })
+    form = CompartirCultivoForm(request.POST, usuario=request.user)
+    if not form.is_valid():
+        return _panel_invitados(request, form=form, status=400)
+    cultivo = form.cleaned_data["cultivo"]
+    username = form.cleaned_data["usuario"]
+    usuario = None
+    nuevo = None
+    if username:
+        usuario = User.objects.filter(username=username, is_active=True).first()
+        if usuario is None or usuario.pk == request.user.pk:
+            form.add_error("usuario", "Elegí otra cuenta activa existente.")
+            return _panel_invitados(request, form=form, status=400)
+    with transaction.atomic():
+        if usuario is None:
+            # Un sufijo aleatorio evita colisiones sin exponer otros usuarios.
+            username = f"{secrets.choice(_ADJETIVOS)}{secrets.choice(_SUSTANTIVOS)}{secrets.token_hex(4)}"
+            password = secrets.token_urlsafe(16)
+            usuario = User.objects.create_user(username=username, password=password)
+            nuevo = {"username": username, "password": password}
+        CultivoMiembro.objects.update_or_create(
+            cultivo=cultivo, usuario=usuario, defaults={"rol": form.cleaned_data["rol"]},
+        )
+    messages.success(request, f"Acceso actualizado para {usuario.username} en {cultivo.nombre}.")
+    if nuevo:
+        return _panel_invitados(request, nuevo=nuevo)
+    return redirect("growlog:invitados_panel")
 
 
 @login_required
-@staff_required
+@require_POST
+def invitado_rol(request, pk):
+    miembro = get_object_or_404(CultivoMiembro, pk=pk, cultivo__propietario=request.user)
+    rol = request.POST.get("rol")
+    if rol not in dict(CultivoMiembro.ROLES):
+        return HttpResponse("Permiso inválido", status=400)
+    miembro.rol = rol
+    miembro.save(update_fields=["rol"])
+    messages.success(request, "Permiso actualizado.")
+    return redirect("growlog:invitados_panel")
+
+
+@login_required
 @require_POST
 def invitado_eliminar(request, pk):
-    user = get_object_or_404(User, pk=pk, is_staff=False, is_superuser=False)
-    user.delete()
-    messages.success(request, "Invitado eliminado.")
+    miembro = get_object_or_404(CultivoMiembro, pk=pk, cultivo__propietario=request.user)
+    miembro.delete()
+    messages.success(request, "Acceso revocado. La cuenta y los registros se conservan.")
     return redirect("growlog:invitados_panel")
 
 
@@ -1465,20 +1444,27 @@ def invitado_eliminar(request, pk):
 def push_subscribe(request):
     try:
         data = json.loads(request.body)
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, UnicodeDecodeError, TypeError):
         return JsonResponse({"error": "JSON inválido"}, status=400)
 
+    if not isinstance(data, dict) or not isinstance(data.get("keys"), dict):
+        return JsonResponse({"error": "Suscripción inválida"}, status=400)
     endpoint = data.get("endpoint")
-    keys = data.get("keys") or {}
+    keys = data["keys"]
     p256dh = keys.get("p256dh")
     auth = keys.get("auth")
-    if not endpoint or not p256dh or not auth:
+    if not all(isinstance(value, str) and value for value in (endpoint, p256dh, auth)):
         return JsonResponse({"error": "Datos de suscripción incompletos"}, status=400)
 
-    PushSubscription.objects.update_or_create(
-        endpoint=endpoint,
-        defaults={"user": request.user, "p256dh": p256dh, "auth": auth},
+    sub, created = PushSubscription.objects.get_or_create(
+        endpoint=endpoint, defaults={"user": request.user, "p256dh": p256dh, "auth": auth},
     )
+    if sub.user_id != request.user.pk:
+        return JsonResponse({"error": "Esta suscripción pertenece a otra cuenta"}, status=409)
+    if not created:
+        sub.p256dh, sub.auth = p256dh, auth
+        sub.save(update_fields=["p256dh", "auth"])
+    request.session["push_endpoint"] = endpoint
     return JsonResponse({"ok": True})
 
 
@@ -1487,18 +1473,39 @@ def push_subscribe(request):
 def push_unsubscribe(request):
     try:
         data = json.loads(request.body)
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, UnicodeDecodeError, TypeError):
         return JsonResponse({"error": "JSON inválido"}, status=400)
 
-    endpoint = data.get("endpoint")
+    if not isinstance(data, dict) or not isinstance(data.get("endpoint"), str):
+        return JsonResponse({"error": "Suscripción inválida"}, status=400)
+    endpoint = data["endpoint"]
     if endpoint:
-        PushSubscription.objects.filter(endpoint=endpoint).delete()
+        PushSubscription.objects.filter(endpoint=endpoint, user=request.user).delete()
     return JsonResponse({"ok": True})
 
 
 # ---------------------------------------------------------------------------
 # PWA — manifest + service worker
 # ---------------------------------------------------------------------------
+
+@login_required
+def protected_media(request, path):
+    # Solo fotos reconocidas del dominio; nunca exponer archivos arbitrarios
+    # (por ejemplo un backup) porque alguien adivinó su ruta de almacenamiento.
+    if not path:
+        raise Http404("Foto no encontrada")
+    medicion = MedicionPlanta.objects.filter(
+        planta__cultivo__in=cultivos_visibles(request.user), foto=path,
+    ).first()
+    if medicion is None:
+        raise Http404("Foto no encontrada")
+    try:
+        response = FileResponse(medicion.foto.open("rb"))
+    except FileNotFoundError:
+        raise Http404("Foto no encontrada")
+    response["Cache-Control"] = "no-store, private"
+    return response
+
 
 def pwa_manifest(request):
     def icon_url(name):
@@ -1532,9 +1539,11 @@ def pwa_manifest(request):
 
 def pwa_service_worker(request):
     js = r"""
-const SHELL = '62xroots-shell-v5';
-const CDN   = '62xroots-cdn-v5';
+const SHELL = '62xroots-public-v7';
+const CDN   = '62xroots-cdn-v7';
 const ALL_CACHES = [SHELL, CDN];
+const OFFLINE_URL = '/registrar/';
+const OFFLINE_ASSETS = [OFFLINE_URL, '/static/growlog/registrar.css', '/static/growlog/offline-store.js', '/static/growlog/registrar.js'];
 
 const CDN_URLS = [
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
@@ -1546,9 +1555,7 @@ const CDN_URLS = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(SHELL)
-      .then(c => c.add('/'))
-      .then(() => self.skipWaiting())
+    caches.open(SHELL).then(cache => cache.addAll(OFFLINE_ASSETS)).then(() => self.skipWaiting())
   );
 });
 
@@ -1556,7 +1563,7 @@ self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => !ALL_CACHES.includes(k)).map(k => caches.delete(k))
+        keys.filter(k => k.startsWith('62xroots-') && !ALL_CACHES.includes(k)).map(k => caches.delete(k))
       ))
       .then(() => clients.claim())
   );
@@ -1582,14 +1589,15 @@ self.addEventListener('fetch', e => {
   }
 
   // Django static files: stale-while-revalidate
-  if (url.includes('/static/')) {
+  if (new URL(url).origin === self.location.origin && new URL(url).pathname.startsWith('/static/')) {
     e.respondWith(
       caches.open(SHELL).then(cache =>
         cache.match(e.request).then(cached => {
-          const fresh = fetch(e.request).then(res => {
-            if (res.ok) cache.put(e.request, res.clone());
+          const fresh = fetch(e.request).then(async res => {
+            if (res.ok) await cache.put(e.request, res.clone());
             return res;
-          });
+          }).catch(() => cached || new Response('', {status: 503}));
+          e.waitUntil(fresh.then(() => {}));
           return cached || fresh;
         })
       )
@@ -1597,18 +1605,17 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Navigation: network-first, fall back to cached page or shell
+  // Solo la shell pública se precarga. Las páginas de cultivos y credenciales
+  // nunca se escriben a Cache Storage; sus pendientes van cifrados a IndexedDB.
   if (e.request.mode === 'navigate') {
-    e.respondWith(
-      fetch(e.request)
-        .then(res => {
-          if (res.ok) caches.open(SHELL).then(c => c.put(e.request, res.clone()));
-          return res;
-        })
-        .catch(() =>
-          caches.match(e.request).then(r => r || caches.match('/'))
-        )
-    );
+    e.respondWith(fetch(e.request).catch(async () => {
+      const shell = await caches.match(OFFLINE_URL);
+      if (shell) return shell;
+      return new Response(
+        '<!doctype html><html lang="es"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sin conexión</title><h1>Sin conexión</h1><p>Abrí Registrar una vez con conexión para preparar este dispositivo.</p><a href="/registrar/">Abrir Registrar</a></html>',
+        {status: 503, headers: {'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store'}}
+      );
+    }));
   }
 });
 
@@ -1706,7 +1713,7 @@ def _reporte_csv(cultivo):
 
 @login_required
 def cultivo_reporte(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
     if request.GET.get("export") == "csv":
         return _reporte_csv(cultivo)
 
@@ -1801,7 +1808,7 @@ def cultivo_energia(request, slug):
     from datetime import date
     from .api_views import _calcular_meses, _ciclo_activo
 
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
     hoy = timezone.localdate()
 
     if request.method == "POST":
@@ -1826,7 +1833,7 @@ def cultivo_energia(request, slug):
         messages.success(request, "Lectura cargada.")
         return redirect("growlog:energia", slug=slug)
 
-    tarifa = TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by("-fecha_desde").first()
+    tarifa = tarifas_del_cultivo(cultivo).filter(fecha_desde__lte=hoy).order_by("-fecha_desde").first()
     precio_kwh = float(tarifa.precio_kwh) if tarifa else 0
 
     costos_actuales = list(
@@ -1835,7 +1842,7 @@ def cultivo_energia(request, slug):
     todos_costos = list(
         cultivo.costos_energeticos.select_related("equipo").order_by("fecha_desde")
     )
-    tarifas = list(TarifaElectrica.objects.filter(fecha_desde__lte=hoy).order_by("-fecha_desde"))
+    tarifas = list(tarifas_del_cultivo(cultivo).filter(fecha_desde__lte=hoy).order_by("-fecha_desde"))
 
     equipos_rows = []
     total_kwh_mes = 0.0
@@ -1909,7 +1916,7 @@ def _default_colas(cx, cy, n=2, radius=50):
 
 @login_required
 def canopy_view(request, slug):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
     plantas = list(cultivo.plantas.filter(archivado=False).order_by('apodo'))
     snapshots_qs = cultivo.canopy_snapshots.all()
     latest = snapshots_qs.first()
@@ -1948,6 +1955,7 @@ def canopy_view(request, slug):
     ]
 
     init_data = {
+        "editable": request.puede_editar_cultivo,
         "slug": cultivo.slug,
         "watts": cultivo.lampara_watts_reales or 314,
         "plantas": plantas_data,
@@ -1965,11 +1973,10 @@ def canopy_view(request, slug):
 
 
 @login_required
-@staff_required
 @require_POST
 def canopy_guardar(request, slug):
     import json as _json
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
     try:
         body = _json.loads(request.body or '{}')
     except _json.JSONDecodeError:
@@ -2036,7 +2043,7 @@ def canopy_guardar(request, slug):
 
 @login_required
 def canopy_snapshot_json(request, slug, snapshot_id):
-    cultivo = get_object_or_404(Cultivo, slug=slug)
+    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
     try:
         snapshot = cultivo.canopy_snapshots.get(pk=snapshot_id)
     except CanopySnapshot.DoesNotExist:

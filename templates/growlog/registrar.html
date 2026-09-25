@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111a15"><title>Registrar · 62×ROOTS</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/static/growlog/registrar.css">
+  <script src="/static/growlog/offline-store.js" defer></script>
+  <script src="/static/growlog/registrar.js" defer></script>
+</head>
+<body>
+  <header class="top"><a href="/" class="brand">62<span>×</span>ROOTS</a><span id="account"></span><a href="/">Mis cultivos</a></header>
+  <main>
+    <div class="intro"><div><p class="eyebrow">Tu bitácora, al día</p><h1>Registrar</h1><p>Anotá ahora. La conexión puede esperar.</p></div><a href="#pendientes" class="queue-link">Pendientes <span id="pending-count">0</span></a></div>
+    <p id="connection" class="notice" role="status" aria-live="polite">Abriendo la bitácora…</p>
+    <p id="session-link" hidden><a href="/login/?next=/registrar/">Iniciar sesión para sincronizar</a></p>
+    <p id="storage-notice" class="hint"></p>
+    <div id="locked" hidden><h2>Entrá a tu cuenta</h2><p>La primera vez necesitás conexión para preparar este dispositivo. Tus pendientes de otra sesión se recuperan al entrar con la misma cuenta.</p><a class="button" href="/login/?next=/registrar/">Iniciar sesión</a></div>
+    <noscript><p>Registrar sin conexión necesita JavaScript. Podés usar el registro clásico desde cada cultivo.</p><a href="/">Volver a mis cultivos</a></noscript>
+    <div id="workspace" hidden>
+      <div class="columns">
+        <section class="card" aria-labelledby="entry-title">
+          <h2 id="entry-title">Una nueva entrada</h2>
+          <form id="entry-form">
+            <div class="row entry-context"><label>Cultivo<select id="cultivo" name="cultivo_id" required></select></label><label>¿Qué querés registrar?<select id="kind" name="kind"><option value="ambiente">Ambiente</option><option value="riego">Riego</option><option value="evento">Observación</option><option value="ec">pH / EC</option><option value="tarea">Tarea</option></select></label></div>
+            <label>Cuándo ocurrió<input name="observado_en" id="observado" type="datetime-local" required></label>
+            <fieldset data-kind="ambiente"><legend>Ambiente</legend><div class="row"><label>Temperatura · °C<input name="temperatura_c" type="number" inputmode="decimal" step="0.01" min="0" max="60" required placeholder="24.5"></label><label>Humedad · %<input name="humedad_relativa" type="number" inputmode="decimal" step="0.01" min="0" max="100" required placeholder="60"></label></div><label>Notas <small>opcional</small><textarea name="notas" maxlength="5000" rows="3" placeholder="¿Algo para recordar?"></textarea></label></fieldset>
+            <fieldset data-kind="evento" hidden disabled><legend>Observación</legend><label>Tipo<select name="tipo" id="event-type"></select></label><label>¿Qué pasó?<textarea name="descripcion" maxlength="5000" required rows="4" placeholder="Lo que viste, hiciste o querés seguir…"></textarea></label></fieldset>
+            <fieldset data-kind="ec" hidden disabled><legend>pH / EC</legend><label>Qué mediste<select name="tipo" id="ec-type"></select></label><div class="row"><label>pH<input name="ph" type="number" inputmode="decimal" step="0.01" min="0" max="14"></label><label>EC · mS/cm<input name="ec" type="number" inputmode="decimal" step="0.01" min="0" max="999.99"></label></div><p class="hint">Completá al menos pH o EC. El valor cero también es válido.</p><label>Temperatura del agua · °C <small>opcional</small><input name="temp_agua" type="number" inputmode="decimal" step="0.1" min="0" max="60"></label><label>Notas <small>opcional</small><textarea name="notas" maxlength="5000" rows="2"></textarea></label></fieldset>
+            <fieldset data-kind="tarea" hidden disabled><legend>Tarea</legend><label>Qué hay que hacer<input name="titulo" maxlength="200" required placeholder="Revisar el sensor"></label><div class="row"><label>Categoría<select id="task-category" name="categoria"></select></label><label>Prioridad<select id="task-priority" name="prioridad"></select></label></div><label>Para cuándo <small>opcional</small><input name="fecha_objetivo" type="date"></label></fieldset>
+            <fieldset data-kind="riego" hidden disabled><legend>Riego</legend><p class="hint">Indicá cuánto recibió cada planta. Dejá vacío si no la regaste.</p><div id="plant-volumes"></div><div class="row"><label>pH de solución <small>opcional</small><input name="ph" type="number" inputmode="decimal" step="0.01" min="0" max="14"></label><label>EC · mS/cm <small>opcional</small><input name="ec" type="number" inputmode="decimal" step="0.01" min="0" max="999.99"></label></div><details><summary>Nutrientes aplicados · opcional</summary><p class="hint">Dosis en g/L, igual que en tu catálogo de nutrientes.</p><div id="nutrient-doses"></div></details><label>Notas <small>opcional</small><textarea name="notas" maxlength="5000" rows="2"></textarea></label></fieldset>
+            <p id="form-message" role="status" aria-live="polite"></p>
+            <div class="actions"><button id="save-entry" type="submit">Guardar registro</button><button type="button" id="clear-draft" class="secondary">Limpiar borrador</button></div>
+            <p id="draft-status" class="hint" role="status"></p>
+          </form>
+        </section>
+        <section id="pendientes" class="card" aria-labelledby="pending-title">
+          <div class="section-head"><h2 id="pending-title">En este dispositivo</h2><button type="button" id="sync" class="secondary">Sincronizar</button></div>
+          <p class="hint">Guardamos primero acá. Solo dice “Confirmado” cuando la bitácora responde. Los pendientes se envían al reconectar con la app abierta, o al volver a abrirla.</p>
+          <div id="queue" aria-live="polite"></div>
+          <button type="button" class="text-button" id="export">Descargar pendientes</button>
+        </section>
+      </div>
+      <footer><a id="history-link" href="/">Ver bitácora</a><a id="classic-link" href="/">Registro clásico y fotos · con conexión</a></footer>
+    </div>
+  </main>
+</body>
+</html>

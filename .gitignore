@@ -9,5 +9,4 @@ venv/
 *.egg-info/
 dist/
 .DS_Store
-.claude/
 /backups
