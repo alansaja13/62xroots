@@ -149,30 +149,6 @@
   .tareas-empty { display: none; }
   #tareas-lista:not(:has(.cd-tarea)) .tareas-empty { display: block; }
 
-  /* Formulario inline de nueva tarea */
-  .tarea-quick-form {
-    display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
-    padding: 10px 14px; border-bottom: 1px solid var(--rule-soft);
-    background: var(--bg-alt);
-  }
-  .tarea-quick-form input[type=text] {
-    flex: 1; min-width: 120px; padding: 7px 10px;
-    font-size: 12px; background: var(--card); border: 1px solid var(--rule);
-    color: var(--cream);
-  }
-  .tarea-quick-form select {
-    padding: 7px 28px 7px 10px; font-size: 11px;
-    background: var(--card); border: 1px solid var(--rule);
-    color: var(--fine); width: auto;
-  }
-  .tarea-quick-form .tarea-add-btn {
-    padding: 7px 14px; background: var(--green); border: none;
-    color: var(--bg); font-family: "JetBrains Mono", monospace;
-    font-size: 13px; font-weight: 800; cursor: pointer; flex-shrink: 0;
-    transition: opacity .12s;
-  }
-  .tarea-quick-form .tarea-add-btn:hover { opacity: .8; }
-
   /* ── SETUP STRIP ── */
   .cd-setup-strip {
     display: flex; align-items: center; flex-wrap: wrap; gap: 0;
@@ -553,9 +529,9 @@
         </div>
         <div style="display:flex; gap:14px; align-items:center;">
           {% if can_edit_cultivo %}
-          <a href="{% url 'growlog:evento_crear' cultivo.slug %}" class="panel__action">+ evento</a>
-          <a href="{% url 'growlog:riego_crear' cultivo.slug %}" class="panel__action">+ riego</a>
-          <a href="{% url 'growlog:medicion_ec_crear' cultivo.slug %}" class="panel__action">+ EC/pH</a>
+          <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=evento" class="panel__action">+ evento</a>
+          <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=riego" class="panel__action">+ riego</a>
+          <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=ec" class="panel__action">+ EC/pH</a>
           {% endif %}
           <a href="{% url 'growlog:timeline' cultivo.slug %}" class="panel__action panel__action--green">historial →</a>
         </div>
@@ -702,26 +678,10 @@
         <div style="display:flex; gap:12px; align-items:center;">
           <a href="{% url 'growlog:tareas_list' cultivo.slug %}" class="panel__action">ver todas →</a>
           {% if can_edit_cultivo %}
-          <a href="{% url 'growlog:tarea_crear' cultivo.slug %}" class="panel__action">+ nueva</a>
+          <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=tarea" class="panel__action">+ nueva</a>
           {% endif %}
         </div>
       </div>
-
-      {% if can_edit_cultivo %}
-      <form class="tarea-quick-form"
-            hx-post="{% url 'growlog:tarea_rapida' cultivo.slug %}"
-            hx-target="#tarea-inline-result"
-            hx-swap="innerHTML"
-            hx-on::after-request="if(event.detail.successful) this.querySelector('input').value=''">
-        {% csrf_token %}
-        <input type="text" name="titulo" placeholder="Nueva tarea rápida..." required>
-        <select name="categoria">
-          {% for val, label in tarea_categorias %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
-        </select>
-        <button type="submit" class="tarea-add-btn">+</button>
-      </form>
-      <div id="tarea-inline-result"></div>
-      {% endif %}
 
       <div id="tareas-lista">
         {% for tarea in tareas_pendientes %}

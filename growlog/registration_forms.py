@@ -16,11 +16,20 @@ class AmbienteForm(NotasForm):
 class ObservacionForm(forms.Form):
     tipo = forms.ChoiceField(choices=Evento.TIPO_CHOICES)
     descripcion = forms.CharField(max_length=5000)
+    # plantas_afectadas viaja aparte (lista de ids, ver recibir_registro) porque
+    # validar() rechaza listas en el cuerpo plano del formulario.
+    follow_up_fecha = forms.DateField(required=False)
+    follow_up_descripcion = forms.CharField(required=False, max_length=5000)
 
 
 class SolucionForm(NotasForm):
     ph = forms.DecimalField(required=False, max_digits=4, decimal_places=2, min_value=0, max_value=14)
     ec = forms.DecimalField(required=False, max_digits=5, decimal_places=2, min_value=0)
+
+
+class RiegoSolucionForm(SolucionForm):
+    """Datos de la sesión de riego (fuera del desglose por planta)."""
+    buscar_runoff = forms.BooleanField(required=False)
 
 
 class ECForm(SolucionForm):
@@ -36,6 +45,7 @@ class ECForm(SolucionForm):
 
 class PendienteForm(forms.Form):
     titulo = forms.CharField(max_length=200)
+    descripcion = forms.CharField(required=False, max_length=5000)
     categoria = forms.ChoiceField(choices=Tarea.CATEGORIA_CHOICES)
     prioridad = forms.ChoiceField(choices=Tarea.PRIORIDAD_CHOICES)
     fecha_objetivo = forms.DateField(required=False)
@@ -44,6 +54,11 @@ class PendienteForm(forms.Form):
 class VolumenForm(forms.Form):
     planta_id = forms.IntegerField(min_value=1)
     volumen_ml = forms.IntegerField(min_value=1, max_value=2147483647)
+    # Runoff por planta: mismos campos que RiegoPlanta, opcionales.
+    runoff_observado = forms.BooleanField(required=False)
+    ph_runoff = forms.DecimalField(required=False, max_digits=4, decimal_places=2, min_value=0, max_value=14)
+    ec_runoff = forms.DecimalField(required=False, max_digits=5, decimal_places=2, min_value=0)
+    notas = forms.CharField(required=False, max_length=5000)
 
 
 class NutrienteForm(forms.Form):

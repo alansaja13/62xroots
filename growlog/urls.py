@@ -91,9 +91,8 @@ urlpatterns = [
     path("cultivo/<slug:slug>/finalizar/", views.cultivo_finalizar, name="cultivo_finalizar"),
     path("cultivo/<slug:slug>/tendencias/", views.cultivo_tendencias, name="cultivo_tendencias"),
     path("cultivo/<slug:slug>/tendencias.json", views.cultivo_tendencias_json, name="cultivo_tendencias_json"),
-    # Enlaces viejos a la carga rápida: Registrar es la única entrada de datos.
+    # Enlace viejo a la carga rápida: Registrar es la única entrada de datos.
     path("cultivo/<slug:slug>/quick/", views.registrar_en_cultivo, name="registrar_en_cultivo"),
-    path("cultivo/<slug:slug>/tareas/rapida/", views.tarea_rapida, name="tarea_rapida"),
     path("cultivo/<slug:slug>/timeline/", views.timeline, name="timeline"),
     path("cultivo/<slug:slug>/reporte/", views.cultivo_reporte, name="reporte"),
     path("cultivo/<slug:slug>/canopy/", views.canopy_view, name="canopy"),
@@ -107,22 +106,19 @@ urlpatterns = [
     path("planta/<int:pk>/editar/", views.planta_editar, name="planta_editar"),
     path("planta/<int:pk>/eliminar/", views.planta_eliminar, name="planta_eliminar"),
 
-    # Tarea
+    # Tarea (el alta pasa por Registrar; acá solo edición/estado)
     path("cultivo/<slug:slug>/tareas/", views.tareas_list, name="tareas_list"),
-    path("cultivo/<slug:slug>/tarea/nueva/", views.tarea_crear, name="tarea_crear"),
     path("tarea/<int:pk>/editar/", views.tarea_editar, name="tarea_editar"),
     path("tarea/<int:pk>/eliminar/", views.tarea_eliminar, name="tarea_eliminar"),
     path("tarea/<int:pk>/completar/", views.tarea_completar, name="tarea_completar"),
     path("tarea/<int:pk>/descompletar/", views.tarea_descompletar, name="tarea_descompletar"),
 
-    # Evento
-    path("cultivo/<slug:slug>/evento/nuevo/", views.evento_crear, name="evento_crear"),
+    # Evento (el alta pasa por Registrar; acá solo edición/estado)
     path("evento/<int:pk>/editar/", views.evento_editar, name="evento_editar"),
     path("evento/<int:pk>/eliminar/", views.evento_eliminar, name="evento_eliminar"),
     path("evento/<int:pk>/resolver-followup/", views.evento_resolver_followup, name="evento_resolver_followup"),
 
-    # Riego
-    path("cultivo/<slug:slug>/riego/nuevo/", views.riego_crear, name="riego_crear"),
+    # Riego (el alta pasa por Registrar; acá solo edición)
     path("riego/<int:pk>/editar/", views.riego_editar, name="riego_editar"),
     path("riego/<int:pk>/eliminar/", views.riego_eliminar, name="riego_eliminar"),
 
@@ -135,8 +131,7 @@ urlpatterns = [
     path("medicion-planta/<int:pk>/editar/", views.medicion_planta_editar, name="medicion_planta_editar"),
     path("medicion-planta/<int:pk>/eliminar/", views.medicion_planta_eliminar, name="medicion_planta_eliminar"),
 
-    # MedicionEC
-    path("cultivo/<slug:slug>/medicion-ec/nueva/", views.medicion_ec_crear, name="medicion_ec_crear"),
+    # MedicionEC (el alta pasa por Registrar; acá solo edición)
     path("medicion-ec/<int:pk>/editar/", views.medicion_ec_editar, name="medicion_ec_editar"),
     path("medicion-ec/<int:pk>/eliminar/", views.medicion_ec_eliminar, name="medicion_ec_eliminar"),
 

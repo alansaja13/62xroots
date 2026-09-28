@@ -83,8 +83,8 @@ class CultivoAccessTests(TestCase):
 
     def web_writes(self):
         routes = [(name, self.c.slug) for name in (
-            "tarea_rapida", "cultivo_editar", "cultivo_marcar_flora", "cultivo_finalizar",
-            "planta_crear", "tarea_crear", "evento_crear", "riego_crear", "medicion_ec_crear", "fotoperiodo_list", "canopy_guardar", "energia",
+            "cultivo_editar", "cultivo_marcar_flora", "cultivo_finalizar",
+            "planta_crear", "fotoperiodo_list", "canopy_guardar", "energia",
         )]
         for prefix, obj in (("planta", self.plant), ("tarea", self.task), ("evento", self.event), ("riego", self.water),
                             ("medicion_planta", self.mp), ("medicion_ec", self.ec), ("cambio_fotoperiodo", self.cf), ("cambio_etapa_planta", self.stage)):
@@ -150,9 +150,10 @@ class CultivoAccessTests(TestCase):
 
     def test_editor_sin_staff_registra_y_conserva_autoria(self):
         self.client.force_login(self.editor)
-        response = self.client.post(reverse("growlog:tarea_rapida", args=[self.c.slug]), {"titulo": "Revisar sensor", "prioridad": "normal", "categoria": "observacion"})
+        response = self.client.post(reverse("growlog:planta_crear", args=[self.c.slug]),
+                                    {"apodo": "Nueva planta", "tipo": "foto", "posicion_tent": "otro", "estado": "activa"})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(m.Tarea.objects.get(titulo="Revisar sensor").creado_por, self.editor)
+        self.assertEqual(m.Planta.objects.get(apodo="Nueva planta").creado_por, self.editor)
         response = self.client.post(f"/api/v1/cultivos/{self.c.slug}/tareas/", data=json.dumps({"titulo": "Revisar luz"}), content_type="application/json", **self.auth(self.editor))
         self.assertEqual(response.status_code, 201)
         self.assertEqual(m.Tarea.objects.get(titulo="Revisar luz").creado_por, self.editor)

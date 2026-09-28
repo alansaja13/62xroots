@@ -32,15 +32,12 @@ from .plantas import (  # noqa: F401
 )
 from .tareas import (  # noqa: F401
     tarea_completar,
-    tarea_crear,
     tarea_descompletar,
     tarea_editar,
     tarea_eliminar,
-    tarea_rapida,
     tareas_list,
 )
 from .eventos import (  # noqa: F401
-    evento_crear,
     evento_editar,
     evento_eliminar,
     evento_resolver_followup,
@@ -48,7 +45,6 @@ from .eventos import (  # noqa: F401
 from .riegos import (  # noqa: F401
     nutriente_aplicado_crear,
     nutriente_aplicado_eliminar,
-    riego_crear,
     riego_editar,
     riego_eliminar,
 )
@@ -56,7 +52,6 @@ from .mediciones import (  # noqa: F401
     cambio_fotoperiodo_editar,
     cambio_fotoperiodo_eliminar,
     fotoperiodo_list,
-    medicion_ec_crear,
     medicion_ec_editar,
     medicion_ec_eliminar,
 )

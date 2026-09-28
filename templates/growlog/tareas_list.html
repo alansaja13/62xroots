@@ -144,7 +144,7 @@
 <div class="tl-header">
   <h1 class="tl-title">tareas <span class="tl-title__accent">// {{ cultivo.nombre }}</span></h1>
   {% if can_edit_cultivo %}
-  <a href="{% url 'growlog:tarea_crear' cultivo.slug %}" class="btn-brand" style="margin-left:auto;">
+  <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=tarea" class="btn-brand" style="margin-left:auto;">
     <i class="bi bi-plus-lg"></i> nueva tarea
   </a>
   {% endif %}
@@ -287,7 +287,7 @@
     {% if estado_filter == 'completada' %}
       Ninguna tarea completada todavía.
     {% else %}
-      Sin tareas pendientes. <a href="{% url 'growlog:tarea_crear' cultivo.slug %}" class="c-green">Crear una →</a>
+      Sin tareas pendientes. <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=tarea" class="c-green">Crear una →</a>
     {% endif %}
   </div>
   {% endif %}

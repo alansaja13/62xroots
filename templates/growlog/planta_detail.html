@@ -263,7 +263,7 @@
       <span class="label-eyebrow panel__title">riegos · histórico</span>
       <span class="mono c-fine" style="font-size:10px;">· {{ riegos_planta|length }}</span>
     </div>
-    {% if can_edit_cultivo %}<a href="{% url 'growlog:riego_crear' cultivo.slug %}" class="panel__action panel__action--green">+ nuevo riego</a>{% endif %}
+    {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=riego" class="panel__action panel__action--green">+ nuevo riego</a>{% endif %}
   </div>
   <table class="table">
     <thead>

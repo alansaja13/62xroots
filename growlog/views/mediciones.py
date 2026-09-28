@@ -6,7 +6,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from ..forms import CambioFotoperiodoForm, DT_FMT, MedicionECForm
+from ..forms import CambioFotoperiodoForm, MedicionECForm
 from ..models import CambioFotoperiodo, Cultivo, MedicionEC
 from ..permissions import objeto_del_cultivo
 
@@ -14,25 +14,6 @@ from ..permissions import objeto_del_cultivo
 # ---------------------------------------------------------------------------
 # MedicionEC CRUD
 # ---------------------------------------------------------------------------
-
-@login_required
-def medicion_ec_crear(request, slug):
-    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
-    initial = {"timestamp": timezone.localtime().strftime(DT_FMT)}
-    form = MedicionECForm(request.POST or None, initial=initial)
-    if request.method == "POST" and form.is_valid():
-        m = form.save(commit=False)
-        m.cultivo = cultivo
-        m.creado_por = request.user
-        m.save()
-        messages.success(request, "Medición EC/pH registrada.")
-        return redirect("growlog:cultivo_detail", slug=slug)
-    return render(request, "growlog/crud_form.html", {
-        "form": form, "title": "Nueva medición EC/pH",
-        "subtitle": cultivo.nombre,
-        "back_url": reverse("growlog:cultivo_detail", args=[slug]),
-    })
-
 
 @login_required
 def medicion_ec_editar(request, pk):

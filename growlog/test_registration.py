@@ -154,6 +154,43 @@ class RegistrationTests(TestCase):
                 self.assertEqual(self.send(payload).status_code, 200)
                 self.assertEqual(model.objects.count(), 1)
 
+    def test_evento_con_plantas_afectadas_y_seguimiento(self):
+        payload = self.payload('evento', {
+            'tipo': 'problema', 'descripcion': 'Hojas amarillas',
+            'plantas_afectadas': [self.plant.pk],
+            'follow_up_fecha': str(timezone.localdate() + timedelta(days=3)),
+            'follow_up_descripcion': 'Revisar si mejoró',
+        })
+        self.assertEqual(self.send(payload).status_code, 201)
+        evento = Evento.objects.get()
+        self.assertEqual(list(evento.plantas_afectadas.all()), [self.plant])
+        self.assertEqual(evento.follow_up_descripcion, 'Revisar si mejoró')
+        self.assertFalse(evento.follow_up_resuelto)
+
+    def test_evento_sin_plantas_ni_seguimiento_queda_vacio(self):
+        payload = self.payload('evento', {'tipo': 'otro', 'descripcion': 'Nada en particular'})
+        self.assertEqual(self.send(payload).status_code, 201)
+        evento = Evento.objects.get()
+        self.assertFalse(evento.plantas_afectadas.exists())
+        self.assertIsNone(evento.follow_up_fecha)
+
+    def test_evento_planta_ajena_o_repetida_no_se_guarda(self):
+        for plantas in ([self.other_p.pk], [self.plant.pk, self.plant.pk]):
+            payload = self.payload('evento', {'tipo': 'otro', 'descripcion': 'x', 'plantas_afectadas': plantas})
+            response = self.send(payload)
+            self.assertIn(response.status_code, (400, 409), response.content)
+        self.assertFalse(Evento.objects.exists())
+
+    def test_evento_plantas_afectadas_como_diccionario_o_booleano_es_invalida(self):
+        for valor in ({'x': 1}, [True], ['1'], 'no-es-lista'):
+            payload = self.payload('evento', {'tipo': 'otro', 'descripcion': 'x', 'plantas_afectadas': valor})
+            self.assertEqual(self.send(payload).status_code, 400)
+
+    def test_tarea_con_descripcion(self):
+        payload = self.payload('tarea', {'titulo': 'Revisar', 'descripcion': 'Ventilar más', 'categoria': 'observacion', 'prioridad': 'urgente'})
+        self.assertEqual(self.send(payload).status_code, 201)
+        self.assertEqual(Tarea.objects.get().descripcion, 'Ventilar más')
+
     def test_ec_vacio_o_fuera_de_rango_se_conserva_como_error(self):
         for values in ({'ph':'', 'ec':''}, {'ph':'15'}, {'ec':'-1'}, {'ph':True}):
             self.assertEqual(self.send(self.payload('ec', {'tipo':'entrada', **values})).status_code, 400)
@@ -187,6 +224,36 @@ class RegistrationTests(TestCase):
             self.assertEqual(self.send(payload).status_code, 400)
         self.assertFalse(Riego.objects.exists())
         self.assertFalse(RegistroRecibido.objects.exists())
+
+    def test_riego_con_runoff_por_planta(self):
+        payload = self.riego()
+        payload['datos']['buscar_runoff'] = 'true'
+        payload['datos']['plantas'][0].update({'runoff_observado': 'on', 'ph_runoff': '6.0', 'ec_runoff': '1.1', 'notas': 'Drenó bien'})
+        self.assertEqual(self.send(payload).status_code, 201)
+        riego = Riego.objects.get()
+        self.assertTrue(riego.buscar_runoff)
+        detalle = riego.detalle_plantas.get()
+        self.assertEqual((detalle.runoff_observado, str(detalle.ph_runoff), str(detalle.ec_runoff), detalle.notas), (True, '6.00', '1.10', 'Drenó bien'))
+
+    def test_riego_sin_runoff_no_guarda_datos_de_drenaje(self):
+        payload = self.riego()
+        self.assertEqual(self.send(payload).status_code, 201)
+        riego = Riego.objects.get()
+        self.assertFalse(riego.buscar_runoff)
+        detalle = riego.detalle_plantas.get()
+        self.assertFalse(detalle.runoff_observado)
+        self.assertIsNone(detalle.ph_runoff)
+
+    def test_riego_buscar_runoff_como_json_booleano_es_invalido(self):
+        # El guardado real usa "true"/"on"; un bool JSON crudo debe seguir rechazado
+        # (mismo resguardo que ya protegía el resto del formulario).
+        payload = self.riego()
+        payload['datos']['buscar_runoff'] = True
+        self.assertEqual(self.send(payload).status_code, 400)
+        payload = self.riego()
+        payload['datos']['plantas'][0]['runoff_observado'] = True
+        self.assertEqual(self.send(payload).status_code, 400)
+        self.assertFalse(Riego.objects.exists())
 
     def test_contexto_solo_contiene_cultivos_editables(self):
         response = self.client.get('/registrar/contexto/')

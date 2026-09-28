@@ -4,33 +4,11 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from ..forms import DT_FMT, EventoForm
-from ..models import Cultivo, Evento
+from ..forms import EventoForm
+from ..models import Evento
 from ..permissions import objeto_del_cultivo
-
-
-@login_required
-def evento_crear(request, slug):
-    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
-    initial = {"timestamp": timezone.localtime().strftime(DT_FMT)}
-    form = EventoForm(request.POST or None, initial=initial)
-    form.fields["plantas_afectadas"].queryset = cultivo.plantas.all()
-    if request.method == "POST" and form.is_valid():
-        e = form.save(commit=False)
-        e.cultivo = cultivo
-        e.creado_por = request.user
-        e.save()
-        form.save_m2m()
-        messages.success(request, "Evento registrado.")
-        return redirect("growlog:cultivo_detail", cultivo.slug)
-    return render(request, "growlog/crud_form.html", {
-        "form": form, "title": "Nuevo evento",
-        "subtitle": cultivo.nombre,
-        "back_url": reverse("growlog:cultivo_detail", args=[cultivo.slug]),
-    })
 
 
 @login_required

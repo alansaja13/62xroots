@@ -289,29 +289,6 @@ class CambioEtapaPlantaForm(forms.ModelForm):
         }
 
 
-class TareaRapidaForm(forms.Form):
-    titulo = forms.CharField(
-        max_length=200,
-        widget=forms.TextInput(attrs={
-            "class": "form-control",
-            "placeholder": "¿Qué hay que hacer?",
-        }),
-    )
-    categoria = forms.ChoiceField(
-        choices=Tarea.CATEGORIA_CHOICES,
-        widget=forms.Select(attrs={"class": "form-select"}),
-    )
-    prioridad = forms.ChoiceField(
-        choices=Tarea.PRIORIDAD_CHOICES,
-        required=False,  # el panel inline no la envía
-        widget=forms.Select(attrs={"class": "form-select"}),
-    )
-    fecha_objetivo = forms.DateField(
-        required=False,
-        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-    )
-
-
 # ---------------------------------------------------------------------------
 
 

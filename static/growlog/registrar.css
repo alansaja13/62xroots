@@ -66,6 +66,16 @@ legend {
 }
 details { margin: 6px 0 18px; }
 summary { cursor: pointer; margin-bottom: 12px; font-weight: 600; }
+
+/* Checkbox + texto en una fila (buscar runoff, runoff por planta, plantas afectadas) */
+.check-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; cursor: pointer; }
+.check-row input[type=checkbox] { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--green); }
+
+/* Fila de planta en Riego: volumen + su runoff plegado aparte */
+.plant-row { margin-bottom: 14px; }
+.plant-row details { margin: 8px 0 0; padding-left: 2px; }
+.plant-row summary { font-size: 12px; font-weight: 500; color: var(--cream-soft); margin-bottom: 10px; }
+#evento-plantas .check-row, #plant-volumes .plant-row details .check-row { margin-bottom: 12px; }
 #form-message { color: var(--honey); font-size: 13px; }
 #draft-status { margin-top: 12px; }
 

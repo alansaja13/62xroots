@@ -40,6 +40,14 @@
     select.replaceChildren(...values.map(([value, label]) => new Option(label, String(value))));
     if (chosen && values.some(([value]) => String(value) === String(chosen))) select.value = chosen;
   }
+  function checkboxRow(name, text, draftKey) {
+    const label = document.createElement('label'); label.className = 'check-row';
+    const input = document.createElement('input');
+    Object.assign(input, {type: 'checkbox', name});
+    if (draftKey) input.dataset.draftKey = draftKey;
+    label.append(input, document.createTextNode(' ' + text));
+    return {label, input};
+  }
   function showKind() {
     document.querySelectorAll('[data-kind]').forEach(fieldset => {
       fieldset.hidden = fieldset.dataset.kind !== $('kind').value;
@@ -51,7 +59,7 @@
     // Incluye pestañas inactivas para conservar el borrador al alternar entre ellas.
     form.querySelectorAll('input,select,textarea').forEach((input, index) => {
       const key = input.dataset.draftKey || `${input.closest('[data-kind]')?.dataset.kind || 'general'}:${input.name}`;
-      values[key] = input.value;
+      values[key] = input.type === 'checkbox' ? input.checked : input.value;
     });
     return {cultivo: $('cultivo').value, kind: $('kind').value, values, editingId};
   }
@@ -63,20 +71,48 @@
     $('cultivo').value = draft.cultivo; $('kind').value = draft.kind; populatePlants();
     form.querySelectorAll('input,select,textarea').forEach((input, index) => {
       const key = input.dataset.draftKey || `${input.closest('[data-kind]')?.dataset.kind || 'general'}:${input.name}`;
-      if (Object.hasOwn(draft.values, key)) input.value = draft.values[key];
+      if (!Object.hasOwn(draft.values, key)) return;
+      if (input.type === 'checkbox') input.checked = !!draft.values[key];
+      else input.value = draft.values[key];
     });
     editingId = draft.editingId || null; formTouched = true; showKind(); updateLinks();
     $('draft-status').textContent = 'Borrador recuperado de este dispositivo.';
   }
+  function numberField(label, name, draftKey, opts = {}) {
+    const l = textNode('label', label), input = document.createElement('input');
+    Object.assign(input, {type: 'number', name, inputMode: 'decimal', step: '0.01', min: '0', max: '14', ...opts});
+    input.dataset.draftKey = draftKey; l.append(input); return l;
+  }
   function populatePlants() {
     const cultivo = context?.cultivos.find(c => String(c.id) === $('cultivo').value);
-    const rows = (cultivo?.plantas || []).map(planta => {
+    const plantas = cultivo?.plantas || [];
+    const rows = plantas.map(planta => {
+      const wrap = document.createElement('div'); wrap.className = 'plant-row';
       const label = textNode('label', `${planta.nombre} · ml`), input = document.createElement('input');
       Object.assign(input, {type: 'number', name: `planta-${planta.id}`, min: '1', max: '2147483647', step: '1', inputMode: 'numeric', placeholder: 'Sin riego'});
       input.dataset.planta = String(planta.id); input.dataset.draftKey = `planta:${cultivo.id}:${planta.id}`;
-      label.append(input); return label;
+      label.append(input);
+
+      // Runoff por planta: plegado, no molesta a quien no lo usa.
+      const details = document.createElement('details');
+      details.append(textNode('summary', 'runoff'));
+      const {label: runoffLabel} = checkboxRow(`runoff-${planta.id}`, 'Runoff observado', `planta:${cultivo.id}:${planta.id}:runoff`);
+      const row2 = document.createElement('div'); row2.className = 'row';
+      row2.append(
+        numberField('pH runoff', `phrunoff-${planta.id}`, `planta:${cultivo.id}:${planta.id}:phrunoff`),
+        numberField('EC runoff', `ecrunoff-${planta.id}`, `planta:${cultivo.id}:${planta.id}:ecrunoff`, {max: '999.99'}),
+      );
+      const notasLabel = textNode('label', 'Notas de esta planta'), notasInput = document.createElement('textarea');
+      Object.assign(notasInput, {name: `notasplanta-${planta.id}`, rows: 2});
+      notasInput.dataset.draftKey = `planta:${cultivo.id}:${planta.id}:notas`; notasLabel.append(notasInput);
+      details.append(runoffLabel, row2, notasLabel);
+
+      wrap.append(label, details); return wrap;
     });
     $('plant-volumes').replaceChildren(...(rows.length ? rows : [textNode('p', 'Este cultivo no tiene plantas disponibles para registrar un riego.', 'hint')]));
+
+    const eventoRows = plantas.map(planta => checkboxRow(`eventoplanta-${planta.id}`, planta.nombre, cultivo ? `eventoplanta:${cultivo.id}:${planta.id}` : undefined).label);
+    $('evento-plantas').replaceChildren(...(eventoRows.length ? eventoRows : [textNode('p', 'Este cultivo no tiene plantas disponibles.', 'hint')]));
     updateLinks();
   }
   function updateLinks() {
@@ -86,7 +122,8 @@
   }
   function renderContext(data, draft) {
     context = data;
-    const selected = draft?.cultivo || $('cultivo').value || new URLSearchParams(location.search).get('cultivo');
+    const params = new URLSearchParams(location.search);
+    const selected = draft?.cultivo || $('cultivo').value || params.get('cultivo');
     options($('cultivo'), data.cultivos.map(c => [c.id, `${c.nombre}${c.archivado ? ' · archivado' : ''}`]), selected);
     options($('event-type'), data.opciones.eventos, 'otro'); options($('ec-type'), data.opciones.ec, 'solucion');
     options($('task-category'), data.opciones.categorias, 'observacion'); options($('task-priority'), data.opciones.prioridades, 'normal');
@@ -96,6 +133,9 @@
       input.dataset.nutriente = String(nutriente.id); input.dataset.draftKey = `nutriente:${nutriente.id}`;
       label.append(input); return label;
     }));
+    // Los botones "+ riego"/"+ evento"/… del cultivo llegan con ?kind= para abrir directo esa pestaña.
+    const wantedKind = params.get('kind');
+    if (!draft && wantedKind && [...$('kind').options].some(option => option.value === wantedKind)) $('kind').value = wantedKind;
     populatePlants(); $('observado').value = localTime(); showKind();
     if (draft) applyDraft(draft);
     $('account').textContent = data.usuario.nombre; $('workspace').hidden = false; $('locked').hidden = true;
@@ -156,6 +196,9 @@
           fieldset.querySelectorAll('input,textarea,select').forEach(input => {
             if (input.dataset.planta) input.value = datos.plantas?.find(p => p.planta_id === Number(input.dataset.planta))?.volumen_ml || '';
             else if (input.dataset.nutriente) input.value = datos.nutrientes?.find(n => n.nutriente_id === Number(input.dataset.nutriente))?.dosis_g_por_litro || '';
+            // El desglose por planta y las plantas afectadas ya viajan como listas aparte:
+            // el runoff/tag de cada planta no se restaura acá, solo los campos generales.
+            else if (input.type === 'checkbox') input.checked = !!datos[input.name];
             else input.value = datos[input.name] ?? '';
           });
           editingId = item.payload.id; formTouched = true;
@@ -250,12 +293,37 @@
     delete data.kind; delete data.cultivo_id; const observado = data.observado_en; delete data.observado_en;
     if (tipo === 'ec' && data.ph === '' && data.ec === '') { $('form-message').textContent = 'Ingresá pH o EC, al menos uno.'; return; }
     if (tipo === 'riego') {
-      data.plantas = []; data.nutrientes = [];
+      // Agrupa volumen + runoff por planta (mismo id en distintos campos) antes de armar el desglose.
+      const porPlanta = {};
       for (const [key, value] of Object.entries(data)) {
-        if (key.startsWith('planta-')) {if (value !== '') data.plantas.push({planta_id:Number(key.slice(7)), volumen_ml:Number(value)}); delete data[key];}
+        const campo = key.match(/^(planta|runoff|phrunoff|ecrunoff|notasplanta)-(\d+)$/);
+        if (!campo) continue;
+        delete data[key];
+        (porPlanta[campo[2]] ||= {})[campo[1]] = value;
+      }
+      data.plantas = [];
+      for (const [id, campos] of Object.entries(porPlanta)) {
+        if (!campos.planta) continue; // vacío = no se regó esta planta
+        const fila = {planta_id: Number(id), volumen_ml: Number(campos.planta)};
+        if (campos.runoff === 'on') {
+          fila.runoff_observado = 'on';
+          if (campos.phrunoff) fila.ph_runoff = campos.phrunoff;
+          if (campos.ecrunoff) fila.ec_runoff = campos.ecrunoff;
+          if (campos.notasplanta) fila.notas = campos.notasplanta;
+        }
+        data.plantas.push(fila);
+      }
+      data.nutrientes = [];
+      for (const [key, value] of Object.entries(data)) {
         if (key.startsWith('nutriente-')) {if (value !== '') data.nutrientes.push({nutriente_id:Number(key.slice(10)), dosis_g_por_litro:value}); delete data[key];}
       }
       if (!data.plantas.length) { $('form-message').textContent = 'Indicá cuánto recibió al menos una planta.'; return; }
+    }
+    if (tipo === 'evento') {
+      data.plantas_afectadas = [];
+      for (const [key, value] of Object.entries(data)) {
+        if (key.startsWith('eventoplanta-')) {data.plantas_afectadas.push(Number(key.slice(13))); delete data[key];}
+      }
     }
     saving = true; $('save-entry').disabled = true;
     const activeStore = store;

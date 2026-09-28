@@ -10,7 +10,9 @@ from django.utils.dateparse import parse_datetime
 
 from growlog.models import Cultivo, Evento, MedicionAmbiente, MedicionEC, Nutriente, RegistroRecibido, Riego, Tarea
 from growlog.permissions import cultivos_visibles, puede_editar
-from growlog.registration_forms import AmbienteForm, ObservacionForm, ECForm, PendienteForm, SolucionForm, VolumenForm, NutrienteForm
+from growlog.registration_forms import (
+    AmbienteForm, ObservacionForm, ECForm, NutrienteForm, PendienteForm, RiegoSolucionForm, VolumenForm,
+)
 from .riegos import guardar_riego
 
 
@@ -72,6 +74,18 @@ def recibir_registro(usuario, payload):
     if tipo == "ambiente":
         obj = MedicionAmbiente(timestamp=observado, **common, **validar(AmbienteForm, datos))
     elif tipo == "evento":
+        if not isinstance(datos, dict):
+            raise RegistroError("Los datos de la observación deben ser un objeto.")
+        datos = dict(datos)
+        plantas_ids = datos.pop("plantas_afectadas", [])
+        if (not isinstance(plantas_ids, list) or len(plantas_ids) > 50
+                or not all(isinstance(i, int) and not isinstance(i, bool) for i in plantas_ids)):
+            raise RegistroError("Las plantas afectadas no son válidas.")
+        if len(set(plantas_ids)) != len(plantas_ids):
+            raise RegistroError("Una planta no puede repetirse en el mismo evento.")
+        plantas_afectadas = list(cultivo.plantas.activas().filter(pk__in=plantas_ids))
+        if len(plantas_afectadas) != len(plantas_ids):
+            raise RegistroError("Una planta ya no está disponible en este cultivo. Revisá el evento.", 409)
         obj = Evento(timestamp=observado, **common, **validar(ObservacionForm, datos))
     elif tipo == "ec":
         obj = MedicionEC(timestamp=observado, **common, **validar(ECForm, datos))
@@ -85,7 +99,7 @@ def recibir_registro(usuario, payload):
         nutrientes = datos.pop("nutrientes", [])
         if not isinstance(plantas, list) or not isinstance(nutrientes, list) or len(plantas) > 200 or len(nutrientes) > 100:
             raise RegistroError("El desglose del riego no es válido.")
-        solucion = validar(SolucionForm, datos)
+        solucion = validar(RiegoSolucionForm, datos)
         disponibles = {p.pk: p for p in cultivo.plantas.activas()}
         detalles = []
         for row in plantas:
@@ -102,7 +116,10 @@ def recibir_registro(usuario, payload):
                 raise RegistroError("Revisá los nutrientes: deben existir y no repetirse.")
             vistos.add(nutriente.pk)
             aplicaciones.append((nutriente, values["dosis_g_por_litro"]))
-        obj = Riego(timestamp=observado, ph_agua=solucion["ph"], ec_solucion=solucion["ec"], notas=solucion["notas"], **common)
+        obj = Riego(
+            timestamp=observado, ph_agua=solucion["ph"], ec_solucion=solucion["ec"], notas=solucion["notas"],
+            buscar_runoff=solucion["buscar_runoff"], **common,
+        )
         try:
             guardar_riego(riego=obj, detalles=detalles, nutrientes=aplicaciones)
         except ValidationError as exc:
@@ -115,6 +132,8 @@ def recibir_registro(usuario, payload):
             obj.save()
         except ValidationError as exc:
             raise RegistroError(" ".join(exc.messages))
+        if tipo == "evento":
+            obj.plantas_afectadas.set(plantas_afectadas)
     recibo.resultado = {"id": str(operation), "tipo": tipo, "registro_id": obj.pk, "observado_en": observado.isoformat(), "recibido_en": recibo.recibido_en.isoformat()}
     recibo.save(update_fields=["resultado"])
     return recibo.resultado, True

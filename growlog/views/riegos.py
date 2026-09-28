@@ -4,11 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from ..forms import DT_FMT, NutrienteAplicadoForm, riego_planta_entries, riego_planta_formset, RiegoForm
-from ..models import Cultivo, NutrienteAplicado, Riego
+from ..forms import NutrienteAplicadoForm, riego_planta_entries, riego_planta_formset, RiegoForm
+from ..models import NutrienteAplicado, Riego
 from ..permissions import objeto_del_cultivo
 from ..services.riegos import guardar_riego
 
@@ -16,37 +15,6 @@ from ..services.riegos import guardar_riego
 # ---------------------------------------------------------------------------
 # Riego CRUD
 # ---------------------------------------------------------------------------
-
-@login_required
-def riego_crear(request, slug):
-    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
-    initial = {"timestamp": timezone.localtime().strftime(DT_FMT)}
-    form = RiegoForm(request.POST or None, initial=initial)
-    rp_formset, plantas = riego_planta_formset(cultivo, request.POST or None)
-
-    if request.method == "POST" and form.is_valid() and rp_formset.is_valid():
-        try:
-            entries = riego_planta_entries(rp_formset, plantas)
-            r = form.save(commit=False)
-            r.cultivo = cultivo
-            r.creado_por = request.user
-            guardar_riego(riego=r, detalles=entries)
-        except ValidationError as exc:
-            form.add_error(None, exc.messages)
-        else:
-            messages.success(request, "Riego registrado.")
-            return redirect("growlog:riego_editar", pk=r.pk)
-
-    return render(request, "growlog/riego_form.html", {
-        "form": form, "riego": None,
-        "rp_rows": list(zip(rp_formset.forms, plantas)),
-        "rp_formset": rp_formset, "plantas": plantas,
-        "title": "Nuevo riego",
-        "subtitle": cultivo.nombre,
-        "cultivo_slug": cultivo.slug,
-        "back_url": reverse("growlog:cultivo_detail", args=[cultivo.slug]),
-    })
-
 
 @login_required
 def riego_editar(request, pk):

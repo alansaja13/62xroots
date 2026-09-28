@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ..forms import NuevoCultivoForm
-from ..models import CambioEtapaPlanta, Cultivo, ParametroIdeal, Tarea
+from ..models import CambioEtapaPlanta, Cultivo, ParametroIdeal
 from ..permissions import objeto_del_cultivo
 from ..services.hoy import resumen_hoy
 from ..utils import (
@@ -94,7 +94,6 @@ def cultivo_detail(request, slug):
         "tareas_pendientes": tareas_pendientes, "tareas_completadas": tareas_completadas,
         "ultimos_registros": ultimos_registros,
         "semaforo": semaforo, "plantas_count": plantas_count, "plantas": plantas,
-        "tarea_categorias": Tarea.CATEGORIA_CHOICES,
         "fotoperiodo_activo": fotoperiodo_activo,
         "luz_estado_actual": luz_estado_actual,
         "progreso": progreso,

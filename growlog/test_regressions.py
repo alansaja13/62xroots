@@ -10,7 +10,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.test import TestCase
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 
 from .models import (
@@ -160,17 +160,9 @@ class BitacoraRegressionTests(TestCase):
         response = self.client.get(f"/cultivo/{self.cultivo.slug}/quick/")
         self.assertRedirects(response, f"{reverse('growlog:registrar')}?cultivo={self.cultivo.pk}", fetch_redirect_response=False)
 
-    def test_tarea_rapida_del_panel_sin_prioridad_usa_normal(self):
-        url = reverse("growlog:tarea_rapida", args=[self.cultivo.slug])
-        response = self.client.post(url, {"titulo": "Revisar sensor", "categoria": "observacion"}, HTTP_HX_REQUEST="true")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["HX-Redirect"], reverse("growlog:cultivo_detail", args=[self.cultivo.slug]))
-        tarea = Tarea.objects.get()
-        self.assertEqual((tarea.prioridad, tarea.creado_por), ("normal", self.editor))
-
-    def test_tarea_rapida_invalida_muestra_error_sin_guardar(self):
-        url = reverse("growlog:tarea_rapida", args=[self.cultivo.slug])
-        response = self.client.post(url, {"titulo": "", "categoria": "invalida"}, HTTP_HX_REQUEST="true")
-        self.assertContains(response, "field-error")
-        self.assertFalse(Tarea.objects.exists())
-        self.assertEqual(self.client.get(url).status_code, 405)
+    def test_pantallas_clasicas_de_alta_ya_no_existen(self):
+        # El alta de riego/evento/EC/tarea vive solo en Registrar; estas rutas se dieron de baja.
+        for name in ("tarea_crear", "evento_crear", "riego_crear", "medicion_ec_crear", "tarea_rapida"):
+            with self.subTest(name=name):
+                with self.assertRaises(NoReverseMatch):
+                    reverse(f"growlog:{name}", args=[self.cultivo.slug])
