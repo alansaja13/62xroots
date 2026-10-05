@@ -14,7 +14,9 @@ def ciclo_activo(cultivo, hoy):
     cf = cultivo.cambios_fotoperiodo.filter(fecha_inicio__lte=hoy).order_by('-fecha_inicio').first()
     if cf:
         return cf.fotoperiodo
-    return '12/12' if cultivo.estado == 'floracion' else '18/6'
+    # Las autoflorecientes no pasan a 12/12: se asume 12/12 solo si hay fotoperiódicas.
+    hay_fotoperiodicas = cultivo.plantas.activas().filter(tipo='foto').exists()
+    return '12/12' if cultivo.estado == 'floracion' and hay_fotoperiodicas else '18/6'
 
 
 def calcular_meses(cultivo_inicio, costos, tarifas, hoy):
