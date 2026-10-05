@@ -118,7 +118,6 @@
   function updateLinks() {
     const cultivo = context?.cultivos.find(c => String(c.id) === $('cultivo').value);
     $('history-link').href = cultivo ? `/cultivo/${encodeURIComponent(cultivo.slug)}/` : '/';
-    $('classic-link').href = cultivo ? `/cultivo/${encodeURIComponent(cultivo.slug)}/quick/` : '/';
   }
   function renderContext(data, draft) {
     context = data;
@@ -372,7 +371,7 @@
   }, 5000);
   (async () => {
     try {
-      if (!crypto.subtle || !window.indexedDB) {notice('Este navegador no permite guardar registros offline de forma segura. Usá un navegador actualizado o el registro clásico.', 'error'); return;}
+      if (!crypto.subtle || !window.indexedDB) {notice('Este navegador no permite guardar registros de forma segura. Usá un navegador actualizado.', 'error'); return;}
       if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js', {scope:'/', updateViaCache:'none'}).catch(() => {
         $('storage-notice').textContent = 'No pudimos preparar la reapertura offline. Mantené esta pantalla abierta hasta recuperar conexión.';
       });

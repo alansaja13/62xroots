@@ -317,9 +317,10 @@
     <div class="label-eyebrow">// log · cultivo activo</div>
     <h1 class="cd-title">{{ cultivo.nombre }}</h1>
     <div class="cd-meta">
-      <span class="pill pill--{% if cultivo.estado == 'vegetativo' %}green{% elif cultivo.estado == 'floracion' %}plum{% elif cultivo.estado == 'secado' or cultivo.estado == 'curado' %}honey{% else %}cream{% endif %}">
-        ● {{ cultivo.get_estado_display }}
-      </span>
+      <a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}" title="Ver y cambiar la etapa del cultivo" style="text-decoration:none;"
+         class="pill pill--{% if cultivo.estado == 'vegetativo' %}green{% elif cultivo.estado == 'floracion' %}plum{% elif cultivo.estado == 'secado' or cultivo.estado == 'curado' %}honey{% else %}cream{% endif %}">
+        ● {% if cultivo.estado == 'finalizado' %}{{ cultivo.get_estado_display }}{% else %}{{ etapa_actual_display|default:cultivo.get_estado_display }}{% endif %}
+      </a>
       <span>desde {{ cultivo.fecha_inicio|date:"d/m/Y" }}</span>
       <span class="cd-meta__sep">·</span>
       <span>{{ plantas_count }} plantas activas</span>
@@ -344,13 +345,11 @@
         <span class="cd-day-box__label">// flora</span>
         <span class="cd-day-box__num">{{ dia_flora }}</span>
       </div>
-      {% elif can_edit_cultivo %}
-      <form method="post" action="{% url 'growlog:cultivo_marcar_flora' cultivo.slug %}" style="display:flex; align-items:center;">
-        {% csrf_token %}
-        <button type="submit" class="btn-ghost" style="font-size:11px;padding:6px 10px;white-space:nowrap;">
-          <i class="bi bi-flower1"></i> marcar flora hoy
-        </button>
-      </form>
+      {% endif %}
+      {% if can_edit_cultivo and cultivo.estado != 'finalizado' %}
+      <a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}" class="btn-ghost" style="font-size:11px;padding:6px 10px;white-space:nowrap;">
+        <i class="bi bi-flower1"></i> cambiar etapa
+      </a>
       {% endif %}
     </div>
     <div class="cd-btn-group" style="display:flex; gap:8px;">

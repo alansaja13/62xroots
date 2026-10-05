@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .models import (
-    APIToken, CambioEtapaPlanta, CanopySnapshot, Cultivo, CultivoMiembro, MedicionAmbiente, MedicionPlanta,
+    APIToken, CambioEtapaCultivo, CambioEtapaPlanta, CanopySnapshot, Cultivo, CultivoMiembro, MedicionAmbiente, MedicionPlanta,
     ParametroIdeal, Planta, Riego, Tarea,
 )
 from .views.auth import _get_client_ip
@@ -88,8 +88,8 @@ class BugfixTests(TestCase):
         ParametroIdeal.objects.update_or_create(etapa="veg_temprano", defaults={"vpd_min": "0.80", "vpd_max": "1.20", **base})
         ParametroIdeal.objects.update_or_create(etapa="flora_temprana", defaults={"vpd_min": "1.20", "vpd_max": "1.60", **base})
         hoy = timezone.localdate()
-        CambioEtapaPlanta.objects.create(planta=self.planta, etapa="veg_temprano", fecha_inicio=hoy - timedelta(days=60))
-        CambioEtapaPlanta.objects.create(planta=self.planta, etapa="flora_temprana", fecha_inicio=hoy - timedelta(days=10))
+        CambioEtapaCultivo.objects.create(cultivo=self.cultivo, etapa="veg_temprano", fecha_inicio=hoy - timedelta(days=60))
+        CambioEtapaCultivo.objects.create(cultivo=self.cultivo, etapa="flora_temprana", fecha_inicio=hoy - timedelta(days=10))
         vieja = MedicionAmbiente.objects.create(cultivo=self.cultivo, temperatura_c=25, humedad_relativa=68,
                                                 timestamp=timezone.now() - timedelta(days=30))
         self.assertAlmostEqual(vieja.vpd, 1.0, places=1)

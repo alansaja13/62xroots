@@ -37,9 +37,10 @@ class Cultivo(models.Model):
         help_text="Días esperados en etapa de floración.",
     )
     fecha_inicio_flora = models.DateField(
-        null=True, blank=True,
+        null=True, blank=True, editable=False,
         verbose_name="Fecha de inicio de floración",
-        help_text="Fecha en que se marcó el cambio a floración (flip a ≤12h de luz).",
+        help_text="Se calcula sola: fecha de la primera etapa de flora del cultivo. "
+                  "Se cambia desde la etapa del cultivo, no a mano.",
     )
     notas = models.TextField(blank=True)
     archivado = models.BooleanField(default=False)
@@ -173,16 +174,45 @@ class Planta(models.Model):
         return True
 
 
+ETAPA_CHOICES = [
+    ("plantula", "Plántula"),
+    ("veg_temprano", "Veg. temprano"),
+    ("veg_tardio", "Veg. tardío"),
+    ("flora_temprana", "Flora temprana"),
+    ("flora_tardia", "Flora tardía"),
+    ("secado", "Secado"),
+    ("curado", "Curado"),
+]
+
+
+class CambioEtapaCultivo(models.Model):
+    """Etapa del cultivo desde una fecha. Es la fuente única de la etapa: de ella
+    salen el estado del cultivo, el día de flora y el rango ideal de VPD."""
+    ETAPA_CHOICES = ETAPA_CHOICES
+
+    cultivo = models.ForeignKey(Cultivo, on_delete=models.CASCADE, related_name="cambios_etapa")
+    etapa = models.CharField(max_length=20, choices=ETAPA_CHOICES)
+    fecha_inicio = models.DateField(
+        verbose_name="Fecha de inicio",
+        help_text="Fecha desde la cual el cultivo está en esta etapa",
+    )
+    notas = models.TextField(blank=True, verbose_name="Notas")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-fecha_inicio", "-pk"]
+        unique_together = [("cultivo", "fecha_inicio")]
+        verbose_name = "Cambio de etapa del cultivo"
+        verbose_name_plural = "Cambios de etapa del cultivo"
+
+    def __str__(self):
+        return f"{self.cultivo} — {self.get_etapa_display()} desde {self.fecha_inicio:%d/%m/%Y}"
+
+
 class CambioEtapaPlanta(models.Model):
-    ETAPA_CHOICES = [
-        ("plantula", "Plántula"),
-        ("veg_temprano", "Veg. temprano"),
-        ("veg_tardio", "Veg. tardío"),
-        ("flora_temprana", "Flora temprana"),
-        ("flora_tardia", "Flora tardía"),
-        ("secado", "Secado"),
-        ("curado", "Curado"),
-    ]
+    """Etapa propia de una planta que va distinta al cultivo. Si no tiene registros,
+    la planta hereda la etapa del cultivo."""
+    ETAPA_CHOICES = ETAPA_CHOICES
 
     planta = models.ForeignKey(Planta, on_delete=models.CASCADE, related_name="cambios_etapa")
     etapa = models.CharField(max_length=20, choices=ETAPA_CHOICES)

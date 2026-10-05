@@ -5,6 +5,8 @@ from django.core.files.uploadedfile import UploadedFile
 from django.db.models import Q
 
 from .models import (
+    ETAPA_CHOICES,
+    CambioEtapaCultivo,
     CambioEtapaPlanta,
     CambioFotoperiodo,
     Cultivo,
@@ -26,14 +28,12 @@ DT_FMT = "%Y-%m-%dT%H:%M"
 class NuevoCultivoForm(forms.ModelForm):
     class Meta:
         model = Cultivo
-        fields = ["nombre", "fecha_inicio", "estado", "sustrato", "carpa_dimensiones",
+        fields = ["nombre", "fecha_inicio", "sustrato", "carpa_dimensiones",
                   "lampara_modelo", "lampara_watts_reales",
-                  "dias_veg_estimados", "dias_flora_estimados", "fecha_inicio_flora", "notas"]
+                  "dias_veg_estimados", "dias_flora_estimados", "notas"]
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Gorilla #3", "autofocus": True}),
             "fecha_inicio": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
-            "estado": forms.Select(attrs={"class": "form-select"}),
-            "fecha_inicio_flora": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
             "sustrato": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Coco + perlita 30%"}),
             "carpa_dimensiones": forms.TextInput(attrs={"class": "form-control field-narrow", "placeholder": "Ej: 80x80x180"}),
             "lampara_modelo": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Spider Farmer SF2000"}),
@@ -42,6 +42,18 @@ class NuevoCultivoForm(forms.ModelForm):
             "dias_flora_estimados": forms.NumberInput(attrs={"class": "form-control field-narrow", "placeholder": "Ej: 60"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Notas iniciales..."}),
         }
+
+    # Solo al crear: después la etapa se cambia desde la página de etapa del cultivo,
+    # que es lo único que mantiene coherentes estado, día de flora y VPD ideal.
+    etapa_inicial = forms.ChoiceField(
+        choices=ETAPA_CHOICES[:5], initial="veg_temprano", label="Etapa inicial", required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            del self.fields["etapa_inicial"]
 
 
 class PlantaForm(forms.ModelForm):
@@ -275,6 +287,17 @@ class CambioFotoperiodoForm(forms.ModelForm):
             "hora_lights_on": forms.TimeInput(attrs={"class": "form-control field-narrow", "type": "time"}),
             "fecha_inicio": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Ej: Inicio de floración, semana 1..."}),
+        }
+
+
+class CambioEtapaCultivoForm(forms.ModelForm):
+    class Meta:
+        model = CambioEtapaCultivo
+        fields = ["etapa", "fecha_inicio", "notas"]
+        widgets = {
+            "etapa": forms.Select(attrs={"class": "form-select", "autofocus": True}),
+            "fecha_inicio": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
+            "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Ej: Flip a 12/12, primeros pistilos..."}),
         }
 
 

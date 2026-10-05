@@ -75,14 +75,39 @@ DEFAULT_ETAPA_POR_ESTADO_CULTIVO = {
 }
 
 
+def _vigente(cambios, fecha):
+    """El cambio de etapa con fecha_inicio más reciente que no supera `fecha`."""
+    return max((c for c in cambios if c.fecha_inicio <= fecha),
+               key=lambda c: (c.fecha_inicio, c.pk), default=None)
+
+
+def get_etapa_activa_cultivo(cultivo, fecha=None):
+    """CambioEtapaCultivo vigente en `fecha` (hoy por defecto), o None.
+
+    Se trae el historial una sola vez y se memoriza en la instancia: listar
+    mediciones evalúa la etapa de cada una.
+    """
+    from django.utils import timezone
+    fecha = fecha or timezone.localdate()
+    cambios = cultivo.__dict__.get("_cambios_etapa")
+    if cambios is None:
+        cambios = cultivo.__dict__["_cambios_etapa"] = list(cultivo.cambios_etapa.all())
+    return _vigente(cambios, fecha)
+
+
+def olvidar_etapas(cultivo):
+    """Descarta lo memorizado en la instancia tras cambiar el historial de etapas."""
+    for clave in ("_cambios_etapa", "_etapa_por_fecha", "_parametro_por_etapa"):
+        cultivo.__dict__.pop(clave, None)
+
+
 def get_etapa_activa_planta(planta, fecha=None):
-    """Devuelve el CambioEtapaPlanta vigente para `planta` en `fecha` (hoy por defecto), o None."""
+    """CambioEtapaPlanta vigente para `planta` en `fecha` (hoy por defecto), o None."""
     from django.utils import timezone
     fecha = fecha or timezone.localdate()
     prefetched = getattr(planta, "_prefetched_objects_cache", {}).get("cambios_etapa")
     if prefetched is not None:
-        vigentes = [c for c in prefetched if c.fecha_inicio <= fecha]
-        return max(vigentes, key=lambda c: (c.fecha_inicio, c.pk), default=None)
+        return _vigente(prefetched, fecha)
     return (
         planta.cambios_etapa
         .filter(fecha_inicio__lte=fecha)
@@ -91,35 +116,27 @@ def get_etapa_activa_planta(planta, fecha=None):
     )
 
 
-def etapa_efectiva_planta(planta, fecha=None):
-    """Etapa vigente de la planta: su historial si tiene, si no el default
-    mapeado desde el estado administrativo del cultivo."""
-    cambio = get_etapa_activa_planta(planta, fecha)
-    if cambio is not None:
-        return cambio.etapa
-    return DEFAULT_ETAPA_POR_ESTADO_CULTIVO.get(planta.cultivo.estado)
-
-
 def etapa_efectiva_cultivo(cultivo, fecha=None):
-    """Etapa más avanzada entre las plantas activas del cultivo (el ambiente
-    compartido se ajusta a la planta que más lo necesita, no al promedio).
-    Si no hay plantas activas o ninguna resuelve etapa, cae al estado del cultivo.
-
-    Se memoriza en la instancia: listar mediciones evalúa la etapa de cada una
-    y, sin esto, cada fila recorría todas las plantas y sus cambios de etapa.
-    """
+    """Etapa del cultivo en `fecha`: su historial de etapas si tiene, si no el
+    default mapeado desde el estado administrativo (cultivos sin historial)."""
     from django.utils import timezone
     fecha = fecha or timezone.localdate()
-    memo = cultivo.__dict__.setdefault("_etapa_por_fecha", {})
-    if fecha not in memo:
-        plantas = cultivo.__dict__.get("_plantas_para_etapa")
-        if plantas is None:
-            plantas = list(cultivo.plantas.activas().prefetch_related("cambios_etapa"))
-            cultivo.__dict__["_plantas_para_etapa"] = plantas
-        etapas = [e for e in (etapa_efectiva_planta(p, fecha) for p in plantas) if e]
-        memo[fecha] = (max(etapas, key=ETAPA_ORDEN.index) if etapas
-                       else DEFAULT_ETAPA_POR_ESTADO_CULTIVO.get(cultivo.estado))
-    return memo[fecha]
+    cambio = get_etapa_activa_cultivo(cultivo, fecha)
+    if cambio is not None:
+        return cambio.etapa
+    return DEFAULT_ETAPA_POR_ESTADO_CULTIVO.get(cultivo.estado)
+
+
+def etapa_efectiva_planta(planta, fecha=None):
+    """Etapa de la planta: hereda la del cultivo, salvo que tenga una etapa propia
+    registrada más reciente que el último cambio de etapa del cultivo."""
+    from django.utils import timezone
+    fecha = fecha or timezone.localdate()
+    propia = get_etapa_activa_planta(planta, fecha)
+    del_cultivo = get_etapa_activa_cultivo(planta.cultivo, fecha)
+    if propia is not None and (del_cultivo is None or propia.fecha_inicio >= del_cultivo.fecha_inicio):
+        return propia.etapa
+    return etapa_efectiva_cultivo(planta.cultivo, fecha)
 
 
 def parametro_ideal_de(cultivo, etapa):
@@ -129,3 +146,10 @@ def parametro_ideal_de(cultivo, etapa):
     if etapa not in memo:
         memo[etapa] = ParametroIdeal.objects.filter(etapa=etapa).first()
     return memo[etapa]
+
+
+def rango_vpd_en(cultivo, fecha):
+    """(vpd_min, vpd_max) vigente en `fecha`, o None si no hay parámetro para esa etapa."""
+    etapa = etapa_efectiva_cultivo(cultivo, fecha)
+    param = parametro_ideal_de(cultivo, etapa) if etapa else None
+    return (float(param.vpd_min), float(param.vpd_max)) if param else None

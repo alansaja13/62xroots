@@ -198,14 +198,14 @@
     var err = document.createElement('div');
     err.className = 'field-error js-decimal-err';
     err.textContent = msg;
-    var container = el.closest('.qe-vital-input') || el.parentNode;
+    var container = el.parentNode;
     container.insertAdjacentElement('afterend', err);
     el.style.borderColor = 'var(--rust)';
     el.style.boxShadow = '0 0 0 3px rgba(196,106,62,.15)';
   }
 
   function clearFieldError(el) {
-    var container = el.closest('.qe-vital-input') || el.parentNode;
+    var container = el.parentNode;
     var err = container.parentNode && container.parentNode.querySelector('.js-decimal-err');
     if (err) err.remove();
     el.style.borderColor = '';

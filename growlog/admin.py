@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    CambioFotoperiodo, CostoEnergetico, Cultivo, CultivoMiembro, Equipo, LecturaMedidor,
+    CambioEtapaCultivo, CambioFotoperiodo, CostoEnergetico, Cultivo, CultivoMiembro, Equipo, LecturaMedidor,
     MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente, NutrienteAplicado,
     Evento, Planta, PushSubscription, Tarea, TarifaElectrica, ParametroIdeal, Riego,
 )
@@ -32,6 +32,12 @@ class LecturaMedidorInline(admin.TabularInline):
     extra = 0
     fields = ['fecha', 'kwh_real', 'notas']
     ordering = ['-fecha']
+
+
+class CambioEtapaCultivoInline(admin.TabularInline):
+    model = CambioEtapaCultivo
+    extra = 0
+    fields = ["etapa", "fecha_inicio", "notas"]
 
 
 class PlantaInline(admin.TabularInline):
@@ -67,8 +73,13 @@ class CultivoAdmin(OwnedResourceAdmin):
     list_display = ["nombre", "estado", "fecha_inicio", "dias_desde_inicio", "archivado"]
     list_filter = ["estado", "archivado"]
     search_fields = ["nombre", "sustrato"]
-    inlines = [CultivoMiembroInline, PlantaInline, MedicionAmbienteInline, RiegoInline, TareaInline, CostoEnergeticoInline, LecturaMedidorInline]
-    readonly_fields = ["dias_desde_inicio", "creado_en"]
+    inlines = [CultivoMiembroInline, CambioEtapaCultivoInline, PlantaInline, MedicionAmbienteInline, RiegoInline, TareaInline, CostoEnergeticoInline, LecturaMedidorInline]
+    readonly_fields = ["estado", "fecha_inicio_flora", "dias_desde_inicio", "creado_en"]
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        from .services.etapas import sincronizar_cultivo
+        sincronizar_cultivo(form.instance)
+
     fieldsets = [
         (None, {"fields": ["nombre", "propietario", "estado", "fecha_inicio", "fecha_inicio_flora", "fecha_fin", "archivado"]}),
         ("Setup", {"fields": ["carpa_dimensiones", "sustrato", "lampara_modelo", "lampara_watts_reales"]}),

@@ -37,6 +37,7 @@ RELACION_CULTIVO = {
     "CanopySnapshot": "cultivo", "MedicionAmbiente": "cultivo",
     "NutrienteAplicado": "riego__cultivo", "RiegoPlanta": "riego__cultivo",
     "MedicionPlanta": "planta__cultivo", "CambioEtapaPlanta": "planta__cultivo",
+    "CambioEtapaCultivo": "cultivo",
 }
 
 

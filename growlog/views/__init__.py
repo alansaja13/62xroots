@@ -7,8 +7,11 @@ from .auth import (  # noqa: F401
     logout_view,
 )
 from .cultivos import (  # noqa: F401
+    cambio_etapa_cultivo_editar,
+    cambio_etapa_cultivo_eliminar,
     cultivo_detail,
     cultivo_editar,
+    cultivo_etapa,
     cultivo_finalizar,
     cultivo_marcar_flora,
     cultivo_tendencias,

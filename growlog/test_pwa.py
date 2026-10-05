@@ -38,6 +38,12 @@ class PwaTests(TestCase):
         for asset in assets[1:]:
             self.assertIn(f'"{asset}"', html)
 
+    def test_registrar_no_promete_un_registro_clasico_que_ya_no_existe(self):
+        # El alta de riego/evento/EC/tarea vive solo en Registrar (ver test_pantallas_clasicas_de_alta_ya_no_existen).
+        html = self.client.get("/registrar/").content.decode()
+        self.assertNotIn("classic-link", html)
+        self.assertNotIn("clásico", html)
+
 
 class PwaHeadTests(TestCase):
     """Safari y Chrome solo leen la página desde la que se instala la app."""

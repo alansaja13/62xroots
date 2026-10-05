@@ -98,10 +98,11 @@
               {{ form.fecha_inicio }}
               {% if form.fecha_inicio.errors %}<div class="field-error">{{ form.fecha_inicio.errors.0 }}</div>{% endif %}
             </div>
-            <div class="col-12 {% if form.estado.errors %}has-error{% endif %}">
-              <label for="{{ form.estado.id_for_label }}">{{ form.estado.label }}</label>
-              {{ form.estado }}
-              {% if form.estado.errors %}<div class="field-error">{{ form.estado.errors.0 }}</div>{% endif %}
+            <div class="col-12 {% if form.etapa_inicial.errors %}has-error{% endif %}">
+              <label for="{{ form.etapa_inicial.id_for_label }}">{{ form.etapa_inicial.label }}</label>
+              {{ form.etapa_inicial }}
+              {% if form.etapa_inicial.errors %}<div class="field-error">{{ form.etapa_inicial.errors.0 }}</div>{% endif %}
+              <div class="field-hint">Después la cambiás desde el cultivo con «cambiar etapa».</div>
             </div>
           </div>
         </div>

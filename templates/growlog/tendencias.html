@@ -155,7 +155,7 @@
     instancias.push(u);
   }
 
-  function chartVpd(host, x, vpd, vpdEstado, rango) {
+  function chartVpd(host, x, vpd, vpdEstado, vpdRango) {
     const ideal = vpd.map((v, i) => vpdEstado[i] === 'ideal' ? v : null);
     const alto = vpd.map((v, i) => vpdEstado[i] === 'alto' ? v : null);
     const bajo = vpd.map((v, i) => vpdEstado[i] === 'bajo' ? v : null);
@@ -168,9 +168,11 @@
       { label: 'bajo', stroke: COLOR.slate, width: 0, points: { show: true, size: 5, fill: COLOR.slate, stroke: COLOR.slate } },
     ];
     let bands;
-    if (rango) {
-      const [minLine, maxLine] = bandaSeries(x, rango.vpd_min, rango.vpd_max);
-      data.push(minLine, maxLine);
+    // La banda sigue la etapa de cada fecha, igual que el color de cada punto.
+    if (vpdRango.some(r => r)) {
+      let ult = vpdRango.find(r => r);
+      const rangos = vpdRango.map(r => (ult = r || ult));
+      data.push(rangos.map(r => r[0]), rangos.map(r => r[1]));
       series.push(
         { label: 'ideal min', stroke: 'rgba(138,171,104,.35)', width: 1, dash: [4, 4], points: { show: false } },
         { label: 'ideal max', stroke: 'rgba(138,171,104,.35)', width: 1, dash: [4, 4], points: { show: false } },
@@ -225,7 +227,7 @@
 
     chartSimple(document.getElementById('chartTemp'), 'Temp', x, temp, COLOR.honey, rango, 'temp_min', 'temp_max');
     chartSimple(document.getElementById('chartHr'), 'HR', x, hr, COLOR.slate, rango, 'hr_min', 'hr_max');
-    chartVpd(document.getElementById('chartVpd'), x, vpd, vpdEstado, rango);
+    chartVpd(document.getElementById('chartVpd'), x, vpd, vpdEstado, mediciones.map(m => m.vpd_rango));
   }
 
   function cargar(dias) {

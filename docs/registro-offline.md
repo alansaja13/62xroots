@@ -77,9 +77,11 @@ instantáneamente datos ya descargados en un dispositivo desconectado.
 Se solicita almacenamiento persistente, pero el navegador puede no concederlo.
 Borrar datos del sitio, usar navegación privada o perder el dispositivo puede eliminar
 pendientes. Si la sesión no se conserva al cerrar el navegador, se necesita conexión
-para iniciar sesión nuevamente. Fotos, historial completo y drenajes detallados siguen
-en los flujos con conexión. Las confirmaciones locales no tienen todavía limpieza por
-antigüedad y no sustituyen un historial paginado del servidor.
+para iniciar sesión nuevamente. Las fotos de planta y el historial completo siguen
+siendo flujos aparte, con conexión (Registrar no sube archivos); el runoff por planta,
+las plantas afectadas y el seguimiento de un evento ya se cargan desde Registrar como
+el resto. Las confirmaciones locales no tienen todavía limpieza por antigüedad y no
+sustituyen un historial paginado del servidor.
 
 ## Migración y operación
 

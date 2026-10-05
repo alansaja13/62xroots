@@ -9,7 +9,7 @@ from django.utils import timezone
 from ..forms import CambioEtapaPlantaForm, MedicionPlantaForm, PlantaForm
 from ..models import CambioEtapaPlanta, Cultivo, MedicionPlanta, Planta
 from ..permissions import objeto_del_cultivo
-from ..utils import etapa_efectiva_planta
+from ..utils import etapa_efectiva_planta, get_etapa_activa_cultivo, get_etapa_activa_planta
 
 
 # ---------------------------------------------------------------------------
@@ -161,6 +161,11 @@ def medicion_planta_eliminar(request, pk):
 def planta_etapa_list(request, pk):
     planta = objeto_del_cultivo(request, Planta, editar=True, pk=pk)
     historial = planta.cambios_etapa.order_by("-fecha_inicio")
+    propia = get_etapa_activa_planta(planta)
+    del_cultivo = get_etapa_activa_cultivo(planta.cultivo)
+    if propia and del_cultivo and propia.fecha_inicio < del_cultivo.fecha_inicio:
+        propia = None  # un cambio de etapa del cultivo posterior la igualó
+    etapa_actual = etapa_efectiva_planta(planta)
 
     if request.method == "POST":
         form = CambioEtapaPlantaForm(request.POST)
@@ -178,11 +183,18 @@ def planta_etapa_list(request, pk):
     else:
         form = CambioEtapaPlantaForm(initial={"fecha_inicio": timezone.localdate()})
 
-    return render(request, "growlog/etapa_planta.html", {
+    return render(request, "growlog/etapa_historial.html", {
         "planta": planta,
         "cultivo": planta.cultivo,
         "historial": historial,
         "form": form,
+        "puede_editar": True,
+        "propia": propia, "vigente_pk": propia.pk if propia else None,
+        "etapa_actual_display": dict(CambioEtapaPlanta.ETAPA_CHOICES).get(etapa_actual),
+        "back_url": reverse("growlog:planta_detail", args=[planta.pk]),
+        "back_label": planta.apodo,
+        "editar_url": "growlog:cambio_etapa_planta_editar",
+        "eliminar_url": "growlog:cambio_etapa_planta_eliminar",
     })
 
 

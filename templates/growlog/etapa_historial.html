@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Etapa · {{ planta.apodo }}{% endblock %}
+{% block title %}Etapa · {% if planta %}{{ planta.apodo }}{% else %}{{ cultivo.nombre }}{% endif %}{% endblock %}
 
 {% block crumb %}
 <div class="nav-crumb d-none d-lg-flex">
@@ -7,8 +7,10 @@
   <span class="nav-crumb__sep">/</span>
   <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="nav-crumb__item" style="text-decoration:none;">{{ cultivo.nombre }}</a>
   <span class="nav-crumb__sep">/</span>
+  {% if planta %}
   <a href="{% url 'growlog:planta_detail' planta.pk %}" class="nav-crumb__item" style="text-decoration:none;">{{ planta.apodo }}</a>
   <span class="nav-crumb__sep">/</span>
+  {% endif %}
   <span class="nav-crumb__item nav-crumb__item--last">etapa</span>
 </div>
 {% endblock %}
@@ -92,17 +94,37 @@
 
 {% block content %}
 
-<a href="{% url 'growlog:planta_detail' planta.pk %}" class="tl-back">
-  <i class="bi bi-chevron-left"></i> {{ planta.apodo }}
+<a href="{{ back_url }}" class="tl-back">
+  <i class="bi bi-chevron-left"></i> {{ back_label }}
 </a>
 
 <div class="tl-header">
-  <h1 class="tl-title">etapa <span class="tl-title__accent">// {{ planta.apodo }}</span></h1>
+  <h1 class="tl-title">etapa <span class="tl-title__accent">// {% if planta %}{{ planta.apodo }}{% else %}{{ cultivo.nombre }}{% endif %}</span></h1>
 </div>
 
+<!-- ETAPA ACTUAL -->
+<div class="panel" style="margin-bottom: 24px;">
+  <div class="fp-section-title">// etapa actual</div>
+  <div style="display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;">
+    <span class="fp-valor" style="font-size:22px;">{{ etapa_actual_display|default:"sin etapa registrada" }}</span>
+    {% if dia_flora %}<span class="fp-fecha">día {{ dia_flora }} de flora</span>{% endif %}
+    {% if planta and not propia %}<span class="fp-fecha">heredada del cultivo</span>{% endif %}
+  </div>
+  <p class="c-fine" style="font-size:12px; margin:10px 0 0; line-height:1.5;">
+    {% if planta %}
+      La planta usa la etapa del cultivo. Registrá una etapa propia solo si esta planta va distinta
+      al resto; un cambio de etapa del cultivo posterior la vuelve a igualar.
+    {% else %}
+      Es la etapa de todo el cultivo: de acá salen el estado, el día de flora y el rango ideal de VPD.
+      El día de flora cuenta desde la primera etapa de flora y no se reinicia al pasar de flora temprana a tardía.
+    {% endif %}
+  </p>
+</div>
+
+{% if form %}
 <!-- NUEVO REGISTRO -->
 <div class="panel" style="margin-bottom: 24px;">
-  <div class="fp-section-title">// registrar cambio de etapa</div>
+  <div class="fp-section-title">// cambiar etapa</div>
 
   <form method="post" novalidate>
     {% csrf_token %}
@@ -148,6 +170,7 @@
     </div>
   </form>
 </div>
+{% endif %}
 
 <!-- HISTORIAL -->
 <div class="fp-section-title">// historial</div>
@@ -160,7 +183,7 @@
         <th>etapa</th>
         <th>desde</th>
         <th>notas</th>
-        <th style="width:80px;"></th>
+        {% if puede_editar %}<th style="width:80px;"></th>{% endif %}
       </tr>
     </thead>
     <tbody>
@@ -168,7 +191,7 @@
       <tr>
         <td>
           <span class="fp-valor">{{ cambio.get_etapa_display }}</span>
-          {% if forloop.first %}
+          {% if cambio.pk == vigente_pk %}
           <span class="fp-active-badge" style="margin-left:8px;">activo</span>
           {% endif %}
         </td>
@@ -176,16 +199,18 @@
         <td class="c-fine" style="font-size:11.5px;">
           {% if cambio.notas %}{{ cambio.notas|truncatechars:60 }}{% else %}—{% endif %}
         </td>
+        {% if puede_editar %}
         <td style="text-align:right;">
           <div style="display:flex; gap:10px; justify-content:flex-end;">
-            <a href="{% url 'growlog:cambio_etapa_planta_editar' cambio.pk %}" class="c-fine" style="font-size:12px;" title="Editar">
+            <a href="{% url editar_url cambio.pk %}" class="c-fine" style="font-size:12px;" title="Editar">
               <i class="bi bi-pencil"></i>
             </a>
-            <a href="{% url 'growlog:cambio_etapa_planta_eliminar' cambio.pk %}" class="c-fine" style="font-size:12px;" title="Eliminar">
+            <a href="{% url eliminar_url cambio.pk %}" class="c-fine" style="font-size:12px;" title="Eliminar">
               <i class="bi bi-trash"></i>
             </a>
           </div>
         </td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>
@@ -194,8 +219,8 @@
   {% else %}
   <div class="fp-empty">
     <i class="bi bi-flower1 fp-empty__icon"></i>
-    Todavía no hay registros de etapa para esta planta.<br>
-    <span style="margin-top:6px; display:block;">Usá el formulario de arriba para agregar el primero.</span>
+    Todavía no hay registros de etapa.<br>
+    {% if form %}<span style="margin-top:6px; display:block;">Usá el formulario de arriba para agregar el primero.</span>{% endif %}
   </div>
   {% endif %}
 </div>
