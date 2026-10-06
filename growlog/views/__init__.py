@@ -55,6 +55,8 @@ from .mediciones import (  # noqa: F401
     cambio_fotoperiodo_editar,
     cambio_fotoperiodo_eliminar,
     fotoperiodo_list,
+    medicion_ambiente_editar,
+    medicion_ambiente_eliminar,
     medicion_ec_editar,
     medicion_ec_eliminar,
 )

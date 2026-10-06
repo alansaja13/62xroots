@@ -134,6 +134,10 @@ urlpatterns = [
     path("medicion-planta/<int:pk>/editar/", views.medicion_planta_editar, name="medicion_planta_editar"),
     path("medicion-planta/<int:pk>/eliminar/", views.medicion_planta_eliminar, name="medicion_planta_eliminar"),
 
+    # MedicionAmbiente (el alta pasa por Registrar; acá solo corrección)
+    path("medicion-ambiente/<int:pk>/editar/", views.medicion_ambiente_editar, name="medicion_ambiente_editar"),
+    path("medicion-ambiente/<int:pk>/eliminar/", views.medicion_ambiente_eliminar, name="medicion_ambiente_eliminar"),
+
     # MedicionEC (el alta pasa por Registrar; acá solo edición)
     path("medicion-ec/<int:pk>/editar/", views.medicion_ec_editar, name="medicion_ec_editar"),
     path("medicion-ec/<int:pk>/eliminar/", views.medicion_ec_eliminar, name="medicion_ec_eliminar"),

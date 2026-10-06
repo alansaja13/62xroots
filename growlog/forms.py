@@ -12,6 +12,7 @@ from .models import (
     Cultivo,
     CultivoMiembro,
     Evento,
+    MedicionAmbiente,
     MedicionEC,
     MedicionPlanta,
     NutrienteAplicado,
@@ -275,6 +276,30 @@ class MedicionECForm(forms.ModelForm):
             "ec": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
             "temp_agua": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.1"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+        }
+
+
+class MedicionAmbienteForm(forms.ModelForm):
+    # Mismos rangos que el registro diario (registration_forms.AmbienteForm) y la API.
+    temperatura_c = forms.DecimalField(
+        max_digits=5, decimal_places=2, min_value=0, max_value=60, label="Temperatura (°C)",
+        widget=forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.1"}),
+    )
+    humedad_relativa = forms.DecimalField(
+        max_digits=5, decimal_places=2, min_value=0, max_value=100, label="Humedad relativa (%)",
+        widget=forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "1"}),
+    )
+    notas = forms.CharField(
+        required=False, max_length=5000, label="Notas",
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+    )
+
+    class Meta:
+        model = MedicionAmbiente
+        fields = ["timestamp", "temperatura_c", "humedad_relativa", "notas"]
+        labels = {"timestamp": "Cuándo se midió"}
+        widgets = {
+            "timestamp": forms.DateTimeInput(format=DT_FMT, attrs={"class": "form-control", "type": "datetime-local"}),
         }
 
 

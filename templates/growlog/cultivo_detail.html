@@ -604,12 +604,16 @@
               {% endif %}
             </td>
             <td style="text-align:right;" data-col="action">
+              {% if can_edit_cultivo %}
               {% if reg.tipo == 'riego' %}
                 <a href="{% url 'growlog:riego_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
               {% elif reg.tipo == 'evento' %}
                 <a href="{% url 'growlog:evento_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
               {% elif reg.tipo == 'medicion_ec' %}
                 <a href="{% url 'growlog:medicion_ec_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
+              {% elif reg.tipo == 'medicion' %}
+                <a href="{% url 'growlog:medicion_ambiente_editar' reg.obj.pk %}" class="c-fine" title="Corregir"><i class="bi bi-three-dots"></i></a>
+              {% endif %}
               {% endif %}
             </td>
           </tr>
