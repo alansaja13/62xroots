@@ -14,6 +14,7 @@ from .cultivos import (  # noqa: F401
     cultivo_etapa,
     cultivo_finalizar,
     cultivo_marcar_flora,
+    cultivo_reabrir,
     cultivo_tendencias,
     cultivo_tendencias_json,
     dashboard,

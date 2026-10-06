@@ -316,7 +316,7 @@
 <!-- HEADER -->
 <div class="cd-header">
   <div>
-    <div class="label-eyebrow">// log · cultivo activo</div>
+    <div class="label-eyebrow">// log · {% if cultivo.estado == 'finalizado' %}cultivo finalizado{% if cultivo.fecha_fin %} el {{ cultivo.fecha_fin|date:"d/m/Y" }}{% endif %}{% elif cultivo.archivado %}cultivo archivado{% else %}cultivo activo{% endif %}</div>
     <h1 class="cd-title">{{ cultivo.nombre }}</h1>
     <div class="cd-meta">
       <a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}" title="Ver y cambiar la etapa del cultivo" style="text-decoration:none;"
@@ -373,6 +373,14 @@
         {% csrf_token %}
         <button type="submit" class="btn-ghost" style="font-size:12px;padding:8px 14px;border-color:var(--rust);color:var(--rust);">
           <i class="bi bi-flag"></i> finalizar
+        </button>
+      </form>
+      {% elif can_edit_cultivo %}
+      <form method="post" action="{% url 'growlog:cultivo_reabrir' cultivo.slug %}"
+            onsubmit="return confirm('¿Reabrir «{{ cultivo.nombre|escapejs }}»? Se quita la fecha de cierre y vuelve a la etapa de su historial.');">
+        {% csrf_token %}
+        <button type="submit" class="btn-ghost" style="font-size:12px;padding:8px 14px;">
+          <i class="bi bi-arrow-counterclockwise"></i> reabrir
         </button>
       </form>
       {% endif %}

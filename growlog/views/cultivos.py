@@ -12,7 +12,7 @@ from django.utils import timezone
 from ..forms import CambioEtapaCultivoForm, NuevoCultivoForm
 from ..models import CambioEtapaCultivo, CambioEtapaPlanta, Cultivo, ParametroIdeal
 from ..permissions import objeto_del_cultivo
-from ..services.etapas import cambiar_etapa, sincronizar_cultivo
+from ..services.etapas import cambiar_etapa, reabrir_cultivo, sincronizar_cultivo
 from ..services.hoy import resumen_hoy
 from ..utils import (
     calcular_luz_estado,
@@ -55,9 +55,11 @@ def cultivo_detail(request, slug):
                 semaforo = evaluar_ambiente(ultima_medicion, param)
             except ParametroIdeal.DoesNotExist:
                 pass
+    finalizado = cultivo.estado == "finalizado"
     fotoperiodo_activo = get_cambio_fotoperiodo_activo(cultivo, timezone.now())
     luz_estado_actual = None
-    if fotoperiodo_activo:
+    # La luz "ahora" no describe un cultivo cerrado.
+    if fotoperiodo_activo and not finalizado:
         luz_estado_actual = calcular_luz_estado(
             timezone.now(), fotoperiodo_activo.hora_lights_on, fotoperiodo_activo.fotoperiodo
         )
@@ -88,12 +90,13 @@ def cultivo_detail(request, slug):
     dia_flora = cultivo.dia_flora
     if dia_flora is None:
         flip = get_flip_a_flora(cultivo)
-        if flip and flip.fecha_inicio <= hoy:
-            dia_flora = (hoy - flip.fecha_inicio).days + 1
+        referencia = cultivo.fecha_referencia
+        if flip and flip.fecha_inicio <= referencia:
+            dia_flora = (referencia - flip.fecha_inicio).days + 1
     # Días desde el último riego
     ultimo_riego = cultivo.riegos.first()
     dias_sin_riego = None
-    if ultimo_riego:
+    if ultimo_riego and not finalizado:
         dias_sin_riego = (hoy - timezone.localtime(ultimo_riego.timestamp).date()).days
     return render(request, "growlog/cultivo_detail.html", {
         "cultivo": cultivo, "ultima_medicion": ultima_medicion,
@@ -299,6 +302,19 @@ def cultivo_finalizar(request, slug):
             cultivo.fecha_fin = timezone.localdate()
         cultivo.save()
         messages.success(request, f"Cultivo «{cultivo.nombre}» finalizado.")
+    return redirect("growlog:cultivo_detail", cultivo.slug)
+
+
+@login_required
+def cultivo_reabrir(request, slug):
+    """Deshace finalizar, por si se tocó sin querer o el ciclo siguió."""
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
+    if request.method == "POST":
+        if cultivo.estado == "finalizado":
+            reabrir_cultivo(cultivo)
+            messages.success(request, f"Cultivo «{cultivo.nombre}» reabierto. Revisá la etapa si no es la correcta.")
+        else:
+            messages.info(request, "Este cultivo no estaba finalizado.")
     return redirect("growlog:cultivo_detail", cultivo.slug)
 
 

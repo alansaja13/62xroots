@@ -79,15 +79,16 @@ class CultivoAccessTests(TestCase):
     def web_reads(self):
         return [reverse(f"growlog:{name}", args=[self.c.slug]) for name in (
             "cultivo_detail", "cultivo_tendencias", "cultivo_tendencias_json", "timeline", "reporte", "canopy", "energia", "tareas_list",
-        )] + [reverse("growlog:planta_detail", args=[self.plant.pk]), reverse("growlog:canopy_snapshot_json", args=[self.c.slug, self.snap.pk])]
+        )] + [reverse("growlog:planta_detail", args=[self.plant.pk]), reverse("growlog:canopy_snapshot_json", args=[self.c.slug, self.snap.pk]),
+              reverse("growlog:planta_etapa_list", args=[self.plant.pk])]
 
     def web_writes(self):
         routes = [(name, self.c.slug) for name in (
-            "cultivo_editar", "cultivo_marcar_flora", "cultivo_finalizar",
+            "cultivo_editar", "cultivo_marcar_flora", "cultivo_finalizar", "cultivo_reabrir",
             "planta_crear", "fotoperiodo_list", "canopy_guardar", "energia",
         )]
         for prefix, obj in (("planta", self.plant), ("tarea", self.task), ("evento", self.event), ("riego", self.water),
-                            ("medicion_planta", self.mp), ("medicion_ec", self.ec), ("cambio_fotoperiodo", self.cf), ("cambio_etapa_planta", self.stage)):
+                            ("medicion_planta", self.mp), ("medicion_ec", self.ec), ("medicion_ambiente", self.ma), ("cambio_fotoperiodo", self.cf), ("cambio_etapa_planta", self.stage)):
             routes.extend([(f"{prefix}_editar", obj.pk), (f"{prefix}_eliminar", obj.pk)])
         routes.extend([
             ("tarea_completar", self.task.pk), ("tarea_descompletar", self.task.pk), ("evento_resolver_followup", self.event.pk),

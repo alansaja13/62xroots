@@ -37,6 +37,16 @@ def sincronizar_cultivo(cultivo):
 
 
 @transaction.atomic
+def reabrir_cultivo(cultivo):
+    """Deshace finalizar: quita la fecha de cierre y recupera el estado desde el
+    historial de etapas. Sin historial queda en vegetativo hasta que se cambie la etapa."""
+    cultivo.estado = "vegetativo"
+    cultivo.fecha_fin = None
+    cultivo.save(update_fields=["estado", "fecha_fin"])
+    sincronizar_cultivo(cultivo)
+
+
+@transaction.atomic
 def cambiar_etapa(cultivo, etapa, fecha, notas=""):
     """Registra que el cultivo está en `etapa` desde `fecha`. Repetir la misma fecha
     corrige el registro de ese día en vez de fallar."""
