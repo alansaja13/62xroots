@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 
 const template = fs.readFileSync(path.join(__dirname, '../templates/pwa/sw.js'), 'utf8');
-const ASSETS = ['/registrar/', '/static/growlog/verde.css', '/static/growlog/registrar.css', '/static/growlog/offline-store.js', '/static/growlog/registrar.js'];
+const ASSETS = ['/registrar/', '/static/growlog/verde.css', '/static/growlog/registrar.css', '/static/growlog/offline-store.js', '/static/growlog/registrar-datos.js', '/static/growlog/registrar.js'];
 // Mismo reemplazo que hace growlog.views.pwa.pwa_service_worker.
 const source = template
   .replace("{{ version }}", 'v9')

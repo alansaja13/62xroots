@@ -24,6 +24,8 @@ from .services.validacion import validar_solucion
 
 # Formato que entiende <input type="datetime-local">.
 DT_FMT = "%Y-%m-%dT%H:%M"
+# <input type="date"> solo acepta ISO; sin esto es-ar renderiza "16/08/2026" y el campo queda vacío.
+DATE_FMT = "%Y-%m-%d"
 
 
 class NuevoCultivoForm(forms.ModelForm):
@@ -34,7 +36,7 @@ class NuevoCultivoForm(forms.ModelForm):
                   "dias_veg_estimados", "dias_flora_estimados", "notas"]
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Gorilla #3", "autofocus": True}),
-            "fecha_inicio": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
+            "fecha_inicio": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),
             "sustrato": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Coco + perlita 30%"}),
             "carpa_dimensiones": forms.TextInput(attrs={"class": "form-control field-narrow", "placeholder": "Ej: 80x80x180"}),
             "lampara_modelo": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Spider Farmer SF2000"}),
@@ -86,7 +88,7 @@ class TareaForm(forms.ModelForm):
         widgets = {
             "titulo": forms.TextInput(attrs={"class": "form-control", "autofocus": True}),
             "descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
-            "fecha_objetivo": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
+            "fecha_objetivo": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),
             "prioridad": forms.Select(attrs={"class": "form-select field-narrow"}),
             "categoria": forms.Select(attrs={"class": "form-select field-narrow"}),
             "completada": forms.CheckboxInput(attrs={"class": "form-check-input"}),
@@ -103,7 +105,7 @@ class EventoForm(forms.ModelForm):
             "tipo": forms.Select(attrs={"class": "form-select"}),
             "descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "plantas_afectadas": forms.CheckboxSelectMultiple(),
-            "follow_up_fecha": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
+            "follow_up_fecha": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),
             "follow_up_descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             "follow_up_resuelto": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
@@ -239,7 +241,7 @@ class MedicionPlantaForm(forms.ModelForm):
         fields = ["fecha", "altura_cm", "nudos_count", "ancho_canopy_cm",
                   "aspecto_general", "sintomas", "foto"]
         widgets = {
-            "fecha": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
+            "fecha": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),
             "altura_cm": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.1"}),
             "nudos_count": forms.NumberInput(attrs={"class": "form-control field-narrow"}),
             "ancho_canopy_cm": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.1"}),
@@ -310,7 +312,7 @@ class CambioFotoperiodoForm(forms.ModelForm):
         widgets = {
             "fotoperiodo": forms.TextInput(attrs={"class": "form-control field-narrow", "placeholder": "12/12", "autofocus": True}),
             "hora_lights_on": forms.TimeInput(attrs={"class": "form-control field-narrow", "type": "time"}),
-            "fecha_inicio": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
+            "fecha_inicio": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Ej: Inicio de floración, semana 1..."}),
         }
 
@@ -321,7 +323,7 @@ class CambioEtapaCultivoForm(forms.ModelForm):
         fields = ["etapa", "fecha_inicio", "notas"]
         widgets = {
             "etapa": forms.Select(attrs={"class": "form-select", "autofocus": True}),
-            "fecha_inicio": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
+            "fecha_inicio": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Ej: Flip a 12/12, primeros pistilos..."}),
         }
 
@@ -332,7 +334,7 @@ class CambioEtapaPlantaForm(forms.ModelForm):
         fields = ["etapa", "fecha_inicio", "notas"]
         widgets = {
             "etapa": forms.Select(attrs={"class": "form-select", "autofocus": True}),
-            "fecha_inicio": forms.DateInput(attrs={"class": "form-control field-narrow", "type": "date"}),
+            "fecha_inicio": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Ej: Primeros pistilos visibles..."}),
         }
 

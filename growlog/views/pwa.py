@@ -107,7 +107,7 @@ def pwa_manifest(request):
 
 # Lo mínimo para que Registrar abra sin señal. Solo contenido público.
 OFFLINE_STATIC = (
-    "growlog/verde.css", "growlog/registrar.css", "growlog/offline-store.js", "growlog/registrar.js",
+    "growlog/verde.css", "growlog/registrar.css", "growlog/offline-store.js", "growlog/registrar-datos.js", "growlog/registrar.js",
     "growlog/icons/icon-96x96.png",
 )
 
