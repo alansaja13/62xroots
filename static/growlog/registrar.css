@@ -77,6 +77,8 @@ summary { cursor: pointer; margin-bottom: 12px; font-weight: 600; }
 .plant-row summary { font-size: 12px; font-weight: 500; color: var(--cream-soft); margin-bottom: 10px; }
 #evento-plantas .check-row, #plant-volumes .plant-row details .check-row { margin-bottom: 12px; }
 #form-message { color: var(--honey); font-size: 13px; }
+/* Número fuera de formato o de rango (lo marca validarNumero en registrar.js) */
+.reg input:user-invalid { border-color: var(--rust); box-shadow: 0 0 0 3px rgba(196,106,62,.14); }
 #draft-status { margin-top: 12px; }
 
 .actions, .section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }

@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+from decimal import Decimal
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -196,6 +197,15 @@ class RegistrationTests(TestCase):
             self.assertEqual(self.send(self.payload('ec', {'tipo':'entrada', **values})).status_code, 400)
         self.assertFalse(MedicionEC.objects.exists())
         self.assertFalse(RegistroRecibido.objects.exists())
+
+    def test_decimal_con_punto_se_guarda_y_con_coma_se_rechaza(self):
+        # Registrar normaliza "1,8" a "1.8" (registrar-datos.js). El servidor no
+        # reinterpreta separadores: con coma rechaza, nunca guarda 18.
+        self.assertEqual(self.send(self.payload('ec', {'tipo': 'entrada', 'ec': '1.8'})).status_code, 201)
+        self.assertEqual(MedicionEC.objects.get().ec, Decimal('1.8'))
+        for datos in ({'tipo': 'entrada', 'ec': '1,8'}, {'tipo': 'entrada', 'ph': '6,2'}):
+            self.assertEqual(self.send(self.payload('ec', datos)).status_code, 400)
+        self.assertEqual(MedicionEC.objects.count(), 1)
 
     def riego(self):
         return self.payload('riego', {'ph':'6.2', 'ec':'1.4', 'notas':'Riego completo', 'plantas':[{'planta_id':self.plant.pk, 'volumen_ml':600}],

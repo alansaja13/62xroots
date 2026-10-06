@@ -78,18 +78,28 @@
     editingId = draft.editingId || null; formTouched = true; showKind(); updateLinks();
     $('draft-status').textContent = 'Borrador recuperado de este dispositivo.';
   }
-  function numberField(label, name, draftKey, opts = {}) {
-    const l = textNode('label', label), input = document.createElement('input');
-    Object.assign(input, {type: 'number', name, inputMode: 'decimal', step: '0.01', min: '0', max: '14', ...opts});
+  // Texto y no type="number": con teclado en es-AR, "1,8" en un number llegaba como 18.
+  // Los límites los aplica validarNumero() con las reglas de registrar-datos.js.
+  function numberInput(name, opts = {}) {
+    const input = document.createElement('input');
+    Object.assign(input, {type: 'text', name, inputMode: 'decimal', pattern: RootsDatos.PATRON.decimal, autocomplete: 'off', ...opts});
+    return input;
+  }
+  function numberField(label, name, draftKey) {
+    const l = textNode('label', label), input = numberInput(name);
     input.dataset.draftKey = draftKey; l.append(input); return l;
+  }
+  function validarNumero(input) {
+    const regla = RootsDatos.regla(input.name);
+    if (regla) input.setCustomValidity(RootsDatos.leer(input.value, regla).error || '');
   }
   function populatePlants() {
     const cultivo = context?.cultivos.find(c => String(c.id) === $('cultivo').value);
     const plantas = cultivo?.plantas || [];
     const rows = plantas.map(planta => {
       const wrap = document.createElement('div'); wrap.className = 'plant-row';
-      const label = textNode('label', `${planta.nombre} · ml`), input = document.createElement('input');
-      Object.assign(input, {type: 'number', name: `planta-${planta.id}`, min: '1', max: '2147483647', step: '1', inputMode: 'numeric', placeholder: 'Sin riego'});
+      const label = textNode('label', `${planta.nombre} · ml`);
+      const input = numberInput(`planta-${planta.id}`, {inputMode: 'numeric', pattern: RootsDatos.PATRON.entero, placeholder: 'Sin riego'});
       input.dataset.planta = String(planta.id); input.dataset.draftKey = `planta:${cultivo.id}:${planta.id}`;
       label.append(input);
 
@@ -100,7 +110,7 @@
       const row2 = document.createElement('div'); row2.className = 'row';
       row2.append(
         numberField('pH runoff', `phrunoff-${planta.id}`, `planta:${cultivo.id}:${planta.id}:phrunoff`),
-        numberField('EC runoff', `ecrunoff-${planta.id}`, `planta:${cultivo.id}:${planta.id}:ecrunoff`, {max: '999.99'}),
+        numberField('EC runoff', `ecrunoff-${planta.id}`, `planta:${cultivo.id}:${planta.id}:ecrunoff`),
       );
       const notasLabel = textNode('label', 'Notas de esta planta'), notasInput = document.createElement('textarea');
       Object.assign(notasInput, {name: `notasplanta-${planta.id}`, rows: 2});
@@ -127,8 +137,8 @@
     options($('event-type'), data.opciones.eventos, 'otro'); options($('ec-type'), data.opciones.ec, 'solucion');
     options($('task-category'), data.opciones.categorias, 'observacion'); options($('task-priority'), data.opciones.prioridades, 'normal');
     $('nutrient-doses').replaceChildren(...data.nutrientes.map(nutriente => {
-      const label = textNode('label', `${nutriente.marca} ${nutriente.nombre} · g/L`.trim()), input = document.createElement('input');
-      Object.assign(input, {type: 'number', name: `nutriente-${nutriente.id}`, min: '0.001', max: '999.999', step: '0.001', inputMode: 'decimal', placeholder: 'No aplicado'});
+      const label = textNode('label', `${nutriente.marca} ${nutriente.nombre} · g/L`.trim());
+      const input = numberInput(`nutriente-${nutriente.id}`, {placeholder: 'No aplicado'});
       input.dataset.nutriente = String(nutriente.id); input.dataset.draftKey = `nutriente:${nutriente.id}`;
       label.append(input); return label;
     }));
@@ -276,8 +286,9 @@
       if (current()) notice('Sin confirmación del servidor. Podés seguir registrando; los pendientes se conservan y se reintentan al reconectar.', 'warning');
     } finally { syncing = false; $('sync').disabled = false; }
   }
-  form.addEventListener('input', () => {
+  form.addEventListener('input', event => {
     if (!current()) return lock();
+    validarNumero(event.target);
     formTouched = true; clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 250);
   });
   $('kind').addEventListener('change', showKind);
@@ -286,43 +297,24 @@
     event.preventDefault(); clearTimeout(draftTimer);
     if (!current()) return lock();
     if (saving) return;
-    const data = Object.fromEntries(new FormData(form)), tipo = data.kind;
-    const cultivo = context.cultivos.find(c => c.id === Number(data.cultivo_id));
+    // El form es novalidate: primero se recalculan los límites de los campos
+    // numéricos (borradores y "Corregir" cargan valores sin evento input).
+    form.querySelectorAll('input').forEach(validarNumero);
+    // Runoff y nutrientes viven en <details>: plegados, el navegador no puede señalar el error.
+    form.querySelectorAll('input:invalid').forEach(input => {const details = input.closest('details'); if (details) details.open = true;});
+    if (!form.reportValidity()) { $('form-message').textContent = ''; return; }
+    const campos = Object.fromEntries(new FormData(form)), tipo = campos.kind;
+    const cultivo = context.cultivos.find(c => c.id === Number(campos.cultivo_id));
     if (!cultivo) { $('form-message').textContent = 'Elegí un cultivo con permiso de edición.'; return; }
-    delete data.kind; delete data.cultivo_id; const observado = data.observado_en; delete data.observado_en;
-    if (tipo === 'ec' && data.ph === '' && data.ec === '') { $('form-message').textContent = 'Ingresá pH o EC, al menos uno.'; return; }
-    if (tipo === 'riego') {
-      // Agrupa volumen + runoff por planta (mismo id en distintos campos) antes de armar el desglose.
-      const porPlanta = {};
-      for (const [key, value] of Object.entries(data)) {
-        const campo = key.match(/^(planta|runoff|phrunoff|ecrunoff|notasplanta)-(\d+)$/);
-        if (!campo) continue;
-        delete data[key];
-        (porPlanta[campo[2]] ||= {})[campo[1]] = value;
-      }
-      data.plantas = [];
-      for (const [id, campos] of Object.entries(porPlanta)) {
-        if (!campos.planta) continue; // vacío = no se regó esta planta
-        const fila = {planta_id: Number(id), volumen_ml: Number(campos.planta)};
-        if (campos.runoff === 'on') {
-          fila.runoff_observado = 'on';
-          if (campos.phrunoff) fila.ph_runoff = campos.phrunoff;
-          if (campos.ecrunoff) fila.ec_runoff = campos.ecrunoff;
-          if (campos.notasplanta) fila.notas = campos.notasplanta;
-        }
-        data.plantas.push(fila);
-      }
-      data.nutrientes = [];
-      for (const [key, value] of Object.entries(data)) {
-        if (key.startsWith('nutriente-')) {if (value !== '') data.nutrientes.push({nutriente_id:Number(key.slice(10)), dosis_g_por_litro:value}); delete data[key];}
-      }
-      if (!data.plantas.length) { $('form-message').textContent = 'Indicá cuánto recibió al menos una planta.'; return; }
-    }
-    if (tipo === 'evento') {
-      data.plantas_afectadas = [];
-      for (const [key, value] of Object.entries(data)) {
-        if (key.startsWith('eventoplanta-')) {data.plantas_afectadas.push(Number(key.slice(13))); delete data[key];}
-      }
+    delete campos.kind; delete campos.cultivo_id; const observado = campos.observado_en; delete campos.observado_en;
+    const {datos: data, error} = RootsDatos.armarDatos(tipo, campos);
+    if (error) { $('form-message').textContent = error; return; }
+    const avisos = RootsDatos.advertencias(data, {
+      plantas: Object.fromEntries(cultivo.plantas.map(p => [p.id, p.nombre])),
+      nutrientes: Object.fromEntries(context.nutrientes.map(n => [n.id, `${n.marca} ${n.nombre}`.trim()])),
+    });
+    if (avisos.length && !confirm(`Estos valores son poco comunes:\n\n${avisos.map(aviso => `• ${aviso}`).join('\n')}\n\n¿Seguro que querés guardarlos así?`)) {
+      $('form-message').textContent = 'No se guardó. Revisá los valores y volvé a guardar.'; return;
     }
     saving = true; $('save-entry').disabled = true;
     const activeStore = store;

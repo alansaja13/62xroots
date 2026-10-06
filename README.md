@@ -25,6 +25,7 @@ python manage.py check --settings=config.test_settings
 python manage.py makemigrations --check --dry-run --settings=config.test_settings
 node tests/service_worker.test.cjs
 node tests/offline_sync.test.cjs
+node tests/registrar_datos.test.cjs
 ```
 
 Estos settings usan una base SQLite en memoria, almacenamiento en memoria y

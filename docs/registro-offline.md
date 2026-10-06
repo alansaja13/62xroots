@@ -27,6 +27,8 @@ manual: todavía no existe una pantalla de importación.
 - `services/registro.py`: permisos, operación transaccional y recibo idempotente.
 - `registration_views.py`: pantalla pública, contexto autenticado y transporte HTTP.
 - `offline-store.js`: cifrado, persistencia y estados de sincronización.
+- `registrar-datos.js`: lectura de números (`1,8` = `1.8`), armado de `datos` y avisos
+  de valores poco comunes (EC > 5, pH fuera de 4–9, etc.) que piden confirmar sin bloquear.
 - `registrar.js`: formulario, borrador, cuenta activa y reintentos.
 
 El POST `/registrar/sincronizar/` exige sesión activa, CSRF y `X-Registro-Cuenta`
