@@ -159,7 +159,9 @@ def medicion_planta_eliminar(request, pk):
 
 @login_required
 def planta_etapa_list(request, pk):
-    planta = objeto_del_cultivo(request, Planta, editar=True, pk=pk)
+    # Un lector ve el historial; objeto_del_cultivo exige edición para el POST.
+    planta = objeto_del_cultivo(request, Planta, pk=pk)
+    puede_editar = request.puede_editar_cultivo
     historial = planta.cambios_etapa.order_by("-fecha_inicio")
     propia = get_etapa_activa_planta(planta)
     del_cultivo = get_etapa_activa_cultivo(planta.cultivo)
@@ -167,7 +169,9 @@ def planta_etapa_list(request, pk):
         propia = None  # un cambio de etapa del cultivo posterior la igualó
     etapa_actual = etapa_efectiva_planta(planta)
 
-    if request.method == "POST":
+    if not puede_editar:
+        form = None
+    elif request.method == "POST":
         form = CambioEtapaPlantaForm(request.POST)
         if form.is_valid():
             cambio = form.save(commit=False)
@@ -188,7 +192,7 @@ def planta_etapa_list(request, pk):
         "cultivo": planta.cultivo,
         "historial": historial,
         "form": form,
-        "puede_editar": True,
+        "puede_editar": puede_editar,
         "propia": propia, "vigente_pk": propia.pk if propia else None,
         "etapa_actual_display": dict(CambioEtapaPlanta.ETAPA_CHOICES).get(etapa_actual),
         "back_url": reverse("growlog:planta_detail", args=[planta.pk]),

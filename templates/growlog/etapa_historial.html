@@ -112,8 +112,8 @@
   </div>
   <p class="c-fine" style="font-size:12px; margin:10px 0 0; line-height:1.5;">
     {% if planta %}
-      La planta usa la etapa del cultivo. Registrá una etapa propia solo si esta planta va distinta
-      al resto; un cambio de etapa del cultivo posterior la vuelve a igualar.
+      La planta usa la etapa del cultivo.{% if puede_editar %} Registrá una etapa propia solo si esta planta va distinta
+      al resto; un cambio de etapa del cultivo posterior la vuelve a igualar.{% endif %}
     {% else %}
       Es la etapa de todo el cultivo: de acá salen el estado, el día de flora y el rango ideal de VPD.
       El día de flora cuenta desde la primera etapa de flora y no se reinicia al pasar de flora temprana a tardía.

@@ -291,7 +291,7 @@
         </td>
         <td class="c-soft" style="{% if rp.notas %}font-style:italic;{% endif %}">{{ rp.notas|default:"—" }}</td>
         <td style="text-align:right;">
-          <a href="{% url 'growlog:riego_editar' rp.riego_id %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
+          {% if can_edit_cultivo %}<a href="{% url 'growlog:riego_editar' rp.riego_id %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>{% endif %}
         </td>
       </tr>
       {% empty %}
@@ -325,7 +325,7 @@
       </div>
       <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
         <span class="mono c-fine" style="font-size:10px;">{{ e.timestamp|date:"d/m/y" }}</span>
-        <a href="{% url 'growlog:evento_editar' e.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
+        {% if can_edit_cultivo %}<a href="{% url 'growlog:evento_editar' e.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>{% endif %}
       </div>
     </div>
     {% endfor %}
@@ -385,7 +385,7 @@
             <i class="bi bi-camera"></i>
           </a>
           {% endif %}
-          <a href="{% url 'growlog:medicion_planta_editar' med.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
+          {% if can_edit_cultivo %}<a href="{% url 'growlog:medicion_planta_editar' med.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>{% endif %}
         </td>
       </tr>
       {% empty %}
@@ -393,7 +393,7 @@
         <td colspan="7" style="text-align:center; padding:36px 16px; color:var(--fine);">
           <i class="bi bi-rulers" style="font-size:22px; display:block; margin-bottom:8px; opacity:.5;"></i>
           Sin mediciones aún.
-          <a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="c-green">Registrar la primera →</a>
+          {% if can_edit_cultivo %}<a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="c-green">Registrar la primera →</a>{% endif %}
         </td>
       </tr>
       {% endfor %}

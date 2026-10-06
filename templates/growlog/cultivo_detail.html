@@ -660,9 +660,11 @@
       <div style="padding:36px 16px; text-align:center;">
         <i class="bi bi-flower1" style="font-size:22px; color:var(--fine); opacity:.4; display:block; margin-bottom:10px;"></i>
         <div class="c-fine" style="font-size:13px; margin-bottom:14px;">Sin plantas registradas aún.</div>
+        {% if can_edit_cultivo %}
         <a href="{% url 'growlog:planta_crear' cultivo.slug %}" class="btn-brand">
           <i class="bi bi-plus-lg"></i> agregar planta
         </a>
+        {% endif %}
       </div>
       {% endif %}
     </div>
@@ -723,10 +725,10 @@
             </div>
           </div>
           <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
+            {% if can_edit_cultivo %}
             <a href="{% url 'growlog:evento_editar' ev.pk %}" class="c-fine" style="font-size:11px;" title="Editar">
               <i class="bi bi-pencil"></i>
             </a>
-            {% if can_edit_cultivo %}
             <button
               hx-post="{% url 'growlog:evento_resolver_followup' ev.pk %}"
               hx-target="#followup-row-{{ ev.pk }}"

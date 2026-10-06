@@ -287,7 +287,7 @@
     {% if estado_filter == 'completada' %}
       Ninguna tarea completada todavía.
     {% else %}
-      Sin tareas pendientes. <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=tarea" class="c-green">Crear una →</a>
+      Sin tareas pendientes.{% if can_edit_cultivo %} <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=tarea" class="c-green">Crear una →</a>{% endif %}
     {% endif %}
   </div>
   {% endif %}
