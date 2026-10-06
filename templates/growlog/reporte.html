@@ -43,7 +43,11 @@
     color: var(--fine); margin-top: 6px; letter-spacing: .05em;
   }
   .rp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
-  @media (max-width: 900px) { .rp-grid { grid-template-columns: 1fr; } }
+  /* minmax(0,…): una tabla ancha se desplaza dentro de su panel en vez de ensanchar la página */
+  @media (max-width: 900px) {
+    .rp-grid { grid-template-columns: minmax(0, 1fr); }
+    .rp-grid .panel { overflow-x: auto; }
+  }
   .rp-empty { padding: 26px 16px; text-align: center; color: var(--fine); font-size: 12px; }
   @media (max-width: 640px) {
     .rp-title { font-size: 32px; }

@@ -190,7 +190,9 @@
     .cd-title { font-size: clamp(36px, 11vw, 48px); overflow-wrap: anywhere; }
     .cd-title__accent { font-size: 32px; }
     .cd-actions { flex-direction: row; flex-wrap: wrap; align-items: stretch; }
-    .cd-day-group { flex: 1 1 100%; }
+    /* "cambiar etapa" baja a su propia fila: al lado de los dos contadores desbordaba el celular */
+    .cd-day-group { flex: 1 1 100%; flex-wrap: wrap; }
+    .cd-day-group > a { flex: 1 1 100%; justify-content: center; }
     .cd-day-box { min-width: 0; flex: 1; padding: 10px 20px; }
     .cd-day-box__num { font-size: 56px; }
     /* Accesos del cultivo en grilla de 2: antes una fila sin corte desbordaba el celular */
