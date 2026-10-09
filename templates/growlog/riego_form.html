@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ec %}
 {% block title %}{% if riego %}Riego — {{ riego }}{% else %}Nuevo riego — {{ subtitle }}{% endif %}{% endblock %}
 
 {% block crumb %}
@@ -246,7 +247,7 @@
                       {% if row.ph_runoff.errors %}<div class="field-error">{{ row.ph_runoff.errors.0 }}</div>{% endif %}
                     </div>
                     <div class="col-6 col-sm-4">
-                      <label for="{{ row.ec_runoff.id_for_label }}">EC runoff</label>
+                      <label for="{{ row.ec_runoff.id_for_label }}">EC runoff <small>×10 µS/cm</small></label>
                       {{ row.ec_runoff }}
                       {% if row.ec_runoff.errors %}<div class="field-error">{{ row.ec_runoff.errors.0 }}</div>{% endif %}
                     </div>
@@ -383,7 +384,7 @@
         {% if riego.ec_solucion %}
         <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
           <span class="label-eyebrow">ec solución</span>
-          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.ec_solucion }} mS</span>
+          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.ec_solucion|ec_us }} µS/cm</span>
         </div>
         {% endif %}
         <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">

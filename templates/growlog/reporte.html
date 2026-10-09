@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ec %}
 {% block title %}Reporte — {{ cultivo.nombre }}{% endblock %}
 
 {% block crumb %}
@@ -105,7 +106,7 @@
   <div class="rp-stat">
     <div class="label-eyebrow">Agua total</div>
     <div class="rp-stat__val">{% if riego_stats.count %}{{ litros_totales|floatformat:1 }}<span class="rp-stat__unit">L</span>{% else %}—{% endif %}</div>
-    <div class="rp-stat__sub">{{ riego_stats.count }} riegos{% if riego_stats.ph_avg %} · pH prom. {{ riego_stats.ph_avg|floatformat:2 }}{% endif %}{% if riego_stats.ec_avg %} · EC prom. {{ riego_stats.ec_avg|floatformat:2 }}{% endif %}</div>
+    <div class="rp-stat__sub">{{ riego_stats.count }} riegos{% if riego_stats.ph_avg %} · pH prom. {{ riego_stats.ph_avg|floatformat:2 }}{% endif %}{% if riego_stats.ec_avg %} · EC prom. {{ riego_stats.ec_avg|ec_us }} µS/cm{% endif %}</div>
   </div>
 </div>
 

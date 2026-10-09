@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ec %}
 {% load static %}
 {% block title %}{{ cultivo.nombre }}{% endblock %}
 
@@ -427,7 +428,7 @@
     <div class="label-eyebrow"><i class="bi bi-moisture"></i> EC / pH</div>
     <div class="cd-vital__val{% if not ultima_medicion_ec %} cd-vital__val--empty{% endif %}" style="margin-top: 10px;">
       {% if ultima_medicion_ec %}
-        {% if ultima_medicion_ec.ec %}{{ ultima_medicion_ec.ec }}<span class="cd-vital__unit">mS</span>
+        {% if ultima_medicion_ec.ec %}{{ ultima_medicion_ec.ec|ec_us }}<span class="cd-vital__unit">µS</span>
         {% elif ultima_medicion_ec.ph %}{{ ultima_medicion_ec.ph }}<span class="cd-vital__unit">pH</span>
         {% else %}—{% endif %}
       {% else %}—{% endif %}
@@ -590,7 +591,7 @@
                 {% if reg.obj.notas %}<span class="c-fine" style="font-style:italic; margin-left:10px;">"{{ reg.obj.notas|truncatechars:45 }}"</span>{% endif %}
               {% elif reg.tipo == 'riego' %}
                 {% if reg.obj.ph_agua %}<span>pH <span class="c-cream">{{ reg.obj.ph_agua }}</span></span>{% endif %}
-                {% if reg.obj.ec_solucion %}<span class="c-fine"> · </span><span>EC <span class="c-cream">{{ reg.obj.ec_solucion }}</span></span>{% endif %}
+                {% if reg.obj.ec_solucion %}<span class="c-fine"> · </span><span>EC <span class="c-cream">{{ reg.obj.ec_solucion|ec_us }}</span> µS/cm</span>{% endif %}
                 {% if reg.obj.detalle_plantas.exists %}
                   <span style="display:inline-flex; gap:5px; flex-wrap:wrap; margin-left:8px;">
                     {% for rp in reg.obj.detalle_plantas.all %}
@@ -607,7 +608,7 @@
                 {% endif %}
               {% elif reg.tipo == 'medicion_ec' %}
                 {% if reg.obj.ph %}<span>pH <span class="c-cream">{{ reg.obj.ph }}</span></span>{% endif %}
-                {% if reg.obj.ec %}<span class="c-fine">{% if reg.obj.ph %} · {% endif %}</span><span>EC <span class="c-cream">{{ reg.obj.ec }}</span> mS/cm</span>{% endif %}
+                {% if reg.obj.ec %}<span class="c-fine">{% if reg.obj.ph %} · {% endif %}</span><span>EC <span class="c-cream">{{ reg.obj.ec|ec_us }}</span> µS/cm</span>{% endif %}
                 {% if reg.obj.temp_agua %}<span class="c-fine"> · </span><span>{{ reg.obj.temp_agua }}°C agua</span>{% endif %}
               {% else %}
                 <span class="c-cream">{{ reg.obj.descripcion|truncatechars:60 }}</span>

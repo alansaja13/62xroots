@@ -1,4 +1,6 @@
 """Formularios de la bitácora web."""
+from decimal import Decimal
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
@@ -26,6 +28,33 @@ from .services.validacion import validar_solucion
 DT_FMT = "%Y-%m-%dT%H:%M"
 # <input type="date"> solo acepta ISO; sin esto es-ar renderiza "16/08/2026" y el campo queda vacío.
 DATE_FMT = "%Y-%m-%d"
+
+
+class ECx10Field(forms.IntegerField):
+    """EC cargada en escala ×10 µS/cm, como la muestran los medidores: 120 = 1200 µS/cm.
+    En la base sigue en mS/cm (120 → 1,20)."""
+    MAX = 99999  # 999,99 mS/cm, el máximo de los campos del modelo
+
+    def __init__(self, label="EC (×10 µS/cm)", **kwargs):
+        kwargs.setdefault("required", False)
+        kwargs.setdefault("widget", forms.NumberInput(attrs={
+            "class": "form-control field-narrow", "step": "1", "min": "0", "inputmode": "numeric", "placeholder": "120",
+        }))
+        super().__init__(label=label, **kwargs)
+
+    def prepare_value(self, value):
+        # Lo guardado (Decimal en mS/cm) se muestra ×10; lo tipeado se devuelve tal cual.
+        if isinstance(value, Decimal):
+            return int((value * 100).to_integral_value())
+        return value
+
+    def to_python(self, value):
+        valor = super().to_python(value)
+        if valor is None:
+            return None
+        if not 0 <= valor <= self.MAX:
+            raise ValidationError(f"Ingresá un valor entre 0 y {self.MAX} (×10 µS/cm).")
+        return (Decimal(valor) / 100).quantize(Decimal("0.01"))
 
 
 class NuevoCultivoForm(forms.ModelForm):
@@ -114,6 +143,8 @@ class EventoForm(forms.ModelForm):
 class RiegoForm(forms.ModelForm):
     """Datos compartidos de la sesión de riego (solución madre). El volumen y el
     runoff se cargan por planta en RiegoPlantaEntryForm — ver riego_planta_formset."""
+    ec_solucion = ECx10Field(label="EC solución (×10 µS/cm)")
+
     def clean(self):
         data = super().clean()
         validar_solucion(ph=data.get("ph_agua"), ec=data.get("ec_solucion"))
@@ -125,7 +156,6 @@ class RiegoForm(forms.ModelForm):
         widgets = {
             "timestamp": forms.DateTimeInput(format=DT_FMT, attrs={"class": "form-control", "type": "datetime-local"}),
             "ph_agua": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01", "placeholder": "6.2"}),
-            "ec_solucion": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01", "placeholder": "1.8"}),
             "buscar_runoff": forms.CheckboxInput(attrs={"class": "form-check-input", "x-model": "buscarRunoff"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Notas generales de la sesión (mezcla, incidencias)..."}),
         }
@@ -151,10 +181,7 @@ class RiegoPlantaEntryForm(forms.Form):
         required=False, max_digits=4, decimal_places=2, label="pH runoff",
         widget=forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01", "placeholder": "6.0"}),
     )
-    ec_runoff = forms.DecimalField(
-        required=False, max_digits=5, decimal_places=2, label="EC runoff (mS/cm)",
-        widget=forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01", "placeholder": "1.8"}),
-    )
+    ec_runoff = ECx10Field(label="EC runoff (×10 µS/cm)")
     notas = forms.CharField(
         required=False, label="Notas",
         widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Notas de esta planta..."}),
@@ -268,6 +295,8 @@ class NutrienteAplicadoForm(forms.ModelForm):
 
 
 class MedicionECForm(forms.ModelForm):
+    ec = ECx10Field()
+
     class Meta:
         model = MedicionEC
         fields = ["timestamp", "tipo", "ph", "ec", "temp_agua", "notas"]
@@ -275,7 +304,6 @@ class MedicionECForm(forms.ModelForm):
             "timestamp": forms.DateTimeInput(format=DT_FMT, attrs={"class": "form-control", "type": "datetime-local"}),
             "tipo": forms.Select(attrs={"class": "form-select"}),
             "ph": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
-            "ec": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
             "temp_agua": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.1"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
         }

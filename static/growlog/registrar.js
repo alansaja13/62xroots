@@ -85,8 +85,8 @@
     Object.assign(input, {type: 'text', name, inputMode: 'decimal', pattern: RootsDatos.PATRON.decimal, autocomplete: 'off', ...opts});
     return input;
   }
-  function numberField(label, name, draftKey) {
-    const l = textNode('label', label), input = numberInput(name);
+  function numberField(label, name, draftKey, opts) {
+    const l = textNode('label', label), input = numberInput(name, opts);
     input.dataset.draftKey = draftKey; l.append(input); return l;
   }
   function validarNumero(input) {
@@ -110,7 +110,7 @@
       const row2 = document.createElement('div'); row2.className = 'row';
       row2.append(
         numberField('pH runoff', `phrunoff-${planta.id}`, `planta:${cultivo.id}:${planta.id}:phrunoff`),
-        numberField('EC runoff', `ecrunoff-${planta.id}`, `planta:${cultivo.id}:${planta.id}:ecrunoff`),
+        numberField('EC runoff · ×10 µS/cm', `ecrunoff-${planta.id}`, `planta:${cultivo.id}:${planta.id}:ecrunoff`, {inputMode: 'numeric', pattern: RootsDatos.PATRON.entero, placeholder: '120'}),
       );
       const notasLabel = textNode('label', 'Notas de esta planta'), notasInput = document.createElement('textarea');
       Object.assign(notasInput, {name: `notasplanta-${planta.id}`, rows: 2});
@@ -179,7 +179,7 @@
       article.append(textNode('h3', `${labels[item.payload.tipo]} · ${item.cultivoNombre}`));
       article.append(textNode('time', new Date(item.payload.observado_en).toLocaleString()));
       const datos = item.payload.datos;
-      const summary = item.payload.tipo === 'ambiente' ? `${datos.temperatura_c} °C · ${datos.humedad_relativa}% HR` : item.payload.tipo === 'riego' ? `${datos.plantas.reduce((total, p) => total + p.volumen_ml, 0)} ml · ${datos.plantas.length} plantas` : datos.descripcion || datos.titulo || `pH ${datos.ph || '—'} · EC ${datos.ec || '—'}`;
+      const summary = item.payload.tipo === 'ambiente' ? `${datos.temperatura_c} °C · ${datos.humedad_relativa}% HR` : item.payload.tipo === 'riego' ? `${datos.plantas.reduce((total, p) => total + p.volumen_ml, 0)} ml · ${datos.plantas.length} plantas` : datos.descripcion || datos.titulo || `pH ${datos.ph || '—'} · EC ${datos.ec ? `${Math.round(datos.ec * 1000)} µS/cm` : '—'}`;
       article.append(textNode('p', summary));
       if (datos.notas) {
         const detail = document.createElement('details');

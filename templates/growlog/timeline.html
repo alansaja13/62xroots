@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ec %}
 {% block title %}Timeline — {{ cultivo.nombre }}{% endblock %}
 
 {% block crumb %}
@@ -190,11 +191,11 @@
             <span class="vpd vpd--{{ reg.obj.vpd_estado }}">VPD {{ reg.obj.vpd }} kPa · {{ reg.obj.vpd_estado }}</span>
           {% elif reg.tipo == 'riego' %}
             {% if reg.obj.ph_agua %}<span>pH <span class="c-cream">{{ reg.obj.ph_agua }}</span></span>{% endif %}
-            {% if reg.obj.ec_solucion %}<span class="c-fine"> · </span><span>EC <span class="c-cream">{{ reg.obj.ec_solucion }}</span></span>{% endif %}
+            {% if reg.obj.ec_solucion %}<span class="c-fine"> · </span><span>EC <span class="c-cream">{{ reg.obj.ec_solucion|ec_us }}</span> µS/cm</span>{% endif %}
             {% if reg.obj.runoff_observado %}<span class="c-fine"> · </span><span class="c-green">runoff ✓</span>{% endif %}
           {% elif reg.tipo == 'medicion_ec' %}
             {% if reg.obj.ph %}<span>pH <span class="c-cream">{{ reg.obj.ph }}</span></span>{% endif %}
-            {% if reg.obj.ec %}<span class="c-fine">{% if reg.obj.ph %} · {% endif %}</span><span>EC <span class="c-cream">{{ reg.obj.ec }}</span> mS/cm</span>{% endif %}
+            {% if reg.obj.ec %}<span class="c-fine">{% if reg.obj.ph %} · {% endif %}</span><span>EC <span class="c-cream">{{ reg.obj.ec|ec_us }}</span> µS/cm</span>{% endif %}
             {% if reg.obj.temp_agua %}<span class="c-fine"> · </span><span>{{ reg.obj.temp_agua }}°C</span>{% endif %}
           {% else %}
             <span class="c-cream">{{ reg.obj.descripcion|truncatechars:70 }}</span>

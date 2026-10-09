@@ -4,7 +4,9 @@
   'use strict';
   // Mismos límites que registration_forms.py, para avisar antes de encolar
   // y no dejar un pendiente que el servidor va a rechazar.
-  const PH = {min: 0, max: 14, decimales: 2}, EC = {min: 0, max: 999.99, decimales: 2};
+  const PH = {min: 0, max: 14, decimales: 2};
+  // EC: se tipea en ×10 µS/cm como en el medidor (120 = 1200 µS/cm) y viaja en mS/cm (1.20).
+  const EC = {min: 0, max: 99999, decimales: 0, divisor: 100};
   const REGLAS = {
     temperatura_c: {min: 0, max: 60, decimales: 2},
     humedad_relativa: {min: 0, max: 100, decimales: 2},
@@ -46,7 +48,7 @@
       if (!reglaCampo) { data[key] = value; continue; }
       const leido = leer(value, reglaCampo);
       if (leido.error) return {error: leido.error, campo: key};
-      data[key] = leido.valor;
+      data[key] = reglaCampo.divisor && leido.valor !== '' ? (Number(leido.valor) / reglaCampo.divisor).toFixed(2) : leido.valor;
     }
     if (tipo === 'ec' && data.ph === '' && data.ec === '') return {error: 'Ingresá pH o EC, al menos uno.'};
     if (tipo === 'riego') {
@@ -91,7 +93,7 @@
     temperatura_c: {texto: 'Temperatura', unidad: ' °C', min: 10, max: 40, habitual: 'entre 10 y 40 °C'},
     humedad_relativa: {texto: 'Humedad', unidad: ' %', min: 15, habitual: '15 % o más'},
     ph: {texto: 'pH', unidad: '', min: 4, max: 9, habitual: 'entre 4 y 9'},
-    ec: {texto: 'EC', unidad: ' mS/cm', max: 5, habitual: 'hasta 5 mS/cm'},
+    ec: {texto: 'EC', unidad: ' µS/cm', max: 5, factor: 1000, habitual: 'hasta 5000 µS/cm'},
     temp_agua: {texto: 'Temperatura del agua', unidad: ' °C', min: 10, max: 40, habitual: 'entre 10 y 40 °C'},
     dosis: {texto: 'Dosis', unidad: ' g/L', max: 10, habitual: 'hasta 10 g/L'},
   };
@@ -102,7 +104,7 @@
       if (valor === '' || valor == null) return;
       const n = Number(valor);
       if (n < (raro.min ?? -Infinity) || n > (raro.max ?? Infinity)) {
-        avisos.push(`${raro.texto} ${coma(valor)}${raro.unidad}${contexto ? ` (${contexto})` : ''}: lo habitual es ${raro.habitual}.`);
+        avisos.push(`${raro.texto} ${coma(raro.factor ? Math.round(n * raro.factor) : valor)}${raro.unidad}${contexto ? ` (${contexto})` : ''}: lo habitual es ${raro.habitual}.`);
       }
     };
     for (const clave of ['temperatura_c', 'humedad_relativa', 'ph', 'ec', 'temp_agua']) revisar(clave, datos[clave]);
