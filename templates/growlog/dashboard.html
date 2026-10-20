@@ -48,7 +48,7 @@
     </div>
   </section>
   {% else %}<section class="hoy-panel"><h2>No tenés cultivos activos</h2><p>Podés consultar tus ciclos anteriores o iniciar uno nuevo.</p></section>{% endif %}
-  {% if finalizados %}<section class="hoy-history"><h2>Finalizados · {{ finalizados|length }}</h2><ul>{% for item in finalizados %}<li><a href="{% url 'growlog:cultivo_detail' item.cultivo.slug %}">{{ item.cultivo.nombre }}</a><span>{{ item.cultivo.fecha_inicio|date:"d/m/Y" }} — {% if item.cultivo.fecha_fin %}{{ item.cultivo.fecha_fin|date:"d/m/Y" }}{% else %}Fecha de cierre sin registrar{% endif %}</span></li>{% endfor %}</ul></section>{% endif %}
+  {% if finalizados %}<section class="hoy-history"><h2>Finalizados · {{ finalizados|length }}</h2><ul>{% for item in finalizados %}<li><a href="{% url 'growlog:cultivo_detail' item.cultivo.slug %}">{{ item.cultivo.nombre }}</a><span>{{ item.cultivo.fecha_inicio|date:"d/m/Y" }} al {% if item.cultivo.fecha_fin %}{{ item.cultivo.fecha_fin|date:"d/m/Y" }}{% else %}Fecha de cierre sin registrar{% endif %}</span></li>{% endfor %}</ul></section>{% endif %}
   {% if archivados %}<details class="hoy-history"><summary>Archivados · {{ archivados|length }}</summary><ul>{% for item in archivados %}<li><a href="{% url 'growlog:cultivo_detail' item.cultivo.slug %}">{{ item.cultivo.nombre }}</a><span>{{ item.cultivo.get_estado_display }} · Inicio {{ item.cultivo.fecha_inicio|date:"d/m/Y" }}</span></li>{% endfor %}</ul></details>{% endif %}
   {% endif %}
 </div>

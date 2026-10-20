@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load ec %}
-{% block title %}Timeline — {{ cultivo.nombre }}{% endblock %}
+{% block title %}Timeline · {{ cultivo.nombre }}{% endblock %}
 
 {% block crumb %}
 <div class="nav-crumb d-none d-lg-flex">
@@ -201,7 +201,7 @@
             <span class="c-cream">{{ reg.obj.descripcion|truncatechars:70 }}</span>
             {% if reg.obj.follow_up_fecha and not reg.obj.follow_up_resuelto %}
             <div class="c-honey mono" style="margin-top:4px; font-size:10px;">
-              <i class="bi bi-alarm"></i> Follow-up: {{ reg.obj.follow_up_fecha|date:"d/m/Y" }} — {{ reg.obj.follow_up_descripcion }}
+              <i class="bi bi-alarm"></i> Follow-up: {{ reg.obj.follow_up_fecha|date:"d/m/Y" }}: {{ reg.obj.follow_up_descripcion }}
             </div>
             {% endif %}
           {% endif %}

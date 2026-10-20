@@ -224,7 +224,7 @@
         <td><span class="fp-hora">{{ cambio.hora_lights_on|time:"H:i" }}</span></td>
         <td><span class="fp-fecha">{{ cambio.fecha_inicio|date:"d/m/Y" }}</span></td>
         <td class="c-fine" style="font-size:11.5px;">
-          {% if cambio.notas %}{{ cambio.notas|truncatechars:60 }}{% else %}—{% endif %}
+          {% if cambio.notas %}{{ cambio.notas|truncatechars:60 }}{% else %}-{% endif %}
         </td>
         <td style="text-align:right;">
           <div style="display:flex; gap:10px; justify-content:flex-end;">

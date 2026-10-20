@@ -397,7 +397,7 @@
   <div class="cd-vital cd-vital--{% if semaforo %}{{ semaforo.temp }}{% else %}neutral{% endif %}">
     <div class="label-eyebrow"><i class="bi bi-thermometer-half"></i> Temperatura</div>
     <div class="cd-vital__val{% if not ultima_medicion %} cd-vital__val--empty{% endif %}" style="margin-top: 10px;">
-      {% if ultima_medicion %}{{ ultima_medicion.temperatura_c|floatformat:1 }}<span class="cd-vital__unit">°C</span>{% else %}—{% endif %}
+      {% if ultima_medicion %}{{ ultima_medicion.temperatura_c|floatformat:1 }}<span class="cd-vital__unit">°C</span>{% else %}-{% endif %}
     </div>
     <div class="cd-vital__status">
       · {% if semaforo %}{{ semaforo.temp }}{% else %}sin ref.{% endif %}
@@ -407,7 +407,7 @@
   <div class="cd-vital cd-vital--{% if semaforo %}{{ semaforo.hr }}{% else %}neutral{% endif %}">
     <div class="label-eyebrow"><i class="bi bi-droplet-half"></i> Humedad</div>
     <div class="cd-vital__val{% if not ultima_medicion %} cd-vital__val--empty{% endif %}" style="margin-top: 10px;">
-      {% if ultima_medicion %}{{ ultima_medicion.humedad_relativa|floatformat:0 }}<span class="cd-vital__unit">%</span>{% else %}—{% endif %}
+      {% if ultima_medicion %}{{ ultima_medicion.humedad_relativa|floatformat:0 }}<span class="cd-vital__unit">%</span>{% else %}-{% endif %}
     </div>
     <div class="cd-vital__status">
       · {% if semaforo %}{{ semaforo.hr }}{% else %}sin ref.{% endif %}
@@ -417,7 +417,7 @@
   <div class="cd-vital cd-vital--{% if semaforo %}{{ semaforo.vpd }}{% else %}neutral{% endif %}">
     <div class="label-eyebrow"><i class="bi bi-activity"></i> VPD</div>
     <div class="cd-vital__val{% if not ultima_medicion %} cd-vital__val--empty{% endif %}" style="margin-top: 10px;">
-      {% if ultima_medicion %}{{ ultima_medicion.vpd }}<span class="cd-vital__unit">kPa</span>{% else %}—{% endif %}
+      {% if ultima_medicion %}{{ ultima_medicion.vpd }}<span class="cd-vital__unit">kPa</span>{% else %}-{% endif %}
     </div>
     <div class="cd-vital__status">
       · {% if semaforo %}{{ semaforo.vpd }}{% else %}sin ref.{% endif %}
@@ -430,8 +430,8 @@
       {% if ultima_medicion_ec %}
         {% if ultima_medicion_ec.ec %}{{ ultima_medicion_ec.ec|ec_us }}<span class="cd-vital__unit">µS</span>
         {% elif ultima_medicion_ec.ph %}{{ ultima_medicion_ec.ph }}<span class="cd-vital__unit">pH</span>
-        {% else %}—{% endif %}
-      {% else %}—{% endif %}
+        {% else %}-{% endif %}
+      {% else %}-{% endif %}
     </div>
     <div class="cd-vital__status">
       {% if ultima_medicion_ec %}

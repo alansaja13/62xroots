@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load ec %}
-{% block title %}Reporte — {{ cultivo.nombre }}{% endblock %}
+{% block title %}Reporte · {{ cultivo.nombre }}{% endblock %}
 
 {% block crumb %}
 <div class="nav-crumb d-none d-lg-flex">
@@ -92,20 +92,20 @@
   <div class="rp-stat">
     <div class="label-eyebrow">Yield total</div>
     <div class="rp-stat__val {% if yield_real_total %}rp-stat__val--green{% endif %}">
-      {% if yield_real_total %}{{ yield_real_total }}<span class="rp-stat__unit">g</span>{% else %}—{% endif %}
+      {% if yield_real_total %}{{ yield_real_total }}<span class="rp-stat__unit">g</span>{% else %}-{% endif %}
     </div>
-    <div class="rp-stat__sub">estimado: {% if yield_est_total %}{{ yield_est_total }} g{% else %}—{% endif %}</div>
+    <div class="rp-stat__sub">estimado: {% if yield_est_total %}{{ yield_est_total }} g{% else %}-{% endif %}</div>
   </div>
   <div class="rp-stat">
     <div class="label-eyebrow">Eficiencia</div>
     <div class="rp-stat__val {% if g_por_watt %}rp-stat__val--honey{% endif %}">
-      {% if g_por_watt %}{{ g_por_watt }}<span class="rp-stat__unit">g/W</span>{% else %}—{% endif %}
+      {% if g_por_watt %}{{ g_por_watt }}<span class="rp-stat__unit">g/W</span>{% else %}-{% endif %}
     </div>
     <div class="rp-stat__sub">{% if cultivo.lampara_watts_reales %}{{ cultivo.lampara_watts_reales }}W reales{% else %}sin watts configurados{% endif %}</div>
   </div>
   <div class="rp-stat">
     <div class="label-eyebrow">Agua total</div>
-    <div class="rp-stat__val">{% if riego_stats.count %}{{ litros_totales|floatformat:1 }}<span class="rp-stat__unit">L</span>{% else %}—{% endif %}</div>
+    <div class="rp-stat__val">{% if riego_stats.count %}{{ litros_totales|floatformat:1 }}<span class="rp-stat__unit">L</span>{% else %}-{% endif %}</div>
     <div class="rp-stat__sub">{{ riego_stats.count }} riegos{% if riego_stats.ph_avg %} · pH prom. {{ riego_stats.ph_avg|floatformat:2 }}{% endif %}{% if riego_stats.ec_avg %} · EC prom. {{ riego_stats.ec_avg|ec_us }} µS/cm{% endif %}</div>
   </div>
 </div>
@@ -131,10 +131,10 @@
             <td><a href="{% url 'growlog:planta_detail' p.pk %}" class="c-cream" style="font-weight:600;">{{ p.apodo }}</a>
               {% if p.estado != 'activa' %}<span class="c-fine" style="font-size:10px;"> · {{ p.get_estado_display|lower }}</span>{% endif %}
             </td>
-            <td class="c-soft">{{ p.strain|default:"—" }}</td>
-            <td style="text-align:right;" class="c-soft">{% if p.yield_estimado_g %}{{ p.yield_estimado_g }} g{% else %}—{% endif %}</td>
+            <td class="c-soft">{{ p.strain|default:"-" }}</td>
+            <td style="text-align:right;" class="c-soft">{% if p.yield_estimado_g %}{{ p.yield_estimado_g }} g{% else %}-{% endif %}</td>
             <td style="text-align:right;" class="{% if p.yield_real_g %}c-green{% else %}c-fine{% endif %}" style="font-weight:700;">
-              {% if p.yield_real_g %}{{ p.yield_real_g }} g{% else %}—{% endif %}
+              {% if p.yield_real_g %}{{ p.yield_real_g }} g{% else %}-{% endif %}
             </td>
           </tr>
           {% endfor %}

@@ -16,7 +16,7 @@ def send_push_to_users(user_ids, title, body, url="/"):
     from .models import PushSubscription
 
     if not settings.VAPID_PRIVATE_KEY:
-        logger.warning("VAPID_PRIVATE_KEY no configurada — no se puede enviar push.")
+        logger.warning("VAPID_PRIVATE_KEY no configurada, no se puede enviar push.")
         return 0
 
     payload = json.dumps({"title": title, "body": body, "url": url})

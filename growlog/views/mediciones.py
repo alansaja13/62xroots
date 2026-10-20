@@ -134,7 +134,7 @@ def cambio_fotoperiodo_editar(request, pk):
                 form.add_error(None, mensaje)
     return render(request, "growlog/crud_form.html", {
         "form": form,
-        "title": f"Editar fotoperiodo — {cultivo.nombre}",
+        "title": f"Editar fotoperiodo: {cultivo.nombre}",
         "back_url": reverse("growlog:fotoperiodo_list", args=[cultivo.slug]),
         "delete_url": reverse("growlog:cambio_fotoperiodo_eliminar", args=[pk]),
     })

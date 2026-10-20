@@ -195,31 +195,31 @@
   <div class="pd-meta-card">
     <div class="label-eyebrow">días flora est.</div>
     <div class="pd-meta-card__val{% if not planta.dias_flora_estimados %} pd-meta-card__val--none{% endif %}">
-      {% if planta.dias_flora_estimados %}{{ planta.dias_flora_estimados }}<span class="pd-meta-card__unit">d</span>{% else %}—{% endif %}
+      {% if planta.dias_flora_estimados %}{{ planta.dias_flora_estimados }}<span class="pd-meta-card__unit">d</span>{% else %}-{% endif %}
     </div>
   </div>
   <div class="pd-meta-card">
     <div class="label-eyebrow">THC est.</div>
     <div class="pd-meta-card__val{% if not planta.thc_estimado %} pd-meta-card__val--none{% endif %}">
-      {% if planta.thc_estimado %}{{ planta.thc_estimado }}<span class="pd-meta-card__unit">%</span>{% else %}—{% endif %}
+      {% if planta.thc_estimado %}{{ planta.thc_estimado }}<span class="pd-meta-card__unit">%</span>{% else %}-{% endif %}
     </div>
   </div>
   <div class="pd-meta-card">
     <div class="label-eyebrow">yield est.</div>
     <div class="pd-meta-card__val{% if not planta.yield_estimado_g %} pd-meta-card__val--none{% endif %}">
-      {% if planta.yield_estimado_g %}{{ planta.yield_estimado_g }}<span class="pd-meta-card__unit">g</span>{% else %}—{% endif %}
+      {% if planta.yield_estimado_g %}{{ planta.yield_estimado_g }}<span class="pd-meta-card__unit">g</span>{% else %}-{% endif %}
     </div>
   </div>
   <div class="pd-meta-card">
     <div class="label-eyebrow">indica/sativa</div>
     <div class="pd-meta-card__val{% if not planta.indica_sativa_ratio %} pd-meta-card__val--none{% endif %}">
-      {% if planta.indica_sativa_ratio %}{{ planta.indica_sativa_ratio }}{% else %}—{% endif %}
+      {% if planta.indica_sativa_ratio %}{{ planta.indica_sativa_ratio }}{% else %}-{% endif %}
     </div>
   </div>
   <div class="pd-meta-card">
     <div class="label-eyebrow">última med</div>
     <div class="pd-meta-card__val{% if not mediciones %} pd-meta-card__val--none{% endif %}" style="font-size: 22px;">
-      {% if mediciones %}{{ mediciones.0.fecha|date:"d/m" }}{% else %}—{% endif %}
+      {% if mediciones %}{{ mediciones.0.fecha|date:"d/m" }}{% else %}-{% endif %}
     </div>
   </div>
 </div>
@@ -288,9 +288,9 @@
             <span class="c-green">✓ observado</span>
             {% if rp.ph_runoff %}<span class="c-fine"> · pH {{ rp.ph_runoff }}</span>{% endif %}
             {% if rp.ec_runoff %}<span class="c-fine"> · EC {{ rp.ec_runoff|ec_us }} µS/cm</span>{% endif %}
-          {% else %}<span class="c-fine">—</span>{% endif %}
+          {% else %}<span class="c-fine">-</span>{% endif %}
         </td>
-        <td class="c-soft" style="{% if rp.notas %}font-style:italic;{% endif %}">{{ rp.notas|default:"—" }}</td>
+        <td class="c-soft" style="{% if rp.notas %}font-style:italic;{% endif %}">{{ rp.notas|default:"-" }}</td>
         <td style="text-align:right;">
           {% if can_edit_cultivo %}<a href="{% url 'growlog:riego_editar' rp.riego_id %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>{% endif %}
         </td>
@@ -363,19 +363,19 @@
         <td style="text-align:right;" class="c-cream">
           {% if med.altura_cm %}
             <span style="font-size:14px; font-weight:600;">{{ med.altura_cm }} <span class="c-fine" style="font-size:11px; font-weight:400;">cm</span></span>
-          {% else %}<span class="c-fine">—</span>{% endif %}
+          {% else %}<span class="c-fine">-</span>{% endif %}
         </td>
         <td style="text-align:right;" class="c-soft">
-          {% if med.ancho_canopy_cm %}{{ med.ancho_canopy_cm }} <span class="c-fine" style="font-size:10px;">cm</span>{% else %}<span class="c-fine">—</span>{% endif %}
+          {% if med.ancho_canopy_cm %}{{ med.ancho_canopy_cm }} <span class="c-fine" style="font-size:10px;">cm</span>{% else %}<span class="c-fine">-</span>{% endif %}
         </td>
         <td style="text-align:right;" class="c-cream">
-          {% if med.nudos_count %}{{ med.nudos_count }}{% else %}<span class="c-fine">—</span>{% endif %}
+          {% if med.nudos_count %}{{ med.nudos_count }}{% else %}<span class="c-fine">-</span>{% endif %}
         </td>
         <td>
           <span class="asp-chip aspecto-{{ med.aspecto_general }}">{{ med.get_aspecto_general_display }}</span>
         </td>
         <td class="c-soft" style="{% if med.sintomas %}font-style:italic;{% endif %}">
-          {{ med.sintomas|default:"—" }}
+          {{ med.sintomas|default:"-" }}
         </td>
         <td style="text-align:right; white-space:nowrap;">
           {% if med.foto %}

@@ -123,7 +123,7 @@ def _write_rate_limit(request):
     key = f"api_writes_{token_hash}"
     count = cache.get(key, 0)
     if count >= 60:
-        return api_error('Rate limit exceeded — 60 writes/hour', 429)
+        return api_error('Rate limit exceeded: 60 writes/hour', 429)
     cache.set(key, count + 1, timeout=3600)
     return None
 
@@ -499,7 +499,7 @@ def cultivo_riego_plantas(request, slug, riego_id):
         except (Planta.DoesNotExist, ValidationError):
             return api_error(f'planta_uuid desconocido o archivado: {uuid_str}')
         if riego.detalle_plantas.filter(planta=planta).exists():
-            return api_error('Esa planta ya tiene un detalle en este riego — usá PATCH para modificarlo')
+            return api_error('Esa planta ya tiene un detalle en este riego, usá PATCH para modificarlo')
         try:
             volumen_ml = int(body['volumen_ml'])
             if volumen_ml <= 0:
@@ -641,7 +641,7 @@ def riego_planta_detail(request, slug, riego_id, rp_id):
         if rl:
             return rl
         if riego.detalle_plantas.count() <= 1:
-            return api_error('No se puede eliminar la última planta del riego — eliminá el riego completo en su lugar.')
+            return api_error('No se puede eliminar la última planta del riego. Eliminá el riego completo en su lugar.')
         rp_id_deleted = rp.id
         rp.delete()
         riego.volumen_total_ml = sum(riego.detalle_plantas.values_list('volumen_ml', flat=True))
@@ -703,9 +703,9 @@ def cultivo_mediciones(request, slug):
             return api_error('temperatura_c y humedad_relativa son requeridos y deben ser números')
 
         if not (0 <= float(temp) <= 60):
-            return api_error('temperatura_c fuera de rango (0–60°C)')
+            return api_error('temperatura_c fuera de rango (0-60°C)')
         if not (0 <= float(hr) <= 100):
-            return api_error('humedad_relativa fuera de rango (0–100%)')
+            return api_error('humedad_relativa fuera de rango (0-100%)')
 
         m = MedicionAmbiente.objects.create(
             cultivo=c,
@@ -745,7 +745,7 @@ def cultivo_medicion_detail(request, slug, medicion_id):
             try:
                 temp = Decimal(str(body['temperatura_c']))
                 if not (0 <= float(temp) <= 60):
-                    return api_error('temperatura_c fuera de rango (0–60°C)')
+                    return api_error('temperatura_c fuera de rango (0-60°C)')
                 m.temperatura_c = temp
             except InvalidOperation:
                 return api_error('temperatura_c debe ser un número')
@@ -753,7 +753,7 @@ def cultivo_medicion_detail(request, slug, medicion_id):
             try:
                 hr = Decimal(str(body['humedad_relativa']))
                 if not (0 <= float(hr) <= 100):
-                    return api_error('humedad_relativa fuera de rango (0–100%)')
+                    return api_error('humedad_relativa fuera de rango (0-100%)')
                 m.humedad_relativa = hr
             except InvalidOperation:
                 return api_error('humedad_relativa debe ser un número')
@@ -2258,7 +2258,7 @@ def cultivo_costos_equipos(request, slug):
         hoy = timezone.localdate()
         tarifa = _tarifa_vigente(hoy, cultivo=c, usuario=request.api_user)
         if not tarifa:
-            return api_error('No hay tarifa eléctrica cargada — creá una en /api/v1/tarifas/ primero')
+            return api_error('No hay tarifa eléctrica cargada. Creá una en /api/v1/tarifas/ primero')
 
         ce = CostoEnergetico.objects.create(
             cultivo=c, equipo=equipo, tarifa=tarifa, fecha_desde=fecha_desde,

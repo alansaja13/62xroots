@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Canopy — {{ cultivo.nombre }}{% endblock %}
+{% block title %}Canopy · {{ cultivo.nombre }}{% endblock %}
 
 {% block crumb %}
 <div class="nav-crumb d-none d-lg-flex">
@@ -241,7 +241,7 @@
               <span class="ctrl-section-title">// snapshot histórico</span>
               <select class="snapshot-sel w-100"
                       @change="loadSnapshot($event.target.value)">
-                <option value="">— Edición actual —</option>
+                <option value="">Edición actual</option>
                 <template x-for="s in snapshots" :key="s.id">
                   <option :value="s.id"
                           :selected="s.id === currentSnapshotId"
@@ -305,7 +305,7 @@
           <!-- Notas -->
           <div class="mt-3">
             <span class="ctrl-section-title">// notas del snapshot</span>
-            <textarea class="notas-input" placeholder="Opcional — describe el estado actual..."
+            <textarea class="notas-input" placeholder="Opcional: describí el estado actual"
                       x-model="notas" :readonly="!editable" rows="2"></textarea>
           </div>
 
@@ -323,12 +323,12 @@
         <span class="stat-label">W / cola</span>
         <span class="stat-value"
               :class="wClass"
-              x-text="totalColas ? wPerCola.toFixed(1) + ' W' : '—'"></span>
+              x-text="totalColas ? wPerCola.toFixed(1) + ' W' : '-'"></span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Col / m²</span>
         <span class="stat-value"
-              x-text="totalColas ? densidad.toFixed(1) : '—'"></span>
+              x-text="totalColas ? densidad.toFixed(1) : '-'"></span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Red llena</span>
@@ -344,7 +344,7 @@
       </div>
       <div class="diag-bar" :class="'diag-bar--' + diagStatus">
         <strong x-text="diagTitulo"></strong>
-        <span x-text="' — ' + diagMsg"></span>
+        <span x-text="': ' + diagMsg"></span>
       </div>
     </div>
 
@@ -353,7 +353,7 @@
       <button class="btn-guardar"
               @click="guardarSnapshot()"
               :disabled="guardando"
-              x-text="guardando ? 'Guardando…' : 'Guardar snapshot'">
+              x-text="guardando ? 'Guardando...' : 'Guardar snapshot'">
       </button>
       <span class="save-msg" x-show="mensajeGuardado" x-text="mensajeGuardado"></span>
     </div>{% else %}<p>Tenés acceso de solo lectura a este cultivo.</p>{% endif %}
@@ -433,10 +433,10 @@ function canopyApp(cfg) {
     get diagMsg() {
       const w = this.wPerCola;
       if (!this.totalColas) return 'Agregá colas con los botones + a la derecha.';
-      if (w < 20)  return `${this.wPerCola.toFixed(1)} W/cola — sacá algunas colas o reducí plantas.`;
-      if (w <= 25) return `${this.wPerCola.toFixed(1)} W/cola — podés estar al límite de rendimiento.`;
-      if (w <= 45) return `${this.wPerCola.toFixed(1)} W/cola — la luz está bien distribuida.`;
-      return `${this.wPerCola.toFixed(1)} W/cola — podés agregar más colas para aprovechar la lámpara.`;
+      if (w < 20)  return `${this.wPerCola.toFixed(1)} W/cola: sacá algunas colas o reducí plantas.`;
+      if (w <= 25) return `${this.wPerCola.toFixed(1)} W/cola: podés estar al límite de rendimiento.`;
+      if (w <= 45) return `${this.wPerCola.toFixed(1)} W/cola: la luz está bien distribuida.`;
+      return `${this.wPerCola.toFixed(1)} W/cola: podés agregar más colas para aprovechar la lámpara.`;
     },
 
     // ── Init ─────────────────────────────────────────────────────────

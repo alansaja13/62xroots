@@ -179,7 +179,7 @@
       article.append(textNode('h3', `${labels[item.payload.tipo]} · ${item.cultivoNombre}`));
       article.append(textNode('time', new Date(item.payload.observado_en).toLocaleString()));
       const datos = item.payload.datos;
-      const summary = item.payload.tipo === 'ambiente' ? `${datos.temperatura_c} °C · ${datos.humedad_relativa}% HR` : item.payload.tipo === 'riego' ? `${datos.plantas.reduce((total, p) => total + p.volumen_ml, 0)} ml · ${datos.plantas.length} plantas` : datos.descripcion || datos.titulo || `pH ${datos.ph || '—'} · EC ${datos.ec ? `${Math.round(datos.ec * 1000)} µS/cm` : '—'}`;
+      const summary = item.payload.tipo === 'ambiente' ? `${datos.temperatura_c} °C · ${datos.humedad_relativa}% HR` : item.payload.tipo === 'riego' ? `${datos.plantas.reduce((total, p) => total + p.volumen_ml, 0)} ml · ${datos.plantas.length} plantas` : datos.descripcion || datos.titulo || `pH ${datos.ph || '-'} · EC ${datos.ec ? `${Math.round(datos.ec * 1000)} µS/cm` : '-'}`;
       article.append(textNode('p', summary));
       if (datos.notas) {
         const detail = document.createElement('details');
@@ -264,7 +264,7 @@
     const run = async () => {
       if (!await refreshContext() || !current()) return;
       const activeStore = store, account = identity.user;
-      notice('Comprobando y sincronizando pendientes…');
+      notice('Comprobando y sincronizando pendientes...');
       const result = await RootsOffline.drain({
         items: await activeStore.items(), isCurrent: () => current() && store === activeStore,
         save: item => activeStore.put(`item:${item.payload.id}`, item),

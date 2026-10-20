@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>{% block title %}GrowLog{% endblock %} — 62xroots</title>
+  <title>{% block title %}GrowLog{% endblock %} · 62xroots</title>
   {% include "growlog/partials/pwa_head.html" %}
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -178,7 +178,7 @@
     if (v === '') { clearFieldError(el); return true; }
     var ok = !isNaN(parseFloat(v)) && isFinite(v);
     if (!ok) {
-      showFieldError(el, 'Número inválido — usá punto: 26.5');
+      showFieldError(el, 'Número inválido. Usá punto: 26.5');
     } else {
       clearFieldError(el);
     }
@@ -292,7 +292,7 @@
           return;
         }
         if (Notification.permission === 'denied') {
-          alert('Las notificaciones están bloqueadas para este sitio en el navegador — habilitalas desde la configuración del sitio y volvé a intentar.');
+          alert('Las notificaciones están bloqueadas para este sitio en el navegador. Habilitalas desde la configuración del sitio y volvé a intentar.');
           return;
         }
         Notification.requestPermission().then(function (perm) {

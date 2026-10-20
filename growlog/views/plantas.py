@@ -43,7 +43,7 @@ def planta_editar(request, pk):
         messages.success(request, "Planta actualizada.")
         return redirect("growlog:planta_detail", pk=pk)
     return render(request, "growlog/crud_form.html", {
-        "form": form, "title": f"Editar — {planta.apodo}",
+        "form": form, "title": f"Editar: {planta.apodo}",
         "subtitle": planta.cultivo.nombre,
         "back_url": reverse("growlog:planta_detail", args=[pk]),
         "delete_url": reverse("growlog:planta_eliminar", args=[pk]),
@@ -219,7 +219,7 @@ def cambio_etapa_planta_editar(request, pk):
                 form.add_error(None, mensaje)
     return render(request, "growlog/crud_form.html", {
         "form": form,
-        "title": f"Editar etapa — {planta.apodo}",
+        "title": f"Editar etapa: {planta.apodo}",
         "back_url": reverse("growlog:planta_etapa_list", args=[planta.pk]),
         "delete_url": reverse("growlog:cambio_etapa_planta_eliminar", args=[pk]),
     })

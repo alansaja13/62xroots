@@ -213,7 +213,7 @@ class CambioEtapaCultivo(models.Model):
         verbose_name_plural = "Cambios de etapa del cultivo"
 
     def __str__(self):
-        return f"{self.cultivo} — {self.get_etapa_display()} desde {self.fecha_inicio:%d/%m/%Y}"
+        return f"{self.cultivo} · {self.get_etapa_display()} desde {self.fecha_inicio:%d/%m/%Y}"
 
 
 class CambioEtapaPlanta(models.Model):
@@ -237,7 +237,7 @@ class CambioEtapaPlanta(models.Model):
         verbose_name_plural = "Cambios de etapa"
 
     def __str__(self):
-        return f"{self.planta} — {self.get_etapa_display()} desde {self.fecha_inicio:%d/%m/%Y}"
+        return f"{self.planta} · {self.get_etapa_display()} desde {self.fecha_inicio:%d/%m/%Y}"
 
 
 class CambioFotoperiodo(models.Model):
@@ -265,7 +265,7 @@ class CambioFotoperiodo(models.Model):
         verbose_name_plural = "Cambios de fotoperiodo"
 
     def __str__(self):
-        return f"{self.cultivo} — {self.fotoperiodo} desde {self.fecha_inicio:%d/%m/%Y}"
+        return f"{self.cultivo} · {self.fotoperiodo} desde {self.fecha_inicio:%d/%m/%Y}"
 
     def clean(self):
         from django.core.exceptions import ValidationError
@@ -305,7 +305,7 @@ class MedicionAmbiente(models.Model):
         verbose_name_plural = "Mediciones de ambiente"
 
     def __str__(self):
-        return f"{self.cultivo} — {self.timestamp:%d/%m %H:%M} | {self.temperatura_c}°C {self.humedad_relativa}%HR"
+        return f"{self.cultivo} · {self.timestamp:%d/%m %H:%M} | {self.temperatura_c}°C {self.humedad_relativa}%HR"
 
     def save(self, *args, **kwargs):
         if self.luz_estado is None:
@@ -388,7 +388,7 @@ class Riego(models.Model):
         verbose_name_plural = "Riegos"
 
     def __str__(self):
-        return f"Riego {self.cultivo} — {self.timestamp:%d/%m %H:%M} ({self.volumen_total_ml}ml)"
+        return f"Riego {self.cultivo} · {self.timestamp:%d/%m %H:%M} ({self.volumen_total_ml}ml)"
 
 
 class NutrienteAplicado(models.Model):
@@ -421,7 +421,7 @@ class RiegoPlanta(models.Model):
         verbose_name_plural = "Detalles de riego por planta"
 
     def __str__(self):
-        return f"{self.planta.apodo} — {self.volumen_ml}ml (riego #{self.riego_id})"
+        return f"{self.planta.apodo} · {self.volumen_ml}ml (riego #{self.riego_id})"
 
 
 class Evento(models.Model):
@@ -453,7 +453,7 @@ class Evento(models.Model):
         verbose_name_plural = "Eventos"
 
     def __str__(self):
-        return f"{self.get_tipo_display()} — {self.timestamp:%d/%m/%Y}"
+        return f"{self.get_tipo_display()} · {self.timestamp:%d/%m/%Y}"
 
 
 class MedicionPlanta(models.Model):
@@ -479,7 +479,7 @@ class MedicionPlanta(models.Model):
         verbose_name_plural = "Mediciones de plantas"
 
     def __str__(self):
-        return f"{self.planta.apodo} — {self.fecha}"
+        return f"{self.planta.apodo} · {self.fecha}"
 
 
 class Tarea(models.Model):
@@ -550,7 +550,7 @@ class APIToken(models.Model):
         verbose_name_plural = "API Tokens"
 
     def __str__(self):
-        return f"{self.user.username} — {self.created_at:%d/%m/%Y}"
+        return f"{self.user.username} · {self.created_at:%d/%m/%Y}"
 
 
 class ParametroIdeal(models.Model):
@@ -584,7 +584,7 @@ class ParametroIdeal(models.Model):
         verbose_name_plural = "Parámetros ideales"
 
     def __str__(self):
-        return f"Parámetros — {self.get_etapa_display()}"
+        return f"Parámetros · {self.get_etapa_display()}"
 
 
 class PushSubscription(models.Model):
@@ -601,7 +601,7 @@ class PushSubscription(models.Model):
         verbose_name_plural = "Suscripciones push"
 
     def __str__(self):
-        return f"{self.user.username} — {self.creado_en:%d/%m/%Y}"
+        return f"{self.user.username} · {self.creado_en:%d/%m/%Y}"
 
 
 POSICION_TENT_COORDS = {
@@ -627,7 +627,7 @@ class CanopySnapshot(models.Model):
         verbose_name_plural = "Canopy Snapshots"
 
     def __str__(self):
-        return f"{self.cultivo} — snapshot {self.creado_en:%d/%m/%Y %H:%M}"
+        return f"{self.cultivo} · snapshot {self.creado_en:%d/%m/%Y %H:%M}"
 
 
 class ColaPosicion(models.Model):
@@ -670,7 +670,7 @@ class MedicionEC(models.Model):
         verbose_name_plural = "Mediciones EC/pH"
 
     def __str__(self):
-        return f"{self.get_tipo_display()} — {self.cultivo} ({self.timestamp:%d/%m %H:%M})"
+        return f"{self.get_tipo_display()} · {self.cultivo} ({self.timestamp:%d/%m %H:%M})"
 
 
 # ── Módulo energético ─────────────────────────────────────────────────────────
@@ -750,4 +750,4 @@ class LecturaMedidor(models.Model):
         verbose_name_plural = 'Lecturas de medidor'
 
     def __str__(self):
-        return f"{self.cultivo.nombre} — {self.fecha} ({self.kwh_real} kWh)"
+        return f"{self.cultivo.nombre} · {self.fecha} ({self.kwh_real} kWh)"

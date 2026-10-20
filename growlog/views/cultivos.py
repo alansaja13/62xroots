@@ -204,7 +204,7 @@ def cultivo_editar(request, slug):
         messages.success(request, "Cultivo actualizado.")
         return redirect("growlog:cultivo_detail", cultivo.slug)
     return render(request, "growlog/crud_form.html", {
-        "form": form, "title": f"Editar — {cultivo.nombre}",
+        "form": form, "title": f"Editar: {cultivo.nombre}",
         "subtitle": f"Día {cultivo.dias_desde_inicio}",
         "back_url": reverse("growlog:cultivo_detail", args=[cultivo.slug]),
     })
@@ -271,7 +271,7 @@ def cambio_etapa_cultivo_editar(request, pk):
             for mensaje in e.messages:
                 form.add_error(None, mensaje)
     return render(request, "growlog/crud_form.html", {
-        "form": form, "title": f"Editar etapa — {cultivo.nombre}",
+        "form": form, "title": f"Editar etapa: {cultivo.nombre}",
         "back_url": reverse("growlog:cultivo_etapa", args=[cultivo.slug]),
         "delete_url": reverse("growlog:cambio_etapa_cultivo_eliminar", args=[pk]),
     })

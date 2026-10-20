@@ -90,7 +90,7 @@
 </div>
 
 <div id="tdContenido">
-  <div class="td-empty"><i class="bi bi-hourglass-split td-empty__icon"></i>Cargando…</div>
+  <div class="td-empty"><i class="bi bi-hourglass-split td-empty__icon"></i>Cargando...</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.iife.min.js"></script>
@@ -222,7 +222,7 @@
         </div>
         <div class="panel" id="chartVpd"></div>
       </div>
-      ${rango ? '' : '<div class="td-empty" style="padding:16px;"><i class="bi bi-info-circle"></i> No hay parámetros ideales cargados para la etapa actual — se muestran los datos sin banda de referencia.</div>'}
+      ${rango ? '' : '<div class="td-empty" style="padding:16px;"><i class="bi bi-info-circle"></i> No hay parámetros ideales cargados para la etapa actual. Se muestran los datos sin banda de referencia.</div>'}
     `;
 
     chartSimple(document.getElementById('chartTemp'), 'Temp', x, temp, COLOR.honey, rango, 'temp_min', 'temp_max');
