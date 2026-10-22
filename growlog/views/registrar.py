@@ -164,7 +164,9 @@ def registrar(request):
         except RegistroError as exc:
             error, errores, avisos = exc.mensaje, _errores(exc), []
 
-    elegido = elegido or (cultivos[0] if cultivos else None)
+    # Sin cultivo pedido, se propone el último que se abrió.
+    reciente = request.session.get("cultivo_reciente")
+    elegido = elegido or next((c for c in cultivos if c.pk == reciente), None) or (cultivos[0] if cultivos else None)
     # Al volver con errores o avisos, el formulario conserva lo escrito.
     v = {}
     if request.method == "POST":

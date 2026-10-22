@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -316,6 +316,34 @@ def cultivo_reabrir(request, slug):
         else:
             messages.info(request, "Este cultivo no estaba finalizado.")
     return redirect("growlog:cultivo_detail", cultivo.slug)
+
+
+@login_required
+def cultivo_ajustes(request, slug):
+    """Un solo lugar para la configuración del cultivo: datos, etapa,
+    fotoperíodo, equipos, compartir y ciclo de vida."""
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
+    etapa = etapa_efectiva_cultivo(cultivo)
+    return render(request, "growlog/cultivo_ajustes.html", {
+        "cultivo": cultivo,
+        "etapa_actual_display": dict(CambioEtapaPlanta.ETAPA_CHOICES).get(etapa),
+        "fotoperiodo_activo": get_cambio_fotoperiodo_activo(cultivo, timezone.now()),
+        "equipos_count": cultivo.costos_energeticos.values("equipo").distinct().count(),
+        "miembros": cultivo.miembros.select_related("usuario").order_by("usuario__username"),
+    })
+
+
+@login_required
+def cultivo_archivar(request, slug):
+    """Archivar saca el cultivo de los activos sin borrar nada; solo el propietario."""
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
+    if cultivo.propietario_id != request.user.pk:
+        raise PermissionDenied("Solo el propietario puede archivar el cultivo.")
+    if request.method == "POST":
+        cultivo.archivado = not cultivo.archivado
+        cultivo.save(update_fields=["archivado"])
+        messages.success(request, f"Cultivo «{cultivo.nombre}» {'archivado' if cultivo.archivado else 'desarchivado'}.")
+    return redirect("growlog:cultivo_ajustes", cultivo.slug)
 
 
 @login_required

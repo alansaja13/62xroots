@@ -1,0 +1,20 @@
+{# Menú de secciones del cultivo en el que estás parado. #}
+<nav class="cultivo-tabs" aria-label="Secciones de {{ cultivo_nav.nombre }}">
+  <a href="{% url 'growlog:cultivo_detail' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'resumen' %} active{% endif %}"{% if seccion_cultivo == 'resumen' %} aria-current="page"{% endif %}><i class="bi bi-flower1" aria-hidden="true"></i>Resumen</a>
+  <a href="{% url 'growlog:timeline' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'bitacora' %} active{% endif %}"{% if seccion_cultivo == 'bitacora' %} aria-current="page"{% endif %}><i class="bi bi-journal-text" aria-hidden="true"></i>Bitácora</a>
+  <a href="{% url 'growlog:tareas_list' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'tareas' %} active{% endif %}"{% if seccion_cultivo == 'tareas' %} aria-current="page"{% endif %}><i class="bi bi-check2-square" aria-hidden="true"></i>Tareas</a>
+  <a href="{% url 'growlog:cultivo_tendencias' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'tendencias' %} active{% endif %}"{% if seccion_cultivo == 'tendencias' %} aria-current="page"{% endif %}><i class="bi bi-graph-up" aria-hidden="true"></i>Tendencias</a>
+  <a href="{% url 'growlog:canopy' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'canopy' %} active{% endif %}"{% if seccion_cultivo == 'canopy' %} aria-current="page"{% endif %}><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>Canopy</a>
+  <a href="{% url 'growlog:energia' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'energia' %} active{% endif %}"{% if seccion_cultivo == 'energia' %} aria-current="page"{% endif %}><i class="bi bi-lightning-charge" aria-hidden="true"></i>Energía</a>
+  <a href="{% url 'growlog:reporte' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'reporte' %} active{% endif %}"{% if seccion_cultivo == 'reporte' %} aria-current="page"{% endif %}><i class="bi bi-clipboard-data" aria-hidden="true"></i>Reporte</a>
+  {% if can_edit_cultivo %}
+  <a href="{% url 'growlog:cultivo_ajustes' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'ajustes' %} active{% endif %}"{% if seccion_cultivo == 'ajustes' %} aria-current="page"{% endif %}><i class="bi bi-gear" aria-hidden="true"></i>Ajustes</a>
+  {% endif %}
+</nav>
+<script>
+  // En el celular las pestañas se desplazan: centrar la activa para que se vea.
+  (function () {
+    var tabs = document.currentScript.previousElementSibling, activa = tabs.querySelector(".active");
+    if (activa) tabs.scrollLeft = activa.offsetLeft - (tabs.clientWidth - activa.offsetWidth) / 2;
+  })();
+</script>

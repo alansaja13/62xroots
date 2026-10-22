@@ -1,26 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Tareas · {{ cultivo.nombre }}{% endblock %}
 
-{% block crumb %}
-<div class="nav-crumb d-none d-lg-flex">
-  <span class="nav-crumb__item">mis cultivos</span>
-  <span class="nav-crumb__sep">/</span>
-  <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="nav-crumb__item" style="text-decoration:none;">{{ cultivo.nombre }}</a>
-  <span class="nav-crumb__sep">/</span>
-  <span class="nav-crumb__item nav-crumb__item--last">tareas</span>
-</div>
-{% endblock %}
-
 {% block extra_head %}
 <style>
-  .tl-back {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-family: "JetBrains Mono", monospace; font-size: 11px;
-    letter-spacing: .1em; color: var(--cream-soft);
-    text-decoration: none; margin-bottom: 20px;
-  }
-  .tl-back:hover { color: var(--green); }
-
   .tl-header {
     display: flex; align-items: baseline; gap: 18px;
     margin-bottom: 22px; padding-bottom: 18px;
@@ -137,9 +119,6 @@
 
 {% block content %}
 
-<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="tl-back">
-  <i class="bi bi-chevron-left"></i> {{ cultivo.nombre }}
-</a>
 
 <div class="tl-header">
   <h1 class="tl-title">tareas <span class="tl-title__accent">// {{ cultivo.nombre }}</span></h1>

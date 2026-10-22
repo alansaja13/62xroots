@@ -1,0 +1,16 @@
+{# Tarjeta de un cultivo activo en el inicio: toda la tarjeta abre la bitácora. #}
+{% with c=item.cultivo m=item.ultima_medicion %}
+<article class="hoy-panel hoy-cultivo">
+  <div class="hoy-section-head">
+    <span><span class="hoy-tag">{{ c.get_estado_display }}</span>{% if not item.es_propio %} <span class="hoy-tag">{% if item.puede_editar %}Editor{% else %}Solo lectura{% endif %}{% if c.propietario %} · de {{ c.propietario.username }}{% endif %}</span>{% endif %}</span>
+    <span class="hoy-open" aria-hidden="true">Abrir <i class="bi bi-arrow-right"></i></span>
+  </div>
+  <h3><a class="stretched-link" href="{% url 'growlog:cultivo_detail' c.slug %}">{{ c.nombre }}</a></h3>
+  <p class="hoy-note">{{ item.plantas_count }} plantas activas · Inicio {{ c.fecha_inicio|date:"d/m/Y" }}</p>
+  {% if m %}
+  <dl class="hoy-readings"><div><dt>Temperatura</dt><dd>{{ m.temperatura_c|floatformat:1 }} <small>°C</small></dd></div><div><dt>Humedad</dt><dd>{{ m.humedad_relativa|floatformat:0 }} <small>%</small></dd></div><div><dt>VPD calculado</dt><dd>{{ m.vpd|floatformat:2 }} <small>kPa</small></dd></div></dl>
+  <p class="hoy-freshness{% if item.frescura != 'hoy' %} hoy-freshness--old{% endif %}">{% if item.frescura == 'hoy' %}Medido hoy{% elif item.frescura == 'futura' %}Fecha futura: revisá el registro{% else %}Medición anterior a hoy{% endif %}<br><time datetime="{{ m.timestamp|date:'c' }}">{{ m.timestamp|date:"d/m/Y · H:i" }}</time></p>
+  {% else %}<div class="hoy-missing"><strong>Sin mediciones de ambiente</strong><p>Todavía no hay datos para mostrar.</p></div>{% endif %}
+  {% if item.puede_editar %}<div class="hoy-actions"><a class="btn-brand" href="{% url 'growlog:registrar' %}?cultivo={{ c.pk }}">Registrar<span class="visually-hidden"> en {{ c.nombre }}</span></a></div>{% endif %}
+</article>
+{% endwith %}

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Ajustes · {{ cultivo.nombre }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .aj { max-width: 900px; }
+  .aj h1 {
+    font-family: var(--font-display); font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: clamp(36px, 7vw, 56px); font-weight: 700; letter-spacing: -.022em; line-height: .95;
+    margin: 8px 0 10px; overflow-wrap: anywhere;
+  }
+  .aj > p { color: var(--cream-soft); margin-bottom: 22px; }
+  .aj-list { display: grid; gap: 10px; margin-bottom: 28px; }
+  .aj-item {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 18px; border: 1px solid var(--rule); border-radius: 14px;
+    background: var(--card); color: var(--cream); text-decoration: none;
+    transition: border-color .15s;
+  }
+  a.aj-item:hover { border-color: var(--green-deep); color: var(--cream); }
+  .aj-item > i { font-size: 20px; color: var(--green); width: 24px; text-align: center; flex-shrink: 0; }
+  .aj-item__body { flex: 1; min-width: 0; }
+  .aj-item__title { font-weight: 700; font-size: 15px; display: block; }
+  .aj-item__val { font-family: var(--font-mono); font-size: 11px; color: var(--cream-soft); overflow-wrap: anywhere; }
+  .aj-item__go { color: var(--fine); font-size: 14px; }
+  .aj h2 { font-size: 18px; font-weight: 800; margin: 0 0 12px; }
+  .aj-ciclo { display: flex; flex-wrap: wrap; gap: 10px; }
+  .aj-ciclo form { margin: 0; }
+  .aj-note { font-size: 13px; color: var(--cream-soft); margin-top: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="aj">
+  <div class="label-eyebrow">// ajustes del cultivo</div>
+  <h1>{{ cultivo.nombre }}</h1>
+  <p>La configuración del cultivo en un solo lugar. Lo del día a día (riegos, ambiente, eventos) se carga desde Registrar.</p>
+
+  <div class="aj-list">
+    <a class="aj-item" href="{% url 'growlog:cultivo_editar' cultivo.slug %}">
+      <i class="bi bi-box" aria-hidden="true"></i>
+      <span class="aj-item__body">
+        <span class="aj-item__title">Datos del cultivo</span>
+        <span class="aj-item__val">{{ cultivo.carpa_dimensiones|default:"carpa sin cargar" }} · {{ cultivo.sustrato|default:"sustrato sin cargar" }} · {{ cultivo.lampara_modelo|default:"lámpara sin cargar" }}</span>
+      </span>
+      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+    </a>
+    <a class="aj-item" href="{% url 'growlog:cultivo_etapa' cultivo.slug %}">
+      <i class="bi bi-flower1" aria-hidden="true"></i>
+      <span class="aj-item__body">
+        <span class="aj-item__title">Etapa</span>
+        <span class="aj-item__val">{% if cultivo.estado == 'finalizado' %}Finalizado{% else %}{{ etapa_actual_display|default:"sin etapa" }}{% endif %}{% if cultivo.dia_flora %} · día {{ cultivo.dia_flora }} de flora{% endif %}</span>
+      </span>
+      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+    </a>
+    <a class="aj-item" href="{% url 'growlog:fotoperiodo_list' cultivo.slug %}">
+      <i class="bi bi-sun" aria-hidden="true"></i>
+      <span class="aj-item__body">
+        <span class="aj-item__title">Fotoperíodo</span>
+        <span class="aj-item__val">{% if fotoperiodo_activo %}{{ fotoperiodo_activo.fotoperiodo }} · enciende {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }}{% else %}sin configurar{% endif %}</span>
+      </span>
+      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+    </a>
+    <a class="aj-item" href="{% url 'growlog:energia' cultivo.slug %}">
+      <i class="bi bi-lightning-charge" aria-hidden="true"></i>
+      <span class="aj-item__body">
+        <span class="aj-item__title">Equipos y consumo eléctrico</span>
+        <span class="aj-item__val">{% if equipos_count %}{{ equipos_count }} equipo{{ equipos_count|pluralize }} asignado{{ equipos_count|pluralize }}{% else %}sin equipos asignados{% endif %}</span>
+      </span>
+      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+    </a>
+    {% if can_manage_cultivo %}
+    <a class="aj-item" href="{% url 'growlog:invitados_panel' %}">
+      <i class="bi bi-people" aria-hidden="true"></i>
+      <span class="aj-item__body">
+        <span class="aj-item__title">Compartir</span>
+        <span class="aj-item__val">{% for m in miembros %}{{ m.usuario.username }} ({{ m.get_rol_display|lower }}){% if not forloop.last %} · {% endif %}{% empty %}no está compartido con nadie{% endfor %}</span>
+      </span>
+      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+    </a>
+    {% endif %}
+  </div>
+
+  <section class="panel" style="padding:18px 20px;">
+    <h2>Ciclo del cultivo</h2>
+    <div class="aj-ciclo">
+      {% if cultivo.estado != 'finalizado' %}
+      <form method="post" action="{% url 'growlog:cultivo_finalizar' cultivo.slug %}"
+            onsubmit="return confirm('¿Finalizar «{{ cultivo.nombre|escapejs }}»? Pasará a estado finalizado con fecha de fin hoy.');">
+        {% csrf_token %}
+        <button type="submit" class="btn-ghost" style="border-color:var(--rust);color:var(--rust);"><i class="bi bi-flag"></i> Finalizar cultivo</button>
+      </form>
+      {% else %}
+      <form method="post" action="{% url 'growlog:cultivo_reabrir' cultivo.slug %}"
+            onsubmit="return confirm('¿Reabrir «{{ cultivo.nombre|escapejs }}»? Se quita la fecha de cierre y vuelve a la etapa de su historial.');">
+        {% csrf_token %}
+        <button type="submit" class="btn-ghost"><i class="bi bi-arrow-counterclockwise"></i> Reabrir cultivo</button>
+      </form>
+      {% endif %}
+      {% if can_manage_cultivo %}
+      <form method="post" action="{% url 'growlog:cultivo_archivar' cultivo.slug %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-ghost"><i class="bi bi-archive"></i> {% if cultivo.archivado %}Desarchivar{% else %}Archivar{% endif %}</button>
+      </form>
+      {% endif %}
+    </div>
+    <p class="aj-note">Finalizar cierra el ciclo con fecha de fin. Archivar lo saca de los activos sin borrar nada{% if cultivo.archivado %}; este cultivo está archivado{% endif %}. Los dos van al historial.</p>
+  </section>
+</div>
+{% endblock %}

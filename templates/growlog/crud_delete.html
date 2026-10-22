@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
 
+{# Formularios: foco en la tarea, sin el menú del cultivo. #}
+{% block cultivo_tabs %}{% endblock %}
+
 {% block bottom_nav %}
 <a href="{{ back_url }}" class="bottom-nav__item">
   <i class="bi bi-arrow-left"></i>

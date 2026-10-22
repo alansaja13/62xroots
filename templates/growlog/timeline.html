@@ -2,41 +2,8 @@
 {% load ec %}
 {% block title %}Timeline · {{ cultivo.nombre }}{% endblock %}
 
-{% block crumb %}
-<div class="nav-crumb d-none d-lg-flex">
-  <span class="nav-crumb__item">mis cultivos</span>
-  <span class="nav-crumb__sep">/</span>
-  <span class="nav-crumb__item">{{ cultivo.nombre }}</span>
-  <span class="nav-crumb__sep">/</span>
-  <span class="nav-crumb__item nav-crumb__item--last">historial</span>
-</div>
-{% endblock %}
-
-{% block bottom_nav %}
-<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="bottom-nav__item">
-  <i class="bi bi-arrow-left"></i>
-  <span>Volver</span>
-</a>
-{% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="bottom-nav__item">
-  <i class="bi bi-lightning-charge-fill"></i>
-  <span>Registrar</span>
-</a>{% endif %}
-<a href="{% url 'growlog:tareas_list' cultivo.slug %}" class="bottom-nav__item">
-  <i class="bi bi-check2-square"></i>
-  <span>Tareas</span>
-</a>
-{% endblock %}
-
 {% block extra_head %}
 <style>
-  .tl-back {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-family: "JetBrains Mono", monospace; font-size: 11px;
-    color: var(--cream-soft); text-decoration: none;
-    margin-bottom: 14px; letter-spacing: .1em;
-  }
-  .tl-back:hover { color: var(--green); }
-
   .tl-header {
     display: grid; grid-template-columns: 1fr auto; gap: 28px;
     align-items: flex-end; margin-bottom: 18px;
@@ -92,9 +59,6 @@
 
 {% block content %}
 
-<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="tl-back">
-  <i class="bi bi-chevron-left"></i> {{ cultivo.nombre }}
-</a>
 
 <!-- HEADER -->
 <div class="tl-header">

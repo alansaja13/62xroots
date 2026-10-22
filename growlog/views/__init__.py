@@ -9,6 +9,8 @@ from .auth import (  # noqa: F401
 from .cultivos import (  # noqa: F401
     cambio_etapa_cultivo_editar,
     cambio_etapa_cultivo_eliminar,
+    cultivo_ajustes,
+    cultivo_archivar,
     cultivo_detail,
     cultivo_editar,
     cultivo_etapa,

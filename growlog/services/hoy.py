@@ -14,7 +14,7 @@ def resumen_hoy(usuario, *, ahora=None):
     cultivos = list(cultivos_visibles(usuario).annotate(
         plantas_count=Count("plantas", filter=Q(plantas__estado="activa", plantas__archivado=False), distinct=True),
         ultima_id=Subquery(ultima.values("pk")[:1]),
-    ).order_by("-fecha_inicio", "-pk"))
+    ).select_related("propietario").order_by("-fecha_inicio", "-pk"))
     editables = set(cultivos_visibles(usuario, editar=True).values_list("pk", flat=True))
     mediciones = MedicionAmbiente.objects.in_bulk(c.ultima_id for c in cultivos if c.ultima_id)
     activos, finalizados, archivados = [], [], []
@@ -24,7 +24,7 @@ def resumen_hoy(usuario, *, ahora=None):
         frescura = "sin_datos" if not fecha else "futura" if medicion.timestamp > ahora else "hoy" if fecha == hoy else "anterior"
         item = {"cultivo": cultivo, "ultima_medicion": medicion,
                 "plantas_count": cultivo.plantas_count, "puede_editar": cultivo.pk in editables,
-                "frescura": frescura}
+                "frescura": frescura, "es_propio": cultivo.propietario_id == usuario.pk}
         (archivados if cultivo.archivado else finalizados if cultivo.estado == "finalizado" else activos).append(item)
 
     ids = [item["cultivo"].pk for item in activos]
@@ -54,7 +54,9 @@ def resumen_hoy(usuario, *, ahora=None):
         item["vencido"] = bool(item["fecha"] and item["fecha"] < hoy)
     atencion.sort(key=lambda item: (not item["vencido"], item["fecha"] or hoy,
                                    item["prioridad"], item["tipo"], item["pk"]))
-    return {"hoy": hoy, "activos": activos, "finalizados": finalizados, "archivados": archivados,
+    return {"hoy": hoy, "activos": activos,
+            "propios": [item for item in activos if item["es_propio"]],
+            "compartidos": [item for item in activos if not item["es_propio"]], "finalizados": finalizados, "archivados": archivados, "historial_total": len(finalizados) + len(archivados),
             "atencion": atencion[:12], "atencion_total": total,
             "atencion_restante": max(0, total - 12), "tareas_total": conteos["total"],
             "tareas_sin_fecha": conteos["sin_fecha"], "puede_registrar": bool(editables),

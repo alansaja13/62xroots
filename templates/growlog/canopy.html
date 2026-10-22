@@ -2,16 +2,6 @@
 {% load static %}
 {% block title %}Canopy · {{ cultivo.nombre }}{% endblock %}
 
-{% block crumb %}
-<div class="nav-crumb d-none d-lg-flex">
-  <span class="nav-crumb__item">mis cultivos</span>
-  <span class="nav-crumb__sep">/</span>
-  <a class="nav-crumb__item" href="{% url 'growlog:cultivo_detail' cultivo.slug %}">{{ cultivo.nombre }}</a>
-  <span class="nav-crumb__sep">/</span>
-  <span class="nav-crumb__item nav-crumb__item--last">canopy map</span>
-</div>
-{% endblock %}
-
 {% block extra_head %}
 <style>
   .canopy-page { max-width: 1200px; margin: 0 auto; }

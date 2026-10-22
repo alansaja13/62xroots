@@ -2,16 +2,6 @@
 {% load ec %}
 {% block title %}{% if riego %}Riego · {{ riego }}{% else %}Nuevo riego · {{ subtitle }}{% endif %}{% endblock %}
 
-{% block crumb %}
-<div class="nav-crumb d-none d-lg-flex">
-  <span class="nav-crumb__item">mis cultivos</span>
-  <span class="nav-crumb__sep">/</span>
-  <span class="nav-crumb__item">{{ subtitle }}</span>
-  <span class="nav-crumb__sep">/</span>
-  <span class="nav-crumb__item nav-crumb__item--last">riego</span>
-</div>
-{% endblock %}
-
 {% block extra_head %}
 <style>
   .rf-back {
