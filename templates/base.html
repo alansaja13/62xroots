@@ -57,6 +57,12 @@
             compartir
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'faq' %}active{% endif %}"
+             href="{% url 'growlog:faq' %}">
+            dudas
+          </a>
+        </li>
         {% endif %}
         {% if user.is_superuser %}
         <li class="nav-item">

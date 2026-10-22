@@ -30,5 +30,8 @@
 <a href="{% url 'growlog:invitados_panel' %}" class="bottom-nav__item{% if actual == 'invitados_panel' %} active{% endif %}"{% if actual == 'invitados_panel' %} aria-current="page"{% endif %}>
   <i class="bi bi-people" aria-hidden="true"></i><span>Compartir</span>
 </a>
+<a href="{% url 'growlog:faq' %}" class="bottom-nav__item{% if actual == 'faq' %} active{% endif %}"{% if actual == 'faq' %} aria-current="page"{% endif %}>
+  <i class="bi bi-question-circle" aria-hidden="true"></i><span>Dudas</span>
+</a>
 {% endif %}
 {% endwith %}

@@ -476,6 +476,7 @@ class MedicionPlanta(models.Model):
         ordering = ["-fecha"]
         verbose_name = "Medición de planta"
         verbose_name_plural = "Mediciones de plantas"
+        permissions = [("subir_fotos", "Puede subir fotos aunque estén deshabilitadas para todos")]
 
     def __str__(self):
         return f"{self.planta.apodo} · {self.fecha}"

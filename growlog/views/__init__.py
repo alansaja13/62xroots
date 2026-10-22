@@ -6,6 +6,7 @@ from .auth import (  # noqa: F401
     login_view,
     logout_view,
 )
+from .ayuda import faq  # noqa: F401
 from .cultivos import (  # noqa: F401
     cambio_etapa_cultivo_editar,
     cambio_etapa_cultivo_eliminar,

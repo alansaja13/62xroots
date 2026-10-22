@@ -1,5 +1,6 @@
 """Política de acceso por cultivo; staff no concede acceso global a la bitácora."""
 
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -56,6 +57,12 @@ def objeto_del_cultivo(request, model, *, editar=False, **lookup):
     request.cultivo_actual = cultivo
     request.puede_editar_cultivo = puede_editar(request.user, cultivo)
     return obj
+
+
+def puede_subir_fotos(usuario):
+    if not usuario.is_authenticated or not usuario.is_active:
+        return False
+    return settings.PERMITIR_FOTOS_A_TODOS or usuario.has_perm("growlog.subir_fotos")
 
 
 def recursos_visibles(model, usuario, *, editar=False):

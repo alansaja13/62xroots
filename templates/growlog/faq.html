@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Dudas frecuentes{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'growlog/faq.css' %}">{% endblock %}
+
+{% block content %}
+<div class="faq">
+  <header class="faq-header">
+    <div class="label-eyebrow">// dudas frecuentes · cultivo en tierra</div>
+    <h1>Preguntas de cultivo</h1>
+    <p>Respuestas cortas a lo que más se pregunta en foros y grupos. Son puntos de partida: cada genética, carpa y tierra responde distinto, así que mirá tus plantas y anotá todo en la bitácora.</p>
+    <label class="faq-search">
+      <i class="bi bi-search" aria-hidden="true"></i>
+      <span class="visually-hidden">Buscar una duda</span>
+      <input type="search" id="faq-buscar" placeholder="Buscar: pH, araña roja, cosecha…" autocomplete="off">
+    </label>
+    <nav class="faq-toc" aria-label="Temas">
+      <a href="#basicos">pH y EC</a><a href="#riego">Riego</a><a href="#ambiente">Ambiente y VPD</a>
+      <a href="#luz">Luz y ciclo</a><a href="#nutricion">Nutrición</a><a href="#plagas">Plagas y hongos</a>
+      <a href="#entrenamiento">Entrenamiento</a><a href="#cosecha">Cosecha y curado</a><a href="#empezar">Para empezar</a>
+    </nav>
+  </header>
+  <p class="faq-empty" id="faq-vacio" hidden>No encontramos dudas con esa palabra. Probá con otra.</p>
+
+  <section class="faq-section" id="basicos" aria-labelledby="basicos-t">
+    <h2 id="basicos-t">pH y EC</h2>
+    <details><summary>¿Qué es el pH y por qué importa?</summary>
+      <p>Mide qué tan ácida o alcalina es el agua o la tierra (escala de 0 a 14, 7 es neutro). La raíz solo puede tomar cada nutriente dentro de cierto rango de pH: si te vas de rango, la planta pasa hambre aunque la tierra tenga de todo.</p>
+      <p><strong>En tierra apuntá a 6,0 a 7,0</strong> en el agua de riego, idealmente entre 6,2 y 6,8. En coco o hidro el rango es más bajo (5,5 a 6,2).</p>
+    </details>
+    <details><summary>¿Qué es la EC?</summary>
+      <p>La conductividad eléctrica indica cuántas sales (nutrientes) hay disueltas en el agua. Más EC, más comida, pero también más riesgo de quemar.</p>
+      <p>Valores orientativos del agua con abono, en mS/cm: plántula 0,4 a 0,8 · vege 0,8 a 1,4 · flora 1,2 a 1,8. En la app la EC se carga ×10 µS/cm, o sea 1,2 mS/cm se anota como 12.</p>
+    </details>
+    <details><summary>¿Por qué medir pH y EC si uso tierra?</summary>
+      <p>Porque la mayoría de los problemas "raros" (hojas manchadas, amarillas, que no crecen) son pH fuera de rango o exceso de sales, no falta de abono. Medir te evita agregar más abono a una planta que en realidad está bloqueada.</p>
+    </details>
+    <details><summary>¿Qué es el runoff y cómo lo mido?</summary>
+      <p>Es el agua que sale por debajo de la maceta. Regá hasta que drene un 10 a 20 %, juntá esa agua y medí pH y EC.</p>
+      <p>Si el pH del runoff se aleja mucho del que entró, o la EC del runoff es bastante más alta que la del riego, se están acumulando sales: bajá la dosis o hacé un riego solo con agua.</p>
+    </details>
+    <details><summary>¿Cómo corrijo el pH del agua?</summary>
+      <p>Con pH- (ácido fosfórico o cítrico) o pH+ (hidróxido de potasio), de a gotas, mezclando y midiendo de nuevo. Siempre ajustá <strong>después</strong> de agregar el abono, porque el abono cambia el pH.</p>
+    </details>
+    <details><summary>¿El agua de la canilla sirve?</summary>
+      <p>En general sí. Dejala reposar 24 h destapada para que se vaya el cloro y llegue a temperatura ambiente. Medí su EC: si sale muy alta (más de 0,6 a 0,8 mS/cm) conviene cortarla con agua de lluvia, destilada o de ósmosis.</p>
+    </details>
+    <details><summary>¿Cada cuánto calibro el medidor?</summary>
+      <p>El de pH, una vez por mes y siempre que dé lecturas raras, con líquido de calibración 4 y 7. Guardá el electrodo húmedo en solución de almacenamiento, nunca en agua destilada.</p>
+    </details>
+  </section>
+
+  <section class="faq-section" id="riego" aria-labelledby="riego-t">
+    <h2 id="riego-t">Riego</h2>
+    <details><summary>¿Cómo sé cuándo regar?</summary>
+      <p><strong>Levantá la maceta.</strong> Recién regada pesa mucho; cuando está liviana, toca regar. También sirve meter el dedo 3 a 5 cm: si está seco, regá. No riegues por calendario: la planta toma más agua a medida que crece y con más calor.</p>
+    </details>
+    <details><summary>¿Cuánta agua le doy?</summary>
+      <p>Regá despacio, repartido por toda la superficie, hasta que drene un 10 a 20 %. Después esperá a que la maceta se aliviane. Mejor riegos completos y espaciados que chorritos todos los días.</p>
+      <p>Con plantas chicas en macetas grandes, regá en círculo cerca del tallo y de a poco, para no dejar toda la tierra empapada.</p>
+    </details>
+    <details><summary>¿Cómo distingo exceso de riego de falta de riego?</summary>
+      <p><strong>Exceso:</strong> hojas caídas pero gorditas y firmes, tierra húmeda, la caída aparece después de regar. Es el error más común de quien empieza.</p>
+      <p><strong>Falta:</strong> hojas caídas, finas y blandas como papel, tierra seca y maceta liviana. Se recupera en horas después de regar.</p>
+    </details>
+    <details><summary>¿A qué temperatura uso el agua?</summary>
+      <p>Templada, entre 18 y 22 °C. El agua muy fría estresa la raíz y la muy caliente tiene poco oxígeno.</p>
+    </details>
+    <details><summary>¿Conviene la maceta de tela?</summary>
+      <p>Sí, sobre todo para empezar: la raíz respira por los costados y es más difícil ahogarla. Secan más rápido, así que vas a regar más seguido.</p>
+    </details>
+  </section>
+
+  <section class="faq-section" id="ambiente" aria-labelledby="ambiente-t">
+    <h2 id="ambiente-t">Ambiente y VPD</h2>
+    <details><summary>¿Qué temperatura y humedad necesito?</summary>
+      <div class="faq-table-wrap"><table class="faq-table">
+        <thead><tr><th>Etapa</th><th>Temp. °C</th><th>Humedad %</th><th>VPD kPa</th></tr></thead>
+        <tbody>
+          <tr><td>Plántula / esqueje</td><td>22 a 26</td><td>65 a 75</td><td>0,4 a 0,8</td></tr>
+          <tr><td>Vege temprano</td><td>22 a 28</td><td>55 a 70</td><td>0,8 a 1,0</td></tr>
+          <tr><td>Vege tardío</td><td>21 a 27</td><td>50 a 65</td><td>1,0 a 1,2</td></tr>
+          <tr><td>Flora temprana</td><td>21 a 26</td><td>45 a 55</td><td>1,0 a 1,3</td></tr>
+          <tr><td>Flora tardía</td><td>20 a 25</td><td>40 a 50</td><td>1,2 a 1,5</td></tr>
+          <tr><td>Secado</td><td>15 a 21</td><td>50 a 60</td><td></td></tr>
+        </tbody>
+      </table></div>
+      <p>Son los mismos rangos que usa la app para marcar tus mediciones como ideal, alto o bajo. Con luces apagadas está bien que baje la temperatura, pero que la diferencia no pase de 5 a 8 °C.</p>
+    </details>
+    <details><summary>¿Qué es el VPD?</summary>
+      <p>El déficit de presión de vapor combina temperatura y humedad en un solo número: indica cuánto "tira" el aire del agua de la hoja. Con VPD bajo la planta transpira poco (y aparecen hongos); con VPD alto transpira demasiado y se estresa.</p>
+      <p>Por eso 26 °C con 60 % no es lo mismo que 20 °C con 60 %: el VPD cambia aunque la humedad sea igual.</p>
+    </details>
+    <details><summary>¿Cómo se calcula el VPD?</summary>
+      <p>La app lo calcula sola cuando cargás temperatura y humedad. La cuenta es:</p>
+      <p class="faq-formula">PSV = 0,6108 × e<sup>(17,27 × T) / (T + 237,3)</sup><br>VPD = PSV × (1 − HR / 100)</p>
+      <p>T es la temperatura en °C y HR la humedad relativa. Ejemplo: 25 °C y 60 % da PSV 3,17 kPa y VPD 1,27 kPa. Algunas tablas usan la temperatura de la hoja (1 a 2 °C menos que el aire), que da un VPD un poco más bajo.</p>
+    </details>
+    <details><summary>¿Qué hago si la humedad está muy alta o muy baja?</summary>
+      <p><strong>Alta:</strong> más extracción, ventilador moviendo aire entre las plantas, deshumidificador, y no dejar agua estancada ni ropa secándose cerca. En flora es prioridad: con humedad alta aparece el moho en los cogollos.</p>
+      <p><strong>Baja:</strong> humidificador, menos extracción (sin pasarte de temperatura), o un balde con agua y una toalla. Pasa mucho en invierno con calefacción.</p>
+    </details>
+    <details><summary>¿Necesito extractor y ventilador?</summary>
+      <p>Sí, los dos. El extractor renueva el aire (saca calor, humedad y trae CO₂ fresco); el ventilador mueve el aire adentro, fortalece los tallos y evita bolsones húmedos. Las hojas tienen que moverse un poco, no flamear.</p>
+    </details>
+    <details><summary>¿A qué distancia pongo la luz?</summary>
+      <p>Depende de la potencia; seguí la tabla del fabricante. Orientativo para LED: plántula 60 a 90 cm, vege 40 a 60 cm, flora 30 a 45 cm. Si las puntas se ponen amarillas o blanqueadas arriba, o las hojas se arquean hacia arriba, está muy cerca o muy fuerte.</p>
+    </details>
+  </section>
+
+  <section class="faq-section" id="luz" aria-labelledby="luz-t">
+    <h2 id="luz-t">Luz y ciclo</h2>
+    <details><summary>¿Por qué las fotoperiódicas dependen de la luz y las automáticas no?</summary>
+      <p>Las <strong>fotoperiódicas</strong> florecen cuando las noches se alargan: en interior se pasan a 12 h de luz y 12 de oscuridad (12/12) y ahí arranca la flora. Mientras tengan 18 h de luz, siguen en vege todo lo que quieras.</p>
+      <p>Las <strong>automáticas</strong> tienen genes de <em>ruderalis</em> y florecen por edad, a las 3 a 5 semanas, sin importar la luz. Se cultivan con 18/6 o 20/4 de principio a fin.</p>
+    </details>
+    <details><summary>¿Qué conviene para empezar: auto o foto?</summary>
+      <p><strong>Auto:</strong> más rápida (unas 10 a 12 semanas de semilla a cosecha), plantas chicas, ideal para poco espacio. Pero no se recupera de errores: un trasplante tarde o una poda fuerte le quitan producción.</p>
+      <p><strong>Foto:</strong> vos decidís cuánto crece, perdona más los errores, se puede podar, entrenar y sacar esquejes. Tarda más (de 3 a 5 meses).</p>
+    </details>
+    <details><summary>¿Qué fotoperíodo uso en cada etapa?</summary>
+      <p>Fotoperiódicas: 18/6 en vege y 12/12 en flora. Automáticas: 18/6 o 20/4 siempre. Usá un timer: los horarios tienen que ser exactos todos los días. Cargalo en Ajustes del cultivo para que la app sepa si la luz está prendida.</p>
+    </details>
+    <details><summary>¿Qué pasa si entra luz en la oscuridad?</summary>
+      <p>En flora, las fugas de luz (un led del enchufe, la puerta mal cerrada) pueden estresar a la planta y volverla hermafrodita: saca bolsas de polen y semilla los cogollos. Revisá la carpa a oscuras antes de pasar a 12/12. Si tenés que entrar de noche, usá luz verde.</p>
+    </details>
+    <details><summary>¿Cuánto se estira la planta al pasar a flora?</summary>
+      <p>En las primeras 2 a 3 semanas de 12/12 la planta puede duplicar (o más) su altura. Pasá a flora cuando la planta tenga más o menos la mitad de la altura que querés al final.</p>
+    </details>
+    <details><summary>¿Cómo distingo macho de hembra?</summary>
+      <p>A las 3 a 6 semanas aparecen las preflores en las uniones del tallo. Hembra: un cáliz con pelitos blancos. Macho: bolitas sin pelos que cuelgan como racimos. Sacá los machos antes de que abran, salvo que quieras semillas.</p>
+    </details>
+  </section>
+
+  <section class="faq-section" id="nutricion" aria-labelledby="nutricion-t">
+    <h2 id="nutricion-t">Nutrición en tierra</h2>
+    <details><summary>¿Cuándo empiezo a abonar?</summary>
+      <p>Si la tierra viene preabonada (la mayoría de las comerciales), las primeras 2 a 4 semanas no hace falta nada: solo agua con pH ajustado. Empezá cuando las hojas de abajo se pongan apenas más claras.</p>
+    </details>
+    <details><summary>¿Qué dosis uso?</summary>
+      <p>Arrancá con la mitad de lo que dice la tabla de la marca y subí según cómo responde la planta. Es mucho más fácil corregir de menos que de más. En vege la planta pide más nitrógeno (N); en flora, más fósforo (P) y potasio (K).</p>
+    </details>
+    <details><summary>Las puntas de las hojas se queman. ¿Qué es?</summary>
+      <p>Casi siempre exceso de abono ("quemadura de nutrientes"): puntas amarillas o marrones y crocantes. Bajá la dosis y medí la EC del runoff. Si es leve y solo en las puntas, la planta está al límite de lo que tolera.</p>
+    </details>
+    <details><summary>Las hojas de abajo se ponen amarillas. ¿Le falta algo?</summary>
+      <p>Si amarillean parejas, de abajo hacia arriba, suele ser falta de nitrógeno. En la última parte de la flora es normal y esperado. Antes de sumar abono, medí el pH: muchas carencias son en realidad un bloqueo.</p>
+    </details>
+    <details><summary>¿Qué es el bloqueo de nutrientes?</summary>
+      <p>Cuando el pH está fuera de rango o hay demasiadas sales acumuladas, la raíz no puede absorber aunque haya comida. Se ven varias carencias a la vez. Solución: corregí el pH del riego y, si la EC del runoff está muy alta, regá con bastante agua sola con pH ajustado.</p>
+    </details>
+    <details><summary>¿Cómo reconozco falta de calcio o magnesio?</summary>
+      <p><strong>Magnesio:</strong> hojas viejas que amarillean entre las nervaduras, que siguen verdes. <strong>Calcio:</strong> manchas marrones u óxido en hojas nuevas y medianas, bordes deformados. Son comunes con LED y con agua blanda u ósmosis; un suplemento de Ca/Mg lo resuelve si el pH está bien.</p>
+    </details>
+    <details><summary>¿Hay que lavar raíces antes de cosechar?</summary>
+      <p>Es tema de debate. En tierra, muchos simplemente dejan de abonar las últimas 1 a 2 semanas y riegan solo con agua. Lo importante es no seguir abonando fuerte hasta el final.</p>
+    </details>
+  </section>
+
+  <section class="faq-section" id="plagas" aria-labelledby="plagas-t">
+    <h2 id="plagas-t">Plagas y hongos</h2>
+    <details><summary>¿Cómo prevengo las plagas?</summary>
+      <p>Revisá el envés de las hojas con lupa una vez por semana. Poné trampas adhesivas amarillas (y azules para trips). Limpieza: nada de hojas muertas en la maceta, herramientas limpias, y no entres a la carpa después de estar en el jardín. Cualquier planta o esqueje nuevo, una semana en cuarentena aparte.</p>
+    </details>
+    <details><summary>Araña roja</summary>
+      <p><strong>Señales:</strong> puntitos blancos o amarillos en las hojas, telitas finas, ácaros mínimos debajo de la hoja. Le encanta el calor seco.</p>
+      <p><strong>Qué hacer:</strong> subir la humedad, ducha a las hojas, jabón potásico o aceite de neem cada 3 días durante 2 semanas (los huevos eclosionan después). Ácaros depredadores como control biológico. Es la plaga más difícil: actuá apenas la veas.</p>
+    </details>
+    <details><summary>Mosca del sustrato (mosquitas negras)</summary>
+      <p><strong>Señales:</strong> mosquitas negras volando cerca de la tierra. Las larvas comen raíces finas.</p>
+      <p><strong>Qué hacer:</strong> dejar secar bien la capa de arriba entre riegos (es el remedio principal), trampas amarillas, una capa de perlita o arena arriba, y <em>Bacillus thuringiensis israelensis</em> (Bti) en el agua de riego para las larvas.</p>
+    </details>
+    <details><summary>Trips</summary>
+      <p><strong>Señales:</strong> manchas plateadas o brillantes en las hojas con puntitos negros (excremento), bichitos alargados que corren.</p>
+      <p><strong>Qué hacer:</strong> trampas azules, jabón potásico, aceite de neem o spinosad. Repetir a la semana.</p>
+    </details>
+    <details><summary>Pulgón y mosca blanca</summary>
+      <p><strong>Señales:</strong> colonias de bichos verdes o negros en brotes nuevos (pulgón), o mosquitas blancas que vuelan al mover la planta. Dejan hojas pegajosas.</p>
+      <p><strong>Qué hacer:</strong> jabón potásico, neem, trampas amarillas. Las vaquitas de San Antonio comen pulgón.</p>
+    </details>
+    <details><summary>Oídio (polvo blanco en las hojas)</summary>
+      <p><strong>Señales:</strong> manchas de polvo blanco, como harina, que empiezan en hojas de abajo con poca luz y aire.</p>
+      <p><strong>Qué hacer:</strong> sacar las hojas afectadas, bajar la humedad, más ventilación, y en vege bicarbonato de potasio, azufre o <em>Bacillus subtilis</em>. En flora no pulverices cogollos.</p>
+    </details>
+    <details><summary>Botrytis (podredumbre del cogollo)</summary>
+      <p><strong>Señales:</strong> una hoja que se seca de golpe en medio del cogollo; adentro, moho gris o marrón. Aparece en flora con humedad alta y cogollos densos.</p>
+      <p><strong>Qué hacer:</strong> cortar el cogollo afectado con margen y sacarlo de la carpa en una bolsa, sin sacudirlo. Bajar la humedad a menos de 50 % y mover aire entre los cogollos. Lo que tiene moho no se consume.</p>
+    </details>
+    <details><summary>¿Puedo pulverizar en flora?</summary>
+      <p>Evitalo a partir de la tercera semana de flora: los productos quedan en el cogollo y la humedad sobre las flores favorece el moho. Por eso conviene prevenir y tratar todo en vege.</p>
+    </details>
+  </section>
+
+  <section class="faq-section" id="entrenamiento" aria-labelledby="entrenamiento-t">
+    <h2 id="entrenamiento-t">Entrenamiento</h2>
+    <details><summary>¿Qué es el LST?</summary>
+      <p>Entrenamiento de bajo estrés: doblar y atar ramas hacia afuera para que la planta crezca ancha y pareja, con muchas puntas a la misma altura. Sirve para autos y fotos. Se hace de a poco, en vege.</p>
+    </details>
+    <details><summary>¿Qué es el topping o apical?</summary>
+      <p>Cortar la punta principal por encima del 4.º a 6.º nudo: la planta se divide en dos ramas principales. Hacelo en vege con la planta sana, y dale una semana de recuperación entre cortes. En autos, solo si está muy vigorosa y temprano.</p>
+    </details>
+    <details><summary>¿Qué es el SCROG?</summary>
+      <p>Una malla horizontal a 20 a 30 cm sobre la maceta: vas pasando las ramas por la malla en vege y al inicio de flora para llenar todo el espacio con un dosel parejo. Ideal para fotos y carpas chicas.</p>
+    </details>
+    <details><summary>¿Hay que defoliar?</summary>
+      <p>Con moderación. Sacar hojas grandes que tapan cogollos y las ramitas de abajo que no reciben luz ("lollipop") mejora el aire y la luz. Nunca saques más de un 20 a 30 % de una vez, y no defolies autos fuerte.</p>
+    </details>
+  </section>
+
+  <section class="faq-section" id="cosecha" aria-labelledby="cosecha-t">
+    <h2 id="cosecha-t">Cosecha, secado y curado</h2>
+    <details><summary>¿Cuándo cosecho?</summary>
+      <p>Mirá los tricomas (las "gotitas" de resina) con una lupa de 60× en los cogollos, no en las hojas. <strong>Transparentes:</strong> falta. <strong>Lechosos:</strong> punto de máximo efecto. <strong>Ámbar:</strong> efecto más relajante. La mayoría cosecha con casi todo lechoso y un 10 a 20 % ámbar. Los pelitos marrones orientan, pero no alcanzan.</p>
+    </details>
+    <details><summary>¿Cómo seco?</summary>
+      <p>Colgá las ramas en un lugar oscuro, con aire que circule sin pegarles directo. Ideal 18 a 21 °C y 55 a 60 % de humedad, durante 7 a 14 días. Está listo cuando las ramitas chicas se quiebran en vez de doblarse. Secar rápido arruina el aroma.</p>
+    </details>
+    <details><summary>¿Cómo curo?</summary>
+      <p>Guardá los cogollos en frascos de vidrio llenos hasta 3/4. La primera semana abrí los frascos unos minutos una o dos veces por día; después, cada pocos días. Con un higrómetro adentro, apuntá a 58 a 62 %. Mínimo 2 semanas; mejora hasta 1 o 2 meses.</p>
+    </details>
+    <details><summary>¿Qué hago si el frasco huele a pasto o a humedad?</summary>
+      <p>Olor a pasto: le falta curado, seguí. Olor a humedad o amoníaco: estaba húmedo, dejalo afuera del frasco unas horas y revisá que no haya moho.</p>
+    </details>
+  </section>
+
+  <section class="faq-section" id="empezar" aria-labelledby="empezar-t">
+    <h2 id="empezar-t">Recomendaciones para empezar</h2>
+    <details><summary>¿Qué tierra y qué maceta uso?</summary>
+      <p>Tierra para cultivo, liviana y aireada, con 20 a 30 % de perlita. Nada de tierra de jardín: se compacta y ahoga la raíz. Maceta orientativa: autos de 11 a 15 L directo en la final; fotos de 15 a 25 L o más, pasando por macetas chicas.</p>
+    </details>
+    <details><summary>¿Cómo germino?</summary>
+      <p>Entre servilletas húmedas, en un plato tapado y en un lugar oscuro y tibio (22 a 25 °C). Cuando asoma la raíz de 1 cm, a la tierra a 1 cm de profundidad con la raíz hacia abajo. También se puede sembrar directo en la tierra húmeda.</p>
+    </details>
+    <details><summary>¿Cuánto tarda un cultivo?</summary>
+      <p>Autos: 10 a 12 semanas de semilla a cosecha. Fotos: 4 a 8 semanas de vege (vos decidís) más 8 a 10 de flora según la genética. Sumá 2 a 4 semanas de secado y curado.</p>
+    </details>
+    <details><summary>¿Cuáles son los errores más comunes?</summary>
+      <p>Regar de más, abonar de más, la luz muy cerca y querer arreglar todo a la vez. Cambiá una sola cosa por vez y esperá unos días a ver qué pasa. Las plantas tardan en mostrar una mejora.</p>
+    </details>
+    <details><summary>¿Por qué anotar todo en la bitácora?</summary>
+      <p>Porque los problemas se entienden mirando hacia atrás: "las puntas se quemaron 3 días después de subir la dosis". Registrá riegos, pH, EC, ambiente y eventos desde Registrar, y el próximo cultivo vas a tener tu propia receta.</p>
+    </details>
+  </section>
+
+  <p class="faq-foot">Información orientativa basada en guías de cultivo y experiencia de foros. Cada cultivo es distinto: ante la duda, mirá a tus plantas y compará con lo que registraste.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Filtro local: muestra solo las dudas que contienen todas las palabras buscadas.
+  (function () {
+    var input = document.getElementById("faq-buscar"), vacio = document.getElementById("faq-vacio");
+    var normalizar = function (t) { return t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); };
+    var items = Array.prototype.map.call(document.querySelectorAll(".faq details"), function (d) {
+      return { el: d, texto: normalizar(d.textContent) };
+    });
+    input.addEventListener("input", function () {
+      var palabras = normalizar(input.value).split(/\s+/).filter(Boolean), alguno = false;
+      items.forEach(function (it) {
+        var ok = palabras.every(function (p) { return it.texto.indexOf(p) !== -1; });
+        it.el.hidden = !ok;
+        it.el.open = ok && palabras.length > 0;
+        alguno = alguno || ok;
+      });
+      document.querySelectorAll(".faq-section").forEach(function (s) {
+        s.hidden = !s.querySelector("details:not([hidden])");
+      });
+      vacio.hidden = alguno;
+    });
+  })();
+</script>
+{% endblock %}

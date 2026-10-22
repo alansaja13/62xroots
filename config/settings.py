@@ -9,6 +9,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # H-6: DEBUG se carga primero para que el guard de SECRET_KEY pueda usarlo
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
+# Fotos de plantas: apagadas para que el foco esté en los datos. Quien tenga el
+# permiso growlog.subir_fotos (o sea superusuario) puede subir igual.
+PERMITIR_FOTOS_A_TODOS = os.environ.get("PERMITIR_FOTOS_A_TODOS", "False") == "True"
+
 # H-6: Nunca arrancar producción sin SECRET_KEY explícita
 SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:

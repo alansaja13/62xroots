@@ -277,6 +277,12 @@ class MedicionPlantaForm(forms.ModelForm):
             "foto": forms.FileInput(attrs={"class": "form-control"}),
         }
 
+    def __init__(self, *args, permitir_foto=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Sin el campo, un archivo enviado igual se ignora y la foto previa se conserva.
+        if not permitir_foto:
+            del self.fields["foto"]
+
     def clean_foto(self):
         foto = self.cleaned_data.get("foto")
         if isinstance(foto, UploadedFile) and foto.size > 5 * 1024 * 1024:

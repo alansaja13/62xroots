@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from ..forms import CambioEtapaPlantaForm, MedicionPlantaForm, PlantaForm
 from ..models import CambioEtapaPlanta, Cultivo, MedicionPlanta, Planta
-from ..permissions import objeto_del_cultivo
+from ..permissions import objeto_del_cultivo, puede_subir_fotos
 from ..utils import etapa_efectiva_planta, get_etapa_activa_cultivo, get_etapa_activa_planta
 
 
@@ -101,11 +101,16 @@ def planta_detail(request, pk):
 # MedicionPlanta CRUD
 # ---------------------------------------------------------------------------
 
+def _subtitulo_medicion(planta, fotos):
+    return str(planta) if fotos else f"{planta} · Por ahora la subida de fotos está deshabilitada."
+
+
 @login_required
 def medicion_planta_crear(request, planta_pk):
     planta = objeto_del_cultivo(request, Planta, editar=True, pk=planta_pk)
+    fotos = puede_subir_fotos(request.user)
     form = MedicionPlantaForm(request.POST or None, request.FILES or None,
-                              initial={"fecha": timezone.localdate()})
+                              initial={"fecha": timezone.localdate()}, permitir_foto=fotos)
     if request.method == "POST" and form.is_valid():
         m = form.save(commit=False)
         m.planta = planta
@@ -115,26 +120,28 @@ def medicion_planta_crear(request, planta_pk):
         return redirect("growlog:planta_detail", pk=planta_pk)
     return render(request, "growlog/crud_form.html", {
         "form": form, "title": "Nueva medición de planta",
-        "subtitle": str(planta),
+        "subtitle": _subtitulo_medicion(planta, fotos),
         "back_url": reverse("growlog:planta_detail", args=[planta_pk]),
-        "multipart": True,
+        "multipart": fotos,
     })
 
 
 @login_required
 def medicion_planta_editar(request, pk):
     medicion = objeto_del_cultivo(request, MedicionPlanta, editar=True, pk=pk)
-    form = MedicionPlantaForm(request.POST or None, request.FILES or None, instance=medicion)
+    fotos = puede_subir_fotos(request.user)
+    form = MedicionPlantaForm(request.POST or None, request.FILES or None, instance=medicion,
+                              permitir_foto=fotos)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Medición actualizada.")
         return redirect("growlog:planta_detail", pk=medicion.planta_id)
     return render(request, "growlog/crud_form.html", {
         "form": form, "title": "Editar medición",
-        "subtitle": str(medicion.planta),
+        "subtitle": _subtitulo_medicion(medicion.planta, fotos),
         "back_url": reverse("growlog:planta_detail", args=[medicion.planta_id]),
         "delete_url": reverse("growlog:medicion_planta_eliminar", args=[pk]),
-        "multipart": True,
+        "multipart": fotos,
     })
 
 
