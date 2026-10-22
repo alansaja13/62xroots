@@ -26,7 +26,7 @@ El comando usa el estado de migraciones aplicado para consultar modelos históri
 Funciona antes y después del cambio de permisos. Es de solo lectura: no migra,
 asigna propietarios, concede accesos ni descarga archivos. Devuelve IDs para revisar,
 migraciones pendientes y verificaciones externas que el código no puede certificar.
-No imprime nombres, URLs de conexión, contraseñas ni claves offline.
+No imprime nombres, URLs de conexión ni contraseñas.
 
 `--fail-on-review` devuelve error cuando hay IDs que revisar. Una salida exitosa
 no certifica que el bucket sea privado, que el backup sea recuperable ni que la
@@ -162,7 +162,7 @@ datos. Configurar `BACKUP_ROOT` dentro del volumen montado. Este control evita e
 directorio efímero por defecto, pero no sustituye verificar el volumen y restaurar
 la copia. El comando no crea volúmenes ni cambia infraestructura.
 
-El fixture contiene información privada, incluidas claves offline y hashes de
+El fixture contiene información privada, incluidos hashes de
 contraseñas. No subirlo a GitHub. No incluye los bytes de las fotos ni configuración
 de infraestructura. `dumpdata` no garantiza por sí solo una instantánea consistente
 entre tablas mientras la aplicación recibe escrituras; usar un backup consistente

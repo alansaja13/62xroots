@@ -1,24 +1,21 @@
-import json
 from datetime import timedelta
 from decimal import Decimal
-from unittest.mock import patch
-from uuid import uuid4
 
 from django.contrib.auth.models import User
-from django.db import OperationalError
-from django.test import Client, TestCase
+from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
-from .models import Cultivo, CultivoMiembro, Evento, MedicionAmbiente, MedicionEC, Nutriente, Planta, RegistroRecibido, Riego, Tarea
-from .registration_views import OFFLINE_COOKIE
+from .forms import DT_FMT
+from .models import Cultivo, CultivoMiembro, Evento, MedicionAmbiente, MedicionEC, Nutriente, Planta, Riego, Tarea
 
 
-class RegistrationTests(TestCase):
+class RegistrarTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.owner = User.objects.create_user('dueño-registro', password='test-only')
-        cls.editor = User.objects.create_user('colaborador-registro', password='test-only')
-        cls.other = User.objects.create_user('otra-cuenta', password='test-only')
+        cls.owner = User.objects.create_user('dueño-registro')
+        cls.editor = User.objects.create_user('colaborador-registro')
+        cls.other = User.objects.create_user('otra-cuenta')
         cls.cultivo = Cultivo.objects.create(nombre='Mi ciclo', fecha_inicio=timezone.localdate(), creado_por=cls.owner)
         cls.member = CultivoMiembro.objects.create(cultivo=cls.cultivo, usuario=cls.editor, rol='editor')
         cls.plant = Planta.objects.create(cultivo=cls.cultivo, apodo='Una planta')
@@ -28,284 +25,139 @@ class RegistrationTests(TestCase):
 
     def setUp(self):
         self.client.force_login(self.editor)
+        self.url = reverse('growlog:registrar')
 
-    def payload(self, tipo='ambiente', datos=None):
-        return {'id': str(uuid4()), 'cultivo_id': self.cultivo.pk, 'tipo': tipo,
-                'observado_en': (timezone.now() - timedelta(hours=5)).isoformat(),
-                'datos': datos if datos is not None else {'temperatura_c': '24.5', 'humedad_relativa': '61', 'notas': 'Registrado sin red'}}
+    def send(self, kind, campos=None, cultivo=None, observado=None, **extra):
+        data = {
+            'cultivo': (cultivo or self.cultivo).pk, 'kind': kind,
+            'observado_en': observado or (timezone.localtime() - timedelta(hours=2)).strftime(DT_FMT),
+            **{f'{kind}-{k}': v for k, v in (campos or {}).items()}, **extra,
+        }
+        return self.client.post(self.url, data)
 
-    def send(self, payload, account=None, client=None):
-        return (client or self.client).post('/registrar/sincronizar/', data=json.dumps(payload), content_type='application/json', HTTP_X_REGISTRO_CUENTA=str(account or self.editor.pk))
+    def assertGuardado(self, response, kind='ambiente', cultivo=None):
+        self.assertRedirects(response, f'{self.url}?cultivo={(cultivo or self.cultivo).pk}&kind={kind}', fetch_redirect_response=False)
 
-    def test_recibo_y_registro_se_confirman_juntos(self):
-        payload = self.payload()
-        first = self.send(payload)
-        self.assertEqual(first.status_code, 201)
-        self.assertFalse(first.json()['repetido'])
+    def test_ambiente_con_coma_decimal_y_autoria(self):
+        response = self.send('ambiente', {'temperatura_c': '24,5', 'humedad_relativa': '61', 'notas': 'Todo bien'})
+        self.assertGuardado(response)
         record = MedicionAmbiente.objects.get()
-        self.assertEqual(record.creado_por, self.editor)
-        self.assertEqual(record.timestamp.isoformat(), payload['observado_en'])
-        self.assertEqual(RegistroRecibido.objects.get().resultado['registro_id'], record.pk)
+        self.assertEqual((record.temperatura_c, record.creado_por, record.notas), (Decimal('24.5'), self.editor, 'Todo bien'))
 
-    def test_reintentar_respuesta_perdida_no_duplica(self):
-        payload = self.payload()
-        first = self.send(payload).json()['data']
-        for _ in range(3):
-            response = self.send(payload)
+    def test_datos_invalidos_vuelven_con_lo_escrito(self):
+        response = self.send('ambiente', {'temperatura_c': '24', 'humedad_relativa': '101'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Humedad')
+        self.assertContains(response, 'value="101"')
+        self.assertFalse(MedicionAmbiente.objects.exists())
+
+    def test_valor_raro_pide_confirmacion_sin_guardar(self):
+        campos = {'temperatura_c': '4', 'humedad_relativa': '60'}
+        response = self.send('ambiente', campos)
+        self.assertContains(response, 'poco comunes')
+        self.assertFalse(MedicionAmbiente.objects.exists())
+        self.assertGuardado(self.send('ambiente', campos, confirmar='1'))
+        self.assertEqual(MedicionAmbiente.objects.count(), 1)
+
+    def test_fecha_futura_o_vacia_se_rechaza(self):
+        futura = (timezone.localtime() + timedelta(hours=1)).strftime(DT_FMT)
+        for observado in (futura, 'no-es-fecha'):
+            response = self.send('ambiente', {'temperatura_c': '24', 'humedad_relativa': '60'}, observado=observado)
             self.assertEqual(response.status_code, 200)
-            self.assertTrue(response.json()['repetido'])
-            self.assertEqual(response.json()['data'], first)
-        self.assertEqual(MedicionAmbiente.objects.count(), 1)
-        self.assertEqual(RegistroRecibido.objects.count(), 1)
-
-    def test_uuid_reutilizado_con_datos_distintos_es_conflicto(self):
-        payload = self.payload()
-        self.send(payload)
-        payload['datos']['temperatura_c'] = '27'
-        self.assertEqual(self.send(payload).status_code, 409)
-        self.assertEqual(MedicionAmbiente.objects.count(), 1)
-
-    def test_uuid_reutilizado_en_otro_cultivo_es_conflicto(self):
-        CultivoMiembro.objects.create(cultivo=self.other_c, usuario=self.editor, rol='editor')
-        payload = self.payload()
-        self.send(payload)
-        payload['cultivo_id'] = self.other_c.pk
-        self.assertEqual(self.send(payload).status_code, 409)
-        self.assertFalse(self.other_c.mediciones.exists())
-
-    def test_fallo_de_escritura_revierte_tambien_recibo(self):
-        with patch('growlog.services.registro.MedicionAmbiente.save', side_effect=OperationalError('database is locked')):
-            self.assertEqual(self.send(self.payload()).status_code, 503)
-        self.assertFalse(RegistroRecibido.objects.exists())
         self.assertFalse(MedicionAmbiente.objects.exists())
 
-    def test_datos_invalidos_no_dejan_recibo_ni_entrada(self):
-        payload = self.payload(datos={'temperatura_c':'24', 'humedad_relativa':'101'})
-        response = self.send(payload)
-        self.assertEqual(response.status_code, 400)
-        self.assertIn('humedad_relativa', response.json()['campos'])
-        self.assertFalse(RegistroRecibido.objects.exists())
-        payload['datos']['humedad_relativa'] = '60'
-        self.assertEqual(self.send(payload).status_code, 201)
-
-    def test_no_acepta_autoria_o_campos_desconocidos(self):
-        payload = self.payload()
-        payload['datos']['creado_por'] = self.owner.pk
-        self.assertEqual(self.send(payload).status_code, 400)
-        self.assertFalse(RegistroRecibido.objects.exists())
-
-    def test_rechaza_valores_y_fechas_invalidas(self):
-        for field, value in [('id', 'mal'), ('id', 2), ('cultivo_id', True), ('observado_en', '2026-09-23T12:00:00'),
-                             ('observado_en', None), ('observado_en', (timezone.now()+timedelta(hours=1)).isoformat()), ('tipo', 'desconocido'), ('datos', [])]:
-            with self.subTest(field=field, value=value):
-                payload = self.payload(); payload[field] = value
-                self.assertEqual(self.send(payload).status_code, 400)
-        self.assertFalse(RegistroRecibido.objects.exists())
-
-    def test_rechaza_json_no_objeto_y_numeros_no_finitos(self):
-        for raw in ('[]', 'null', '{"x":NaN}', '{', '"texto"'):
-            response = self.client.post('/registrar/sincronizar/', data=raw, content_type='application/json', HTTP_X_REGISTRO_CUENTA=str(self.editor.pk))
-            self.assertEqual(response.status_code, 400)
-
-    def test_sesion_y_cuenta_requeridas(self):
-        payload = self.payload()
-        self.assertEqual(self.send(payload, account=self.other.pk).status_code, 409)
-        self.client.logout()
-        self.assertEqual(self.send(payload).status_code, 401)
-        self.assertFalse(RegistroRecibido.objects.exists())
-
-    def test_otra_cuenta_no_recibe_pendientes_ajenos(self):
-        self.client.force_login(self.owner)
-        self.assertEqual(self.send(self.payload(), account=self.editor.pk).status_code, 409)
-        self.assertFalse(MedicionAmbiente.objects.exists())
-
-    def test_revocar_permiso_bloquea_incluso_reintentos_confirmados(self):
-        payload = self.payload(); self.send(payload)
-        self.member.delete()
-        self.assertEqual(self.send(payload).status_code, 404)
-        self.assertEqual(self.send(self.payload()).status_code, 404)
-        self.assertEqual(MedicionAmbiente.objects.count(), 1)
-
-    def test_lector_no_sincroniza(self):
+    def test_lector_o_cultivo_ajeno_no_registra(self):
+        self.assertEqual(self.send('ambiente', {'temperatura_c': '24', 'humedad_relativa': '60'}, cultivo=self.other_c).status_code, 200)
         self.member.rol = 'lector'; self.member.save()
-        self.assertEqual(self.send(self.payload()).status_code, 403)
-        self.assertFalse(RegistroRecibido.objects.exists())
+        response = self.send('ambiente', {'temperatura_c': '24', 'humedad_relativa': '60'})
+        self.assertContains(response, 'No tenés cultivos con permiso')
+        self.assertFalse(MedicionAmbiente.objects.exists())
 
-    def test_cultivo_ajeno_no_sincroniza(self):
-        payload = self.payload(); payload['cultivo_id'] = self.other_c.pk
-        self.assertEqual(self.send(payload).status_code, 404)
+    def test_requiere_sesion(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(self.url).status_code, 302)
 
-    def test_csrf_sigue_siendo_obligatorio(self):
-        client = Client(enforce_csrf_checks=True); client.force_login(self.editor)
-        self.assertEqual(self.send(self.payload(), client=client).status_code, 403)
-        context = client.get('/registrar/contexto/').json()
-        response = client.post('/registrar/sincronizar/', data=json.dumps(self.payload()), content_type='application/json', HTTP_X_REGISTRO_CUENTA=str(self.editor.pk), HTTP_X_CSRFTOKEN=context['csrf'])
-        self.assertEqual(response.status_code, 201)
+    def test_get_preselecciona_cultivo_y_tipo(self):
+        CultivoMiembro.objects.create(cultivo=self.other_c, usuario=self.editor, rol='editor')
+        response = self.client.get(f'{self.url}?cultivo={self.other_c.pk}&kind=riego')
+        self.assertEqual(response.context['elegido'], self.other_c)
+        self.assertEqual(response.context['tipo'], 'riego')
+
+    def test_solo_plantas_activas_y_cultivos_editables(self):
+        Planta.objects.create(cultivo=self.cultivo, apodo='Archivada', archivado=True)
+        Planta.objects.create(cultivo=self.cultivo, apodo='Cosechada', estado='cosechada')
+        response = self.client.get(self.url)
+        self.assertEqual(response.context['cultivos'], [self.cultivo])
+        self.assertEqual([f['planta'] for f in response.context['plantas_por_cultivo'][0]['plantas']], [self.plant])
 
     def test_observacion_ec_y_tarea(self):
-        cases = [('evento', {'tipo':'otro', 'descripcion':'Observación, con coma'}, Evento),
-                 ('ec', {'tipo':'entrada', 'ph':'', 'ec':'0', 'notas':''}, MedicionEC),
-                 ('tarea', {'titulo':'Revisar', 'categoria':'observacion', 'prioridad':'normal'}, Tarea)]
-        for tipo, datos, model in cases:
-            with self.subTest(tipo=tipo):
-                payload = self.payload(tipo, datos)
-                response = self.send(payload)
-                self.assertEqual(response.status_code, 201, response.content)
+        cases = [('evento', {'tipo': 'otro', 'descripcion': 'Observación, con coma'}, Evento),
+                 ('ec', {'tipo': 'entrada', 'ph': '', 'ec': '0'}, MedicionEC),
+                 ('tarea', {'titulo': 'Revisar', 'descripcion': 'Ventilar más', 'categoria': 'observacion', 'prioridad': 'urgente'}, Tarea)]
+        for kind, campos, model in cases:
+            with self.subTest(kind=kind):
+                self.assertGuardado(self.send(kind, campos), kind)
                 self.assertEqual(model.objects.get().creado_por, self.editor)
-                self.assertEqual(self.send(payload).status_code, 200)
-                self.assertEqual(model.objects.count(), 1)
+
+    def test_ec_se_tipea_por_diez_microsiemens(self):
+        self.assertGuardado(self.send('ec', {'tipo': 'entrada', 'ph': '6,2', 'ec': '120'}), 'ec')
+        medicion = MedicionEC.objects.get()
+        self.assertEqual((medicion.ph, medicion.ec), (Decimal('6.2'), Decimal('1.2')))
+
+    def test_ec_vacio_o_invalido_no_se_guarda(self):
+        for campos in ({'ph': '', 'ec': ''}, {'ph': '15'}, {'ec': '1,8'}, {'ec': '-1'}):
+            with self.subTest(campos=campos):
+                self.assertEqual(self.send('ec', {'tipo': 'entrada', **campos}).status_code, 200)
+        self.assertFalse(MedicionEC.objects.exists())
 
     def test_evento_con_plantas_afectadas_y_seguimiento(self):
-        payload = self.payload('evento', {
-            'tipo': 'problema', 'descripcion': 'Hojas amarillas',
-            'plantas_afectadas': [self.plant.pk],
-            'follow_up_fecha': str(timezone.localdate() + timedelta(days=3)),
-            'follow_up_descripcion': 'Revisar si mejoró',
-        })
-        self.assertEqual(self.send(payload).status_code, 201)
+        self.assertGuardado(self.send('evento', {
+            'tipo': 'problema', 'descripcion': 'Hojas amarillas', f'planta-{self.plant.pk}': 'on',
+            f'planta-{self.other_p.pk}': 'on',  # de otro cultivo: se ignora
+            'follow_up_fecha': str(timezone.localdate() + timedelta(days=3)), 'follow_up_descripcion': 'Revisar si mejoró',
+        }), 'evento')
         evento = Evento.objects.get()
         self.assertEqual(list(evento.plantas_afectadas.all()), [self.plant])
         self.assertEqual(evento.follow_up_descripcion, 'Revisar si mejoró')
-        self.assertFalse(evento.follow_up_resuelto)
 
-    def test_evento_sin_plantas_ni_seguimiento_queda_vacio(self):
-        payload = self.payload('evento', {'tipo': 'otro', 'descripcion': 'Nada en particular'})
-        self.assertEqual(self.send(payload).status_code, 201)
-        evento = Evento.objects.get()
-        self.assertFalse(evento.plantas_afectadas.exists())
-        self.assertIsNone(evento.follow_up_fecha)
+    def riego(self, **extra):
+        return {'ph': '6,2', 'ec': '140', 'notas': 'Riego completo', f'planta-{self.plant.pk}': '600',
+                f'nutriente-{self.nutrient.pk}': '1,25', **extra}
 
-    def test_evento_planta_ajena_o_repetida_no_se_guarda(self):
-        for plantas in ([self.other_p.pk], [self.plant.pk, self.plant.pk]):
-            payload = self.payload('evento', {'tipo': 'otro', 'descripcion': 'x', 'plantas_afectadas': plantas})
-            response = self.send(payload)
-            self.assertIn(response.status_code, (400, 409), response.content)
-        self.assertFalse(Evento.objects.exists())
-
-    def test_evento_plantas_afectadas_como_diccionario_o_booleano_es_invalida(self):
-        for valor in ({'x': 1}, [True], ['1'], 'no-es-lista'):
-            payload = self.payload('evento', {'tipo': 'otro', 'descripcion': 'x', 'plantas_afectadas': valor})
-            self.assertEqual(self.send(payload).status_code, 400)
-
-    def test_tarea_con_descripcion(self):
-        payload = self.payload('tarea', {'titulo': 'Revisar', 'descripcion': 'Ventilar más', 'categoria': 'observacion', 'prioridad': 'urgente'})
-        self.assertEqual(self.send(payload).status_code, 201)
-        self.assertEqual(Tarea.objects.get().descripcion, 'Ventilar más')
-
-    def test_ec_vacio_o_fuera_de_rango_se_conserva_como_error(self):
-        for values in ({'ph':'', 'ec':''}, {'ph':'15'}, {'ec':'-1'}, {'ph':True}):
-            self.assertEqual(self.send(self.payload('ec', {'tipo':'entrada', **values})).status_code, 400)
-        self.assertFalse(MedicionEC.objects.exists())
-        self.assertFalse(RegistroRecibido.objects.exists())
-
-    def test_decimal_con_punto_se_guarda_y_con_coma_se_rechaza(self):
-        # Registrar normaliza "1,8" a "1.8" (registrar-datos.js). El servidor no
-        # reinterpreta separadores: con coma rechaza, nunca guarda 18.
-        self.assertEqual(self.send(self.payload('ec', {'tipo': 'entrada', 'ec': '1.8'})).status_code, 201)
-        self.assertEqual(MedicionEC.objects.get().ec, Decimal('1.8'))
-        for datos in ({'tipo': 'entrada', 'ec': '1,8'}, {'tipo': 'entrada', 'ph': '6,2'}):
-            self.assertEqual(self.send(self.payload('ec', datos)).status_code, 400)
-        self.assertEqual(MedicionEC.objects.count(), 1)
-
-    def riego(self):
-        return self.payload('riego', {'ph':'6.2', 'ec':'1.4', 'notas':'Riego completo', 'plantas':[{'planta_id':self.plant.pk, 'volumen_ml':600}],
-                                     'nutrientes':[{'nutriente_id':self.nutrient.pk, 'dosis_g_por_litro':'1.25'}]})
-
-    def test_riego_atomico_y_sin_duplicados_con_nutrientes(self):
-        payload = self.riego()
-        self.assertEqual(self.send(payload).status_code, 201)
-        self.assertEqual(self.send(payload).status_code, 200)
-        water = Riego.objects.get()
-        self.assertEqual(water.volumen_total_ml, 600)
-        self.assertEqual(water.detalle_plantas.count(), 1)
-        self.assertEqual(water.nutrientes_aplicados.count(), 1)
-
-    def test_riego_planta_ajena_o_archivada_no_deja_cabecera(self):
-        for plant in (self.other_p, self.plant):
-            self.plant.archivado = True; self.plant.save()
-            payload = self.riego(); payload['datos']['plantas'][0]['planta_id'] = plant.pk
-            self.assertEqual(self.send(payload).status_code, 409)
-        self.assertFalse(Riego.objects.exists())
-        self.assertFalse(RegistroRecibido.objects.exists())
-
-    def test_riego_desglose_duplicado_o_vacio_no_se_guarda(self):
-        for rows in ([], [{'planta_id':self.plant.pk, 'volumen_ml':100}]*2, [None], [{'planta_id':self.plant.pk, 'volumen_ml':0}]):
-            payload = self.riego(); payload['datos']['plantas'] = rows
-            self.assertEqual(self.send(payload).status_code, 400)
-        self.assertFalse(Riego.objects.exists())
-        self.assertFalse(RegistroRecibido.objects.exists())
+    def test_riego_con_nutrientes(self):
+        self.assertGuardado(self.send('riego', self.riego()), 'riego')
+        riego = Riego.objects.get()
+        self.assertEqual((riego.volumen_total_ml, riego.ph_agua, riego.ec_solucion), (600, Decimal('6.2'), Decimal('1.4')))
+        self.assertEqual(riego.nutrientes_aplicados.get().dosis_g_por_litro, Decimal('1.25'))
 
     def test_riego_con_runoff_por_planta(self):
-        payload = self.riego()
-        payload['datos']['buscar_runoff'] = 'true'
-        payload['datos']['plantas'][0].update({'runoff_observado': 'on', 'ph_runoff': '6.0', 'ec_runoff': '1.1', 'notas': 'Drenó bien'})
-        self.assertEqual(self.send(payload).status_code, 201)
+        campos = self.riego(buscar_runoff='on', **{
+            f'runoff-{self.plant.pk}': 'on', f'phrunoff-{self.plant.pk}': '6', f'ecrunoff-{self.plant.pk}': '110',
+            f'notasplanta-{self.plant.pk}': 'Drenó bien',
+        })
+        self.assertGuardado(self.send('riego', campos), 'riego')
         riego = Riego.objects.get()
         self.assertTrue(riego.buscar_runoff)
         detalle = riego.detalle_plantas.get()
-        self.assertEqual((detalle.runoff_observado, str(detalle.ph_runoff), str(detalle.ec_runoff), detalle.notas), (True, '6.00', '1.10', 'Drenó bien'))
+        self.assertEqual((detalle.runoff_observado, str(detalle.ph_runoff), str(detalle.ec_runoff), detalle.notas),
+                         (True, '6.00', '1.10', 'Drenó bien'))
 
-    def test_riego_sin_runoff_no_guarda_datos_de_drenaje(self):
-        payload = self.riego()
-        self.assertEqual(self.send(payload).status_code, 201)
-        riego = Riego.objects.get()
-        self.assertFalse(riego.buscar_runoff)
-        detalle = riego.detalle_plantas.get()
+    def test_riego_sin_runoff_ignora_datos_de_drenaje(self):
+        self.assertGuardado(self.send('riego', self.riego(**{f'phrunoff-{self.plant.pk}': '6'})), 'riego')
+        detalle = Riego.objects.get().detalle_plantas.get()
         self.assertFalse(detalle.runoff_observado)
         self.assertIsNone(detalle.ph_runoff)
 
-    def test_riego_buscar_runoff_como_json_booleano_es_invalido(self):
-        # El guardado real usa "true"/"on"; un bool JSON crudo debe seguir rechazado
-        # (mismo resguardo que ya protegía el resto del formulario).
-        payload = self.riego()
-        payload['datos']['buscar_runoff'] = True
-        self.assertEqual(self.send(payload).status_code, 400)
-        payload = self.riego()
-        payload['datos']['plantas'][0]['runoff_observado'] = True
-        self.assertEqual(self.send(payload).status_code, 400)
+    def test_riego_sin_volumen_o_invalido_no_deja_cabecera(self):
+        for volumen in ('', '0', 'abc'):
+            with self.subTest(volumen=volumen):
+                self.assertEqual(self.send('riego', self.riego(**{f'planta-{self.plant.pk}': volumen})).status_code, 200)
+        self.assertEqual(self.send('riego', self.riego(**{f'nutriente-{self.nutrient.pk}': '0'})).status_code, 200)
         self.assertFalse(Riego.objects.exists())
 
-    def test_contexto_solo_contiene_cultivos_editables(self):
-        response = self.client.get('/registrar/contexto/')
-        self.assertEqual([c['id'] for c in response.json()['cultivos']], [self.cultivo.pk])
-        self.assertIn('no-store', response['Cache-Control'])
-        self.assertEqual(len(response.json()['desbloqueo']['clave']), 43)
-        self.assertNotIn(OFFLINE_COOKIE, response.cookies)
-        self.member.rol = 'lector'; self.member.save()
-        self.assertEqual(self.client.get('/registrar/contexto/').json()['cultivos'], [])
-
-    def test_clave_local_se_recupera_solo_en_la_misma_cuenta(self):
-        first = self.client.get('/registrar/contexto/').json()['desbloqueo']['clave']
-        self.client.cookies[OFFLINE_COOKIE] = f'{self.editor.pk}.{first}'
-        self.client.post('/logout/')
-        self.assertEqual(self.client.cookies[OFFLINE_COOKIE].value, '')
-        self.assertEqual(self.client.get('/registrar/contexto/').status_code, 401)
-        self.client.force_login(self.other)
-        second = self.client.get('/registrar/contexto/').json()['desbloqueo']['clave']
-        self.assertNotEqual(first, second)
-        self.client.force_login(self.editor)
-        recovered = self.client.get('/registrar/contexto/').json()['desbloqueo']['clave']
-        self.assertEqual(first, recovered)
-
-    def test_clave_local_no_autentica_solicitudes(self):
-        key = self.client.get('/registrar/contexto/').json()['desbloqueo']['clave']
-        self.client.cookies[OFFLINE_COOKIE] = f'{self.editor.pk}.{key}'
-        self.client.cookies.pop('sessionid')
-        self.assertEqual(self.send(self.payload()).status_code, 401)
-
-    def test_cambio_de_cuenta_limpia_desbloqueo_previo(self):
-        key = self.client.get('/registrar/contexto/').json()['desbloqueo']['clave']
-        self.client.cookies[OFFLINE_COOKIE] = f'{self.editor.pk}.{key}'
-        self.client.force_login(self.other)
-        response = self.client.get('/')
-        self.assertEqual(response.cookies[OFFLINE_COOKIE].value, '')
-
-    def test_shell_publica_identica_sin_datos_de_cuenta(self):
-        logged_in = self.client.get('/registrar/')
-        self.client.logout()
-        anonymous = self.client.get('/registrar/')
-        self.assertEqual(logged_in.content, anonymous.content)
-        self.assertNotContains(logged_in, self.editor.username)
-        self.assertNotContains(logged_in, self.cultivo.nombre)
-        self.assertIn('public', anonymous['Cache-Control'])
-        self.assertNotIn(OFFLINE_COOKIE, anonymous.cookies)
+    def test_campos_de_otro_tipo_no_se_mezclan(self):
+        response = self.send('tarea', {'titulo': 'Solo la tarea', 'categoria': 'observacion', 'prioridad': 'normal'},
+                             **{'ambiente-temperatura_c': '24', 'ambiente-humedad_relativa': '60'})
+        self.assertGuardado(response, 'tarea')
+        self.assertTrue(Tarea.objects.exists())
+        self.assertFalse(MedicionAmbiente.objects.exists())

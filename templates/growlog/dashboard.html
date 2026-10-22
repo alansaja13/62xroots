@@ -8,7 +8,6 @@
     <div><p class="hoy-eyebrow">Tu bitácora · {{ hoy|date:"j \d\e F" }}</p><h1>Hoy</h1><p>Lo que tenés pendiente y lo último que registraste.</p></div>
     <div class="hoy-actions">{% if puede_registrar %}<a class="btn-brand" href="{% url 'growlog:registrar' %}">Registrar</a>{% endif %}<a class="btn-ghost" href="{% url 'growlog:nuevo_cultivo' %}">Nuevo cultivo</a></div>
   </header>
-  {% if puede_registrar %}<p class="hoy-note">Este resumen muestra registros sincronizados. Los pendientes guardados en tu dispositivo están en <a href="{% url 'growlog:registrar' %}#pendientes">Registrar</a>.</p>{% endif %}
   {% if not activos and not finalizados and not archivados %}
   <section class="hoy-panel"><h2>Tu bitácora empieza con un cultivo</h2><p>Creá uno para registrar observaciones, riegos y tareas. Si vas a colaborar, pedile al propietario que te comparta su cultivo.</p><a href="{% url 'growlog:nuevo_cultivo' %}" class="btn-brand">Crear mi primer cultivo</a></section>
   {% else %}

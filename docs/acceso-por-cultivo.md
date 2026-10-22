@@ -72,11 +72,8 @@ antigua anónima ya no entrega fotos o backups. El código no modifica esa confi
 ni elimina copias públicas antiguas. Esta comprobación remota sigue pendiente.
 
 Páginas autenticadas, API y media indican `Cache-Control: private, no-store`. El
-service worker v7 elimina las cachés antiguas de 62xroots al activarse y conserva
-solo recursos públicos, incluida la estructura vacía de Registrar. Los registros
-locales se almacenan por separado, cifrados por cuenta en IndexedDB; ver
-[registro-offline.md](registro-offline.md). Los dispositivos
-deben recibir la actualización del service worker para retirar su caché anterior.
+service worker solo maneja notificaciones push y, al activarse, elimina las cachés
+antiguas de 62xroots. Registrar ya no guarda registros en el dispositivo.
 
 `backup_db` usa `STORAGES["backups"]`, separado del almacenamiento de fotos. Por
 defecto escribe en `BASE_DIR/backups`, fuera de las rutas HTTP. `BACKUP_ROOT` permite

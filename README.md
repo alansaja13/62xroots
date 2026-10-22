@@ -23,9 +23,6 @@ Con Python compatible con Django 6 y las dependencias de `requirements.txt`:
 python manage.py test --settings=config.test_settings
 python manage.py check --settings=config.test_settings
 python manage.py makemigrations --check --dry-run --settings=config.test_settings
-node tests/service_worker.test.cjs
-node tests/offline_sync.test.cjs
-node tests/registrar_datos.test.cjs
 ```
 
 Estos settings usan una base SQLite en memoria, almacenamiento en memoria y
@@ -61,22 +58,13 @@ público debe hacerse privado en el proveedor; este cambio de código no desacti
 los dominios públicos existentes. Los backups nuevos utilizan un almacenamiento
 separado (`STORAGES["backups"]`, directorio `BACKUP_ROOT`), que debe ser persistente.
 
-## Registrar con y sin conexión
+## Registrar
 
-La pantalla **Registrar** permite guardar ambiente, observaciones, tareas, pH/EC
-y riegos por planta con nutrientes. Primero guarda en el dispositivo y luego
-sincroniza; distingue pendientes, rechazos y confirmaciones del servidor.
-Abrirla con conexión y sesión iniciada al menos una vez en cada dispositivo.
-Se necesita HTTPS (o localhost para desarrollo), JavaScript, IndexedDB y WebCrypto.
+La pantalla **Registrar** (`/registrar/`) es un formulario común de Django para
+cargar ambiente, observaciones, tareas, pH/EC y riegos por planta con nutrientes.
+Guarda directo contra el servidor y necesita conexión. Los valores poco comunes
+(por ejemplo 4 °C o pH 11) se piden confirmar antes de guardar. La EC se escribe
+en ×10 µS/cm, como en el medidor, y se guarda en mS/cm.
 
-Las migraciones 0026 y 0027 agregan recibos para evitar duplicados y claves de
-almacenamiento local por cuenta. Tampoco se aplicaron a datos reales.
-Los pendientes se guardan cifrados; cerrar sesión bloquea su acceso y volver a
-entrar con la misma cuenta permite recuperarlos. Para reabrir sin conexión después
-de cerrar el navegador, la sesión debe conservarse. No borrar los datos del sitio
-mientras haya pendientes sin sincronizar o exportar.
-
-La sincronización funciona con la pantalla abierta o al volver a abrirla. Fotos,
-drenajes detallados y consulta del historial completo requieren conexión.
-La caché del service worker conserva únicamente la pantalla pública y recursos
-estáticos. Contrato, límites y pruebas: [docs/registro-offline.md](docs/registro-offline.md).
+El service worker solo maneja notificaciones push: no guarda páginas ni assets.
+La migración 0030 elimina las tablas de la antigua cola offline.

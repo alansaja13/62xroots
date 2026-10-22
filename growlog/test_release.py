@@ -10,7 +10,7 @@ from django.core.management.base import CommandError
 from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 
-from .models import ClaveRegistroLocal, Cultivo, CultivoMiembro, Equipo, RegistroRecibido
+from .models import Cultivo, CultivoMiembro, Equipo
 
 
 class ReleaseAuditTests(TestCase):
@@ -53,14 +53,13 @@ class ReleaseAuditTests(TestCase):
         c = Cultivo.objects.create(nombre="private-cultivo", fecha_inicio=timezone.localdate(), propietario=owner)
         orphan = Cultivo.objects.create(nombre="sin dueño", fecha_inicio=timezone.localdate())
         resource = Equipo.objects.create(nombre="sin asignar", watts=100, horas_dia=12)
-        key = ClaveRegistroLocal.objects.create(usuario=owner)
         output = io.StringIO()
         call_command("auditar_actualizacion", stdout=output)
         report = json.loads(output.getvalue())
         self.assertEqual(report["revisar_ids"]["cultivos_sin_propietario"], [orphan.pk])
         self.assertEqual(report["revisar_ids"]["equipo_sin_propietario_inequivoco"], [resource.pk])
         self.assertEqual(report["migraciones_growlog_pendientes"], [])
-        for secret in (owner.username, c.nombre, key.clave, owner.password):
+        for secret in (owner.username, c.nombre, owner.password):
             self.assertNotIn(secret, output.getvalue())
         c.refresh_from_db()
         self.assertEqual(c.propietario_id, owner.pk)
@@ -72,15 +71,11 @@ class ReleaseAuditTests(TestCase):
 
 
 class BackupRestoreTests(TransactionTestCase):
-    def test_backup_privado_restaura_permisos_clave_y_recibo(self):
+    def test_backup_privado_restaura_permisos(self):
         owner = User.objects.create_user(username="restore-owner")
         editor = User.objects.create_user(username="restore-editor")
         c = Cultivo.objects.create(nombre="Restaurable", fecha_inicio=timezone.localdate(), propietario=owner)
         CultivoMiembro.objects.create(cultivo=c, usuario=editor, rol="editor")
-        key = ClaveRegistroLocal.objects.create(usuario=editor)
-        RegistroRecibido.objects.create(usuario=editor, cultivo=c,
-            operacion_id="9b8d9c8e-73f8-4de6-b7c6-a0cc111aad90", contenido_hash="a" * 64,
-            resultado={"registro_id": 9, "tipo": "evento"})
         storage = storages["backups"]
         before = set(storage.listdir("")[1])
         call_command("backup_db", stdout=io.StringIO())
@@ -97,7 +92,5 @@ class BackupRestoreTests(TransactionTestCase):
             restored = Cultivo.objects.get(nombre="Restaurable")
             self.assertEqual(restored.propietario.username, "restore-owner")
             self.assertEqual(restored.miembros.get().rol, "editor")
-            self.assertEqual(ClaveRegistroLocal.objects.get(usuario__username="restore-editor").clave, key.clave)
-            self.assertEqual(RegistroRecibido.objects.get().resultado, {"registro_id": 9, "tipo": "evento"})
         finally:
             storage.delete(name)

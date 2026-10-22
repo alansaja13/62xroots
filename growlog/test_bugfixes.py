@@ -100,8 +100,8 @@ class BugfixTests(TestCase):
         Planta.objects.create(cultivo=self.cultivo, apodo="Archivada", archivado=True)
         Planta.objects.create(cultivo=self.cultivo, apodo="Cosechada", estado="cosechada")
         self.assertEqual(list(self.cultivo.plantas.activas()), [self.planta])
-        contexto = self.client.get(reverse("growlog:registro_contexto")).json()
-        self.assertEqual([p["nombre"] for p in contexto["cultivos"][0]["plantas"]], ["P1"])
+        registrar = self.client.get(reverse("growlog:registrar")).context
+        self.assertEqual([f["planta"].apodo for f in registrar["plantas_por_cultivo"][0]["plantas"]], ["P1"])
         hoy = self.client.get(reverse("growlog:dashboard")).context["activos"][0]
         self.assertEqual(hoy["plantas_count"], 1)
 

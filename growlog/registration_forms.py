@@ -1,4 +1,4 @@
-"""Contrato de entrada del registro diario (web y sincronización)."""
+"""Contrato de entrada del registro diario (pantalla Registrar)."""
 from django import forms
 
 from .models import Evento, MedicionEC, Tarea

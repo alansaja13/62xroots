@@ -154,10 +154,7 @@ guardar y separación entre cuentas. Pasan 111 pruebas Django, 8 de sincronizaci
 y cifrado y 6 del service worker. La interfaz se revisó en escritorio y móvil.
 Las migraciones 0026/0027 están preparadas, sin aplicar a datos reales.
 
-Alcance, arquitectura y límites: [registro-offline.md](registro-offline.md).
-La sincronización requiere abrir Registrar; fotos e historial completo requieren
-conexión. El almacenamiento del navegador no sustituye un backup y los conflictos
-se conservan para corrección o revisión explícita.
+La cola offline se retiró después: Registrar pasó a ser un formulario común con conexión.
 
 El rediseño completo continúa pendiente: resumen Hoy, coherencia de históricos,
 rendimiento y escrituras de dominio restantes. La verificación del storage privado

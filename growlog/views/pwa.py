@@ -1,12 +1,10 @@
 """PWA: manifest, service worker y suscripciones push."""
-import hashlib
 import json
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.templatetags.static import static as static_url
-from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from ..models import PushSubscription
@@ -94,7 +92,7 @@ def pwa_manifest(request):
             icon("maskable-512x512.png", "512x512", "maskable"),
         ],
         "shortcuts": [
-            {"name": "Registrar", "short_name": "Registrar", "description": "Anotar ambiente, riego u observación, con o sin señal",
+            {"name": "Registrar", "short_name": "Registrar", "description": "Anotar ambiente, riego u observación",
              "url": "/registrar/", "icons": [icon("shortcut-registrar-96x96.png", "96x96")]},
             {"name": "Hoy", "short_name": "Hoy", "description": "Pendientes y últimos registros",
              "url": "/", "icons": [icon("maskable-192x192.png", "192x192")]},
@@ -105,20 +103,8 @@ def pwa_manifest(request):
     return response
 
 
-# Lo mínimo para que Registrar abra sin señal. Solo contenido público.
-OFFLINE_STATIC = (
-    "growlog/verde.css", "growlog/registrar.css", "growlog/offline-store.js", "growlog/registrar-datos.js", "growlog/registrar.js",
-    "growlog/icons/icon-96x96.png",
-)
-
-
 def pwa_service_worker(request):
-    offline_url = reverse("growlog:registrar")
-    assets = [offline_url, *(static_url(path) for path in OFFLINE_STATIC)]
-    version = hashlib.sha256(json.dumps(assets).encode()).hexdigest()[:10]
-    js = render_to_string("pwa/sw.js", {
-        "version": version, "offline_url": offline_url, "offline_assets": json.dumps(assets),
-    })
+    js = render_to_string("pwa/sw.js")
     response = HttpResponse(js, content_type="application/javascript; charset=utf-8")
     response["Service-Worker-Allowed"] = "/"
     response["Cache-Control"] = "no-cache"

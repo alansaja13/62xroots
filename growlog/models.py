@@ -1,6 +1,5 @@
 import math
 import uuid
-import secrets
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -513,31 +512,6 @@ class Tarea(models.Model):
 
     def __str__(self):
         return self.titulo
-
-
-def generar_clave_registro():
-    return secrets.token_urlsafe(32)
-
-
-class ClaveRegistroLocal(models.Model):
-    """Desbloqueo por cuenta, estable ante rotación de SECRET_KEY o contraseñas."""
-
-    usuario = models.OneToOneField(User, on_delete=models.CASCADE)
-    clave = models.CharField(max_length=43, default=generar_clave_registro, editable=False)
-
-
-class RegistroRecibido(models.Model):
-    """Recibo durable: confirmar un reintento nunca vuelve a crear el registro."""
-
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
-    operacion_id = models.UUIDField()
-    cultivo = models.ForeignKey(Cultivo, on_delete=models.CASCADE)
-    contenido_hash = models.CharField(max_length=64)
-    resultado = models.JSONField(default=dict)
-    recibido_en = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields=["usuario", "operacion_id"], name="registro_usuario_operacion_unico")]
 
 
 class APIToken(models.Model):

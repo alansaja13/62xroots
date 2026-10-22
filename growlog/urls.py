@@ -1,14 +1,11 @@
 from django.urls import path
 from . import views
 from . import api_views
-from . import registration_views
 
 app_name = "growlog"
 
 urlpatterns = [
-    path("registrar/", registration_views.registrar, name="registrar"),
-    path("registrar/contexto/", registration_views.contexto, name="registro_contexto"),
-    path("registrar/sincronizar/", registration_views.sincronizar, name="registro_sincronizar"),
+    path("registrar/", views.registrar, name="registrar"),
     # ── API v1 ────────────────────────────────────────────────────────────────
     path("api/v1/cultivos/", api_views.cultivos_list),
     path("api/v1/cultivos/<slug:slug>/", api_views.cultivo_detail),

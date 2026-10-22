@@ -67,6 +67,7 @@ from .invitados import (  # noqa: F401
     invitado_rol,
     invitados_panel,
 )
+from .registrar import registrar  # noqa: F401
 from .pwa import (  # noqa: F401
     push_subscribe,
     push_unsubscribe,

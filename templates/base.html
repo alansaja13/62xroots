@@ -339,13 +339,5 @@
   setInterval(tick, 1000);
 })();
 </script>
-<script>
-// Bloquear otras pestañas inmediatamente al cerrar sesión. Los pendientes
-// cifrados se conservan y solo se recuperan al entrar con la misma cuenta.
-document.getElementById('logout-form')?.addEventListener('submit', function () {
-  document.cookie = 'growlog_offline=; Max-Age=0; Path=/; SameSite=Lax';
-  try { localStorage.setItem('62xroots-session-change', String(Date.now())); } catch (_) {}
-});
-</script>
 </body>
 </html>

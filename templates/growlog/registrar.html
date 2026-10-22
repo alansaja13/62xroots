@@ -1,68 +1,173 @@
-{% load static %}<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Registrar · 62×ROOTS</title>
-  {% include "growlog/partials/pwa_head.html" %}
-  {# Sin conexión las fuentes caen al sistema; el layout no depende de ellas. #}
-  {% include "growlog/partials/fonts.html" %}
-  <link rel="stylesheet" href="{% static 'growlog/verde.css' %}">
-  <link rel="stylesheet" href="{% static 'growlog/registrar.css' %}">
-  <script src="{% static 'growlog/offline-store.js' %}" defer></script>
-  <script src="{% static 'growlog/registrar-datos.js' %}" defer></script>
-  <script src="{% static 'growlog/registrar.js' %}" defer></script>
-</head>
-<body class="reg">
-  <header class="top">
-    <a href="/" class="nav-brand">
-      <img src="{% static 'growlog/icons/icon-96x96.png' %}" alt="" width="38" height="38">
-      <span><span class="nav-brand__title">62×ROOTS</span><span class="nav-brand__sub">registrar</span></span>
-    </a>
-    <span id="account" class="nav-user__name"></span>
-    <a href="/" class="top__link">Hoy</a>
-  </header>
-  <main>
-    <div class="intro">
-      <div><p class="reg-eyebrow">Tu bitácora, al día</p><h1>Registrar</h1><p class="intro__lead">Anotá ahora. La conexión puede esperar.</p></div>
-      <a href="#pendientes" class="queue-link">Pendientes <span id="pending-count">0</span></a>
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Registrar{% endblock %}
+
+{% block extra_head %}<link rel="stylesheet" href="{% static 'growlog/registrar.css' %}">{% endblock %}
+
+{% block content %}
+<div class="reg">
+  <p class="reg-eyebrow">Tu bitácora, al día</p>
+  <h1 class="reg-title">Registrar</h1>
+
+  {% if not cultivos %}
+  <section class="reg-card">
+    <p>No tenés cultivos con permiso para registrar. Podés crear uno o pedir que te compartan acceso de edición.</p>
+    <a href="{% url 'growlog:nuevo_cultivo' %}" class="btn-brand">Crear un cultivo</a>
+  </section>
+  {% else %}
+  <form id="reg-form" method="post" class="reg-card">
+    {% csrf_token %}
+
+    {% if error %}
+    <div class="reg-notice reg-notice--error" role="alert">
+      <p>{{ error }}</p>
+      {% if errores %}<ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
     </div>
-    <p id="connection" class="notice" role="status" aria-live="polite">Abriendo la bitácora...</p>
-    <p id="session-link" hidden><a href="/login/?next=/registrar/">Iniciar sesión para sincronizar</a></p>
-    <p id="storage-notice" class="hint"></p>
-    <div id="locked" hidden><h2>Entrá a tu cuenta</h2><p>La primera vez necesitás conexión para preparar este dispositivo. Tus pendientes de otra sesión se recuperan al entrar con la misma cuenta.</p><a class="btn-brand btn-brand--green" href="/login/?next=/registrar/">Iniciar sesión</a></div>
-    <noscript><p>Registrar necesita JavaScript, incluso con conexión. Iniciá sesión y entrá a tu cultivo para ver la bitácora.</p><a href="/">Volver a mis cultivos</a></noscript>
-    <div id="workspace" hidden>
-      <div class="columns">
-        <section class="card" aria-labelledby="entry-title">
-          <h2 id="entry-title" class="card__title">Nueva entrada</h2>
-          <form id="entry-form" novalidate>
-            <div class="row entry-context"><label>Cultivo<select id="cultivo" name="cultivo_id" required></select></label><label>¿Qué querés registrar?<select id="kind" name="kind"><option value="ambiente">Ambiente</option><option value="riego">Riego</option><option value="evento">Observación</option><option value="ec">pH / EC</option><option value="tarea">Tarea</option></select></label></div>
-            <label>Cuándo ocurrió<input name="observado_en" id="observado" type="datetime-local" required></label>
-            <fieldset data-kind="ambiente"><legend>Ambiente</legend><div class="row"><label>Temperatura · °C<input name="temperatura_c" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" required placeholder="24,5" class="input-num-big"></label><label>Humedad · %<input name="humedad_relativa" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" required placeholder="60" class="input-num-big"></label></div><label>Notas <small>opcional</small><textarea name="notas" maxlength="5000" rows="3" placeholder="¿Algo para recordar?"></textarea></label></fieldset>
-            <fieldset data-kind="evento" hidden disabled><legend>Observación</legend><label>Tipo<select name="tipo" id="event-type"></select></label><label>¿Qué pasó?<textarea name="descripcion" maxlength="5000" required rows="4" placeholder="Lo que viste, hiciste o querés seguir"></textarea></label><details><summary>Plantas afectadas · opcional</summary><div id="evento-plantas"></div></details><details><summary>Programar seguimiento · opcional</summary><p class="hint">Aparece en "Para revisar" en Hoy hasta que lo resuelvas desde la bitácora.</p><label>Para cuándo<input name="follow_up_fecha" type="date"></label><label>Qué hay que revisar <small>opcional</small><textarea name="follow_up_descripcion" maxlength="5000" rows="2"></textarea></label></details></fieldset>
-            <fieldset data-kind="ec" hidden disabled><legend>pH / EC</legend><label>Qué mediste<select name="tipo" id="ec-type"></select></label><div class="row"><label>pH<input name="ph" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off"></label><label>EC · ×10 µS/cm<input name="ec" type="text" inputmode="numeric" pattern="[0-9]+" placeholder="120" autocomplete="off"></label></div><p class="hint">Completá al menos pH o EC. El valor cero también es válido.</p><label>Temperatura del agua · °C <small>opcional</small><input name="temp_agua" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off"></label><label>Notas <small>opcional</small><textarea name="notas" maxlength="5000" rows="2"></textarea></label></fieldset>
-            <fieldset data-kind="tarea" hidden disabled><legend>Tarea</legend><label>Qué hay que hacer<input name="titulo" maxlength="200" required placeholder="Revisar el sensor"></label><label>Detalle <small>opcional</small><textarea name="descripcion" maxlength="5000" rows="2"></textarea></label><div class="row"><label>Categoría<select id="task-category" name="categoria"></select></label><label>Prioridad<select id="task-priority" name="prioridad"></select></label></div><label>Para cuándo <small>opcional</small><input name="fecha_objetivo" type="date"></label></fieldset>
-            <fieldset data-kind="riego" hidden disabled><legend>Riego</legend><p class="hint">Indicá cuánto recibió cada planta. Dejá vacío si no la regaste.</p><div id="plant-volumes"></div><div class="row"><label>pH de solución <small>opcional</small><input name="ph" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off"></label><label>EC · ×10 µS/cm <small>opcional</small><input name="ec" type="text" inputmode="numeric" pattern="[0-9]+" placeholder="120" autocomplete="off"></label></div><details><summary>Nutrientes aplicados · opcional</summary><p class="hint">Dosis en g/L, igual que en tu catálogo de nutrientes.</p><div id="nutrient-doses" class="row"></div></details><label class="check-row"><input type="checkbox" name="buscar_runoff"> Midió runoff (drenaje) en este riego</label><label>Notas <small>opcional</small><textarea name="notas" maxlength="5000" rows="2"></textarea></label></fieldset>
-            <p id="form-message" role="status" aria-live="polite"></p>
-            <div class="actions"><button id="save-entry" type="submit" class="btn-brand btn-brand--green">Guardar registro</button><button type="button" id="clear-draft" class="btn-ghost">Limpiar borrador</button></div>
-            <p id="draft-status" class="hint" role="status"></p>
-          </form>
-        </section>
-        <section id="pendientes" class="card" aria-labelledby="pending-title">
-          <div class="section-head"><h2 id="pending-title" class="card__title">En este dispositivo</h2><button type="button" id="sync" class="btn-ghost">Sincronizar</button></div>
-          <p class="hint">Se guarda primero acá. Dice "Confirmado" recién cuando la bitácora responde. Los pendientes se envían al reconectar con la app abierta, o al volver a abrirla.</p>
-          <div id="queue" aria-live="polite"></div>
-          <button type="button" class="text-button" id="export">Descargar pendientes</button>
-        </section>
+    {% endif %}
+    {% if avisos %}
+    <div class="reg-notice reg-notice--warning" role="alert">
+      <p>Estos valores son poco comunes. Revisalos o guardá igual.</p>
+      <ul>{% for a in avisos %}<li>{{ a }}</li>{% endfor %}</ul>
+      <button type="submit" name="confirmar" value="1" class="btn-ghost">Guardar igual</button>
+    </div>
+    {% endif %}
+
+    <div class="reg-row">
+      <label>Cultivo
+        <select name="cultivo" id="reg-cultivo">
+          {% for c in cultivos %}<option value="{{ c.pk }}" data-bitacora="{% url 'growlog:cultivo_detail' c.slug %}"{% if c == elegido %} selected{% endif %}>{{ c.nombre }}{% if c.archivado %} · archivado{% endif %}</option>{% endfor %}
+        </select>
+      </label>
+      <label>¿Qué querés registrar?
+        <select name="kind" id="reg-kind">
+          {% for valor, etiqueta in etiquetas.items %}<option value="{{ valor }}"{% if valor == tipo %} selected{% endif %}>{{ etiqueta }}</option>{% endfor %}
+        </select>
+      </label>
+    </div>
+
+    <label id="reg-observado"{% if tipo == "tarea" %} hidden{% endif %}>Cuándo ocurrió
+      <input name="observado_en" type="datetime-local" value="{{ observado }}" required{% if tipo == "tarea" %} disabled{% endif %}>
+    </label>
+
+    <fieldset data-kind="ambiente"{% if tipo != "ambiente" %} hidden disabled{% endif %}>
+      <legend>Ambiente</legend>
+      <div class="reg-row">
+        <label>Temperatura · °C<input name="ambiente-temperatura_c" value="{{ v.ambiente.temperatura_c }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" required placeholder="24,5" class="reg-num-big"></label>
+        <label>Humedad · %<input name="ambiente-humedad_relativa" value="{{ v.ambiente.humedad_relativa }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" required placeholder="60" class="reg-num-big"></label>
       </div>
-      <footer><a id="history-link" href="/">Ver bitácora</a></footer>
+      <label>Notas <small>opcional</small><textarea name="ambiente-notas" maxlength="5000" rows="3" placeholder="¿Algo para recordar?">{{ v.ambiente.notas }}</textarea></label>
+    </fieldset>
+
+    <fieldset data-kind="riego"{% if tipo != "riego" %} hidden disabled{% endif %}>
+      <legend>Riego</legend>
+      <p class="reg-hint">Indicá cuánto recibió cada planta. Dejá vacío si no la regaste.</p>
+      {% for grupo in plantas_por_cultivo %}
+      <div data-cultivo="{{ grupo.cultivo.pk }}"{% if grupo.cultivo != elegido %} hidden{% endif %}>
+        {% for fila in grupo.plantas %}
+        <div class="reg-plant">
+          <label>{{ fila.planta.apodo }} · ml<input name="riego-planta-{{ fila.planta.pk }}" value="{{ fila.volumen }}" inputmode="numeric" pattern="[0-9]+" autocomplete="off" placeholder="Sin riego"></label>
+          <details{% if fila.runoff %} open{% endif %}>
+            <summary>runoff</summary>
+            <label class="reg-check"><input type="checkbox" name="riego-runoff-{{ fila.planta.pk }}"{% if fila.runoff %} checked{% endif %}> Runoff observado</label>
+            <div class="reg-row">
+              <label>pH runoff<input name="riego-phrunoff-{{ fila.planta.pk }}" value="{{ fila.ph_runoff }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off"></label>
+              <label>EC runoff · ×10 µS/cm<input name="riego-ecrunoff-{{ fila.planta.pk }}" value="{{ fila.ec_runoff }}" inputmode="numeric" pattern="[0-9]+" autocomplete="off" placeholder="120"></label>
+            </div>
+            <label>Notas de esta planta<textarea name="riego-notasplanta-{{ fila.planta.pk }}" rows="2">{{ fila.notas }}</textarea></label>
+          </details>
+        </div>
+        {% empty %}
+        <p class="reg-hint">Este cultivo no tiene plantas disponibles para registrar un riego.</p>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      <div class="reg-row">
+        <label>pH de solución <small>opcional</small><input name="riego-ph" value="{{ v.riego.ph }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off"></label>
+        <label>EC · ×10 µS/cm <small>opcional</small><input name="riego-ec" value="{{ v.riego.ec }}" inputmode="numeric" pattern="[0-9]+" placeholder="120" autocomplete="off"></label>
+      </div>
+      {% if nutrientes %}
+      <details>
+        <summary>Nutrientes aplicados · opcional</summary>
+        <p class="reg-hint">Dosis en g/L, igual que en tu catálogo de nutrientes.</p>
+        <div class="reg-row">
+          {% for n in nutrientes %}<label>{{ n.nutriente }} · g/L<input name="riego-nutriente-{{ n.nutriente.pk }}" value="{{ n.dosis }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" placeholder="No aplicado"></label>{% endfor %}
+        </div>
+      </details>
+      {% endif %}
+      <label class="reg-check"><input type="checkbox" name="riego-buscar_runoff"{% if v.riego.buscar_runoff %} checked{% endif %}> Midió runoff (drenaje) en este riego</label>
+      <label>Notas <small>opcional</small><textarea name="riego-notas" maxlength="5000" rows="2">{{ v.riego.notas }}</textarea></label>
+    </fieldset>
+
+    <fieldset data-kind="evento"{% if tipo != "evento" %} hidden disabled{% endif %}>
+      <legend>Observación</legend>
+      <label>Tipo
+        <select name="evento-tipo">
+          {% for valor, etiqueta in opciones.eventos %}<option value="{{ valor }}"{% if valor == v.evento.tipo|default:"otro" %} selected{% endif %}>{{ etiqueta }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>¿Qué pasó?<textarea name="evento-descripcion" maxlength="5000" required rows="4" placeholder="Lo que viste, hiciste o querés seguir">{{ v.evento.descripcion }}</textarea></label>
+      <details>
+        <summary>Plantas afectadas · opcional</summary>
+        {% for grupo in plantas_por_cultivo %}
+        <div data-cultivo="{{ grupo.cultivo.pk }}"{% if grupo.cultivo != elegido %} hidden{% endif %}>
+          {% for fila in grupo.plantas %}
+          <label class="reg-check"><input type="checkbox" name="evento-planta-{{ fila.planta.pk }}"{% if fila.afectada %} checked{% endif %}> {{ fila.planta.apodo }}</label>
+          {% empty %}
+          <p class="reg-hint">Este cultivo no tiene plantas disponibles.</p>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </details>
+      <details{% if v.evento.follow_up_fecha %} open{% endif %}>
+        <summary>Programar seguimiento · opcional</summary>
+        <p class="reg-hint">Aparece en "Para revisar" en Hoy hasta que lo resuelvas desde la bitácora.</p>
+        <label>Para cuándo<input name="evento-follow_up_fecha" type="date" value="{{ v.evento.follow_up_fecha }}"></label>
+        <label>Qué hay que revisar <small>opcional</small><textarea name="evento-follow_up_descripcion" maxlength="5000" rows="2">{{ v.evento.follow_up_descripcion }}</textarea></label>
+      </details>
+    </fieldset>
+
+    <fieldset data-kind="ec"{% if tipo != "ec" %} hidden disabled{% endif %}>
+      <legend>pH / EC</legend>
+      <label>Qué mediste
+        <select name="ec-tipo">
+          {% for valor, etiqueta in opciones.ec %}<option value="{{ valor }}"{% if valor == v.ec.tipo|default:"solucion" %} selected{% endif %}>{{ etiqueta }}</option>{% endfor %}
+        </select>
+      </label>
+      <div class="reg-row">
+        <label>pH<input name="ec-ph" value="{{ v.ec.ph }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off"></label>
+        <label>EC · ×10 µS/cm<input name="ec-ec" value="{{ v.ec.ec }}" inputmode="numeric" pattern="[0-9]+" placeholder="120" autocomplete="off"></label>
+      </div>
+      <p class="reg-hint">Completá al menos pH o EC. El valor cero también es válido.</p>
+      <label>Temperatura del agua · °C <small>opcional</small><input name="ec-temp_agua" value="{{ v.ec.temp_agua }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off"></label>
+      <label>Notas <small>opcional</small><textarea name="ec-notas" maxlength="5000" rows="2">{{ v.ec.notas }}</textarea></label>
+    </fieldset>
+
+    <fieldset data-kind="tarea"{% if tipo != "tarea" %} hidden disabled{% endif %}>
+      <legend>Tarea</legend>
+      <label>Qué hay que hacer<input name="tarea-titulo" value="{{ v.tarea.titulo }}" maxlength="200" required placeholder="Revisar el sensor"></label>
+      <label>Detalle <small>opcional</small><textarea name="tarea-descripcion" maxlength="5000" rows="2">{{ v.tarea.descripcion }}</textarea></label>
+      <div class="reg-row">
+        <label>Categoría
+          <select name="tarea-categoria">
+            {% for valor, etiqueta in opciones.categorias %}<option value="{{ valor }}"{% if valor == v.tarea.categoria|default:"observacion" %} selected{% endif %}>{{ etiqueta }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>Prioridad
+          <select name="tarea-prioridad">
+            {% for valor, etiqueta in opciones.prioridades %}<option value="{{ valor }}"{% if valor == v.tarea.prioridad|default:"normal" %} selected{% endif %}>{{ etiqueta }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+      <label>Para cuándo <small>opcional</small><input name="tarea-fecha_objetivo" type="date" value="{{ v.tarea.fecha_objetivo }}"></label>
+    </fieldset>
+
+    <div class="reg-actions">
+      <button type="submit" class="btn-brand btn-brand--green">Guardar registro</button>
+      {% if elegido %}<a id="reg-bitacora" href="{% url 'growlog:cultivo_detail' elegido.slug %}" class="btn-ghost">Ver bitácora</a>{% endif %}
     </div>
-  </main>
-  {# Íconos en SVG inline: esta pantalla tiene que funcionar sin el CDN de íconos. #}
-  <nav class="bottom-nav" aria-label="Navegación principal">
-    <a href="/" class="bottom-nav__item"><svg class="reg-icon" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v11A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm1.5-.5a.5.5 0 0 0-.5.5v11a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-11a.5.5 0 0 0-.5-.5zM9 2.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v5A1.5 1.5 0 0 1 13.5 9h-3A1.5 1.5 0 0 1 9 7.5zm1.5-.5a.5.5 0 0 0-.5.5v5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-5a.5.5 0 0 0-.5-.5zM9 11.5a1.5 1.5 0 0 1 1.5-1.5h3a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5zm1.5-.5a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 0-.5-.5z"/></svg><span>Hoy</span></a>
-    <a href="#entry-title" class="bottom-nav__item bottom-nav__item--cta active" aria-current="page"><i><svg class="reg-icon" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M15.502 1.94a.5.5 0 0 1 0 .706l-1.047 1.048-2-2 1.047-1.048a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill="currentColor" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/></svg></i><span>Registrar</span></a>
-    <a href="#pendientes" class="bottom-nav__item"><svg class="reg-icon" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4.98 4a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 10 8h4.46l-3.05-3.812A.5.5 0 0 0 11.02 4zm9.954 5H10.45a2.5 2.5 0 0 1-4.9 0H1.066l.32 2.562a.5.5 0 0 0 .497.438h12.234a.5.5 0 0 0 .496-.438zM3.809 3.563A1.5 1.5 0 0 1 4.981 3h6.038a1.5 1.5 0 0 1 1.172.563l3.7 4.625a.5.5 0 0 1 .105.374l-.39 3.124A1.5 1.5 0 0 1 14.117 13H1.883a1.5 1.5 0 0 1-1.489-1.314l-.39-3.124a.5.5 0 0 1 .106-.374z"/></svg><span>Pendientes</span></a>
-  </nav>
-</body>
-</html>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}<script src="{% static 'growlog/registrar.js' %}"></script>{% endblock %}
