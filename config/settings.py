@@ -112,9 +112,15 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# Si una plantilla pide un estático que no está en el manifest, se usa el nombre
+# sin hash en vez de romper la página con un 500.
+WHITENOISE_MANIFEST_STRICT = False
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        # Nombres con hash (verde.3f9a1c.css): cada deploy cambia la URL y el
+        # navegador no puede mezclar HTML nuevo con CSS viejo. El manifest lo
+        # genera el collectstatic de la build (railway.toml).
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
