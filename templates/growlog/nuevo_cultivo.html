@@ -17,26 +17,17 @@
     color: var(--green); font-style: italic; font-size: 56px; font-weight: 700;
     padding-bottom: 4px;
   }
-  .nc-segment {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
-  }
-  @media (max-width: 640px) { .nc-segment { grid-template-columns: repeat(2, 1fr); } }
-  .nc-segment__opt {
-    padding: 12px 10px; border: 1px solid var(--rule);
-    text-align: center; cursor: pointer;
-    font-family: "JetBrains Mono", monospace; font-size: 10px;
-    letter-spacing: .15em; text-transform: uppercase;
-    color: var(--cream-soft);
-    transition: border-color .12s, color .12s;
-  }
-  .nc-segment__opt:hover { border-color: var(--green); color: var(--green); }
-  .nc-segment__opt--active {
-    border-color: var(--green); background: var(--green-wash); color: var(--green);
-    font-weight: 700;
-  }
   @media (max-width: 900px) {
     .nc-title { font-size: 56px; }
     .nc-title__accent { font-size: 36px; }
+  }
+  .nc-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .nc-actions__btns { display: flex; gap: 10px; }
+  .nc-ref { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--rule-soft); }
+  .nc-ref span:last-child { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--green); text-align: right; }
+  @media (max-width: 575px) {
+    .nc-actions__btns { width: 100%; }
+    .nc-actions__btns > * { flex: 1; justify-content: center; }
   }
 </style>
 {% endblock %}
@@ -145,11 +136,11 @@
         </div>
       </div>
 
-      <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 10px;">
+      <div class="nc-actions">
         <span class="mono c-soft" style="font-size: 11px;">
           Una vez creado, podrás agregar plantas y registros desde el detalle.
         </span>
-        <div style="display: flex; gap: 10px;">
+        <div class="nc-actions__btns">
           <a href="{% url 'growlog:dashboard' %}" class="btn-ghost">cancelar</a>
           <button type="submit" class="btn-brand">+ crear cultivo</button>
         </div>
@@ -157,43 +148,24 @@
     </form>
   </div>
 
-  <!-- SIDEBAR -->
-  <div class="col-12 col-lg-4">
+  <!-- SIDEBAR: referencia rápida, solo en pantallas grandes -->
+  <div class="col-12 col-lg-4 d-none d-lg-block">
     <div class="panel">
       <div class="panel__head">
         <div class="panel__head-left">
           <span class="panel__sigil">§</span>
-          <span class="label-eyebrow panel__title">parámetros ideales · veg</span>
+          <span class="label-eyebrow panel__title">referencia · vege en tierra</span>
         </div>
       </div>
       <div class="panel__body" style="padding-top: 8px;">
-        {% for k, v in idealveg.items %}{% endfor %}
-        <div class="cd-setup-row" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="label-eyebrow">temp</span>
-          <span class="mono c-green" style="font-size: 11px; font-weight: 600;">22-27°C</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="label-eyebrow">hr</span>
-          <span class="mono c-green" style="font-size: 11px; font-weight: 600;">55-70%</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="label-eyebrow">ph</span>
-          <span class="mono c-green" style="font-size: 11px; font-weight: 600;">5.8-6.5</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="label-eyebrow">ec</span>
-          <span class="mono c-green" style="font-size: 11px; font-weight: 600;">800-1600 µS</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="label-eyebrow">vpd</span>
-          <span class="mono c-green" style="font-size: 11px; font-weight: 600;">0.8-1.2 kPa</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-          <span class="label-eyebrow">luz</span>
-          <span class="mono c-green" style="font-size: 11px; font-weight: 600;">18h / 6h</span>
-        </div>
-        <div class="mono c-fine" style="margin-top: 14px; font-size: 10px; line-height: 1.5;">
-          Estos valores se ajustan automáticamente cuando cambias el estado del cultivo.
+        <div class="nc-ref"><span class="label-eyebrow">temp</span><span>22 a 28 °C</span></div>
+        <div class="nc-ref"><span class="label-eyebrow">humedad</span><span>55 a 70 %</span></div>
+        <div class="nc-ref"><span class="label-eyebrow">vpd</span><span>0,8 a 1,0 kPa</span></div>
+        <div class="nc-ref"><span class="label-eyebrow">ph riego</span><span>6,0 a 7,0</span></div>
+        <div class="nc-ref"><span class="label-eyebrow">ec riego</span><span>0,8 a 1,4 mS/cm</span></div>
+        <div class="nc-ref" style="border-bottom: 0;"><span class="label-eyebrow">luz</span><span>18 / 6 h</span></div>
+        <div class="mono c-fine" style="margin-top: 12px; font-size: 10px; line-height: 1.5;">
+          Valores orientativos. La app compara tus mediciones con el rango de la etapa vigente. Más detalle en <a href="{% url 'growlog:faq' %}" class="c-green">dudas frecuentes</a>.
         </div>
       </div>
     </div>

@@ -46,12 +46,6 @@
         {% if user.is_authenticated %}
         <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'registrar' %}active{% endif %}" href="{% url 'growlog:registrar' %}{% if cultivo_nav and can_edit_cultivo %}?cultivo={{ cultivo_nav.pk }}{% endif %}">registrar</a></li>
         <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.url_name == 'nuevo_cultivo' %}active{% endif %}"
-             href="{% url 'growlog:nuevo_cultivo' %}">
-            nuevo
-          </a>
-        </li>
-        <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.url_name == 'invitados_panel' %}active{% endif %}"
              href="{% url 'growlog:invitados_panel' %}">
             compartir

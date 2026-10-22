@@ -420,6 +420,13 @@ textarea:focus, select:focus {
   border-color: var(--green);
   box-shadow: 0 0 0 3px rgba(138,171,104,.14);
 }
+/* iOS Safari ignora width:100% en los campos de fecha y hora (se salen de la
+   caja y quedan centrados). Sin la apariencia nativa respetan el ancho. */
+input[type=date], input[type=time], input[type=datetime-local] {
+  -webkit-appearance: none; appearance: none;
+  display: block; min-width: 0; min-height: 42px;
+}
+input::-webkit-date-and-time-value { text-align: left; }
 /* Big chunky number inputs for vital data */
 .input-num-big {
   font-family: "Manrope", sans-serif !important;
