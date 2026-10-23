@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -139,7 +139,14 @@ def registrar(request):
     cultivos = list(cultivos_visibles(request.user, editar=True).prefetch_related(
         Prefetch("plantas", queryset=Planta.objects.activas(), to_attr="plantas_activas"),
     ))
-    nutrientes = list(Nutriente.objects.all())
+    # Un solo query para el catálogo de todos los cultivos; cada cultivo ofrece
+    # los compartidos, los propios y los de su dueño.
+    catalogo = list(Nutriente.objects.filter(oculto=False).filter(
+        Q(propietario__isnull=True) | Q(propietario=request.user)
+        | Q(propietario_id__in={c.propietario_id for c in cultivos})))
+
+    def nutrientes_de(cultivo):
+        return [n for n in catalogo if n.propietario_id in (None, request.user.pk, cultivo.propietario_id)]
     origen = request.POST if request.method == "POST" else request.GET
     elegido = next((c for c in cultivos if str(c.pk) == origen.get("cultivo")), None)
     tipo = origen.get("kind") if origen.get("kind") in TIPOS else "ambiente"
@@ -150,13 +157,13 @@ def registrar(request):
             if elegido is None:
                 raise RegistroError("Elegí un cultivo en el que puedas registrar.")
             observado = _observado(request.POST.get("observado_en"), tipo)
-            datos = _datos(request.POST, tipo, elegido.plantas_activas, nutrientes)
+            datos = _datos(request.POST, tipo, elegido.plantas_activas, nutrientes_de(elegido))
             with transaction.atomic():
                 guardar_registro(request.user, elegido, tipo, observado, datos)
                 # Los avisos se muestran solo sobre datos válidos: se guarda, y si
                 # hay algo raro sin confirmar se deshace y se pregunta.
                 if not request.POST.get("confirmar"):
-                    avisos = _avisos(datos, elegido.plantas_activas, nutrientes)
+                    avisos = _avisos(datos, elegido.plantas_activas, nutrientes_de(elegido))
                     transaction.set_rollback(bool(avisos))
             if not avisos:
                 messages.success(request, f"{ETIQUETAS[tipo]} guardado en {elegido.nombre}.")
@@ -189,7 +196,11 @@ def registrar(request):
     return render(request, "growlog/registrar.html", {
         "cultivos": cultivos, "elegido": elegido, "tipo": tipo, "etiquetas": ETIQUETAS,
         "plantas_por_cultivo": plantas_por_cultivo,
-        "nutrientes": [{"nutriente": n, "dosis": riego.get(f"nutriente-{n.pk}", "")} for n in nutrientes],
+        "nutrientes_por_cultivo": [
+            {"cultivo": c, "nutrientes": [{"nutriente": n, "dosis": riego.get(f"nutriente-{n.pk}", "")}
+                                          for n in nutrientes_de(c)]}
+            for c in cultivos
+        ],
         "v": v, "observado": request.POST.get("observado_en") or timezone.localtime().strftime(DT_FMT),
         "error": error, "errores": errores, "avisos": avisos,
         "opciones": {

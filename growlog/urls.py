@@ -8,6 +8,11 @@ urlpatterns = [
     path("registrar/", views.registrar, name="registrar"),
     path("dudas/", views.faq, name="faq"),
     path("actividad/", views.actividad, name="actividad"),
+    path("nutrientes/", views.nutrientes, name="nutrientes"),
+    path("nutrientes/nuevo/", views.nutriente_crear, name="nutriente_crear"),
+    path("nutrientes/<int:pk>/editar/", views.nutriente_editar, name="nutriente_editar"),
+    path("nutrientes/<int:pk>/ocultar/", views.nutriente_ocultar, name="nutriente_ocultar"),
+    path("nutrientes/<int:pk>/eliminar/", views.nutriente_eliminar, name="nutriente_eliminar"),
     # ── API v1 ────────────────────────────────────────────────────────────────
     path("api/v1/cultivos/", api_views.cultivos_list),
     path("api/v1/cultivos/<slug:slug>/", api_views.cultivo_detail),

@@ -1,0 +1,15 @@
+<li{% if n.oculto %} class="is-oculto"{% endif %}>
+  <div class="nu-info">
+    <div class="nu-name">{{ n }}{% if n.oculto %} · oculto{% endif %}</div>
+    <div class="nu-meta">{{ n.get_etapa_recomendada_display }}{% if n.npk %} · NPK {{ n.npk }}{% endif %}{% if n.dosis_recomendada_min or n.dosis_recomendada_max %} · {{ n.dosis_recomendada_min|default:"?" }} a {{ n.dosis_recomendada_max|default:"?" }} g/L{% endif %}{% if n.propietario and not editable %} · de {{ n.propietario.username }}{% endif %}</div>
+  </div>
+  {% if editable %}
+  <div class="nu-actions">
+    <a href="{% url 'growlog:nutriente_editar' n.pk %}">Editar</a>
+    <form method="post" action="{% url 'growlog:nutriente_ocultar' n.pk %}">{% csrf_token %}<button type="submit">{% if n.oculto %}Mostrar{% else %}Ocultar{% endif %}</button></form>
+    {% if not n.usos %}
+    <form method="post" action="{% url 'growlog:nutriente_eliminar' n.pk %}" onsubmit="return confirm('¿Eliminar «{{ n|escapejs }}»?');">{% csrf_token %}<button type="submit" class="is-danger">Eliminar</button></form>
+    {% endif %}
+  </div>
+  {% endif %}
+</li>

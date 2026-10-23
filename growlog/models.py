@@ -357,6 +357,12 @@ class Nutriente(models.Model):
     etapa_recomendada = models.CharField(max_length=10, choices=ETAPA_CHOICES, default="veg")
     dosis_recomendada_min = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     dosis_recomendada_max = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    # Sin propietario es del catálogo compartido; con propietario lo ve solo
+    # su dueño (y quien registra en un cultivo de ese dueño).
+    propietario = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True,
+                                    related_name="nutrientes_propios")
+    # Oculto deja de ofrecerse al registrar, pero los riegos viejos lo conservan.
+    oculto = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["marca", "nombre"]

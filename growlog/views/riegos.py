@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 
 from ..forms import NutrienteAplicadoForm, riego_planta_entries, riego_planta_formset, RiegoForm
 from ..models import NutrienteAplicado, Riego
-from ..permissions import objeto_del_cultivo
+from ..permissions import nutrientes_para, objeto_del_cultivo
 from ..services.riegos import guardar_riego
 
 
@@ -35,7 +35,7 @@ def riego_editar(request, pk):
             return redirect("growlog:riego_editar", pk=pk)
 
     nutrientes = riego.nutrientes_aplicados.select_related("nutriente").all()
-    na_form = NutrienteAplicadoForm()
+    na_form = NutrienteAplicadoForm(nutrientes=nutrientes_para(request.user, cultivo))
     return render(request, "growlog/riego_form.html", {
         "form": form, "riego": riego, "nutrientes": nutrientes,
         "na_form": na_form,
@@ -71,7 +71,7 @@ def riego_eliminar(request, pk):
 @login_required
 def nutriente_aplicado_crear(request, riego_pk):
     riego = objeto_del_cultivo(request, Riego, editar=True, pk=riego_pk)
-    form = NutrienteAplicadoForm(request.POST or None)
+    form = NutrienteAplicadoForm(request.POST or None, nutrientes=nutrientes_para(request.user, riego.cultivo))
     if request.method == "POST" and form.is_valid():
         na = form.save(commit=False)
         na.riego = riego

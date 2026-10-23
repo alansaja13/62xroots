@@ -71,6 +71,13 @@ from .invitados import (  # noqa: F401
     invitado_rol,
     invitados_panel,
 )
+from .nutrientes import (  # noqa: F401
+    nutriente_crear,
+    nutriente_editar,
+    nutriente_eliminar,
+    nutriente_ocultar,
+    nutrientes,
+)
 from .registrar import registrar  # noqa: F401
 from .pwa import (  # noqa: F401
     push_subscribe,

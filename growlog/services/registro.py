@@ -2,7 +2,8 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from growlog.models import Evento, MedicionAmbiente, MedicionEC, Nutriente, Riego, Tarea
+from growlog.models import Evento, MedicionAmbiente, MedicionEC, Riego, Tarea
+from growlog.permissions import nutrientes_para
 from growlog.registration_forms import (
     AmbienteForm, ObservacionForm, ECForm, NutrienteForm, PendienteForm, RiegoSolucionForm, VolumenForm,
 )
@@ -60,7 +61,7 @@ def guardar_registro(usuario, cultivo, tipo, observado, datos):
         aplicaciones = []
         for row in nutrientes:
             values = validar(NutrienteForm, row)
-            nutriente = Nutriente.objects.filter(pk=values["nutriente_id"]).first()
+            nutriente = nutrientes_para(usuario, cultivo).filter(pk=values["nutriente_id"]).first()
             if nutriente is None:
                 raise RegistroError("Revisá los nutrientes: alguno ya no existe.")
             aplicaciones.append((nutriente, values["dosis_g_por_litro"]))

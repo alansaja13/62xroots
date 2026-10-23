@@ -16,12 +16,13 @@ from django.views.decorators.http import require_GET
 from .models import (
     APIToken, CambioFotoperiodo, CanopySnapshot, ColaPosicion,
     CostoEnergetico, Cultivo, Equipo, Evento, LecturaMedidor,
-    MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente, NutrienteAplicado,
+    MedicionAmbiente, MedicionEC, MedicionPlanta, NutrienteAplicado,
     ParametroIdeal, Planta, POSICION_TENT_COORDS, Riego, Tarea, TarifaElectrica,
 )
 from .services.energia import calcular_meses, ciclo_activo
 from .services.riegos import guardar_riego
-from .permissions import (SAFE_METHODS, cultivos_visibles, puede_editar, recursos_visibles, tarifas_del_cultivo, equipos_asignables)
+from .permissions import (SAFE_METHODS, cultivos_visibles, puede_editar, recursos_visibles, tarifas_del_cultivo, equipos_asignables,
+                          nutrientes_para, nutrientes_visibles)
 
 EVENTO_TIPOS = {c[0] for c in Evento.TIPO_CHOICES}
 TAREA_PRIORIDADES = {c[0] for c in Tarea.PRIORIDAD_CHOICES}
@@ -510,12 +511,12 @@ CAMPOS_DETALLE_PLANTA = {
 }
 
 
-def _nutriente_y_dosis(item):
+def _nutriente_y_dosis(item, request):
     if not isinstance(item, dict):
         raise ApiInputError('Cada nutriente debe ser un objeto')
     nutriente_id = _entero(item, 'nutriente_id', requerido=True)
     dosis = _decimal(item, 'dosis_g_por_litro', requerido=True, positivo=True)
-    nutriente = Nutriente.objects.filter(pk=nutriente_id).first()
+    nutriente = nutrientes_para(request.api_user, request.api_cultivo).filter(pk=nutriente_id).first()
     if nutriente is None:
         raise ApiInputError(f'nutriente_id {nutriente_id} no existe')
     return nutriente, dosis
@@ -565,7 +566,7 @@ def cultivo_riegos(request, slug):
         nutrientes_raw = body.get('nutrientes', [])
         if not isinstance(nutrientes_raw, list):
             raise ApiInputError('nutrientes debe ser una lista')
-        nutrientes = [_nutriente_y_dosis(item) for item in nutrientes_raw]
+        nutrientes = [_nutriente_y_dosis(item, request) for item in nutrientes_raw]
 
         riego = Riego(cultivo=c, creado_por=request.api_user, **_leer(body, CAMPOS_RIEGO))
         _guardar_riego(riego, detalles, nutrientes)
@@ -631,7 +632,7 @@ def cultivo_riego_nutrientes(request, slug, riego_id):
         ])
 
     if request.method == 'POST':
-        nutriente, dosis = _nutriente_y_dosis(_body(request))
+        nutriente, dosis = _nutriente_y_dosis(_body(request), request)
         na = _guardar(NutrienteAplicado(riego=riego, nutriente=nutriente, dosis_g_por_litro=dosis))
         return api_ok(_nutriente_aplicado(na), status=201)
 
@@ -1534,7 +1535,7 @@ def nutrientes_list(request):
             'dosis_recomendada_min': _num(n.dosis_recomendada_min),
             'dosis_recomendada_max': _num(n.dosis_recomendada_max),
         }
-        for n in Nutriente.objects.all()
+        for n in nutrientes_visibles(request.api_user)
     ])
 
 

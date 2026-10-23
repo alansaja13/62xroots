@@ -5,7 +5,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
-from .models import Cultivo, Equipo, TarifaElectrica
+from .models import Cultivo, Equipo, Nutriente, TarifaElectrica
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
@@ -63,6 +63,21 @@ def puede_subir_fotos(usuario):
     if not usuario.is_authenticated or not usuario.is_active:
         return False
     return settings.PERMITIR_FOTOS_A_TODOS or usuario.has_perm("growlog.subir_fotos")
+
+
+def nutrientes_para(usuario, cultivo):
+    """Nutrientes que se ofrecen al registrar en `cultivo`: el catálogo
+    compartido, los propios y los del dueño del cultivo (para quien colabora)."""
+    return Nutriente.objects.filter(oculto=False).filter(
+        Q(propietario__isnull=True) | Q(propietario=usuario) | Q(propietario_id=cultivo.propietario_id))
+
+
+def nutrientes_visibles(usuario):
+    """Catálogo que ve un usuario: compartidos, propios y los de los dueños de
+    los cultivos a los que tiene acceso."""
+    duenos = cultivos_visibles(usuario).values("propietario_id")
+    return Nutriente.objects.filter(oculto=False).filter(
+        Q(propietario__isnull=True) | Q(propietario=usuario) | Q(propietario_id__in=duenos))
 
 
 def recursos_visibles(model, usuario, *, editar=False):

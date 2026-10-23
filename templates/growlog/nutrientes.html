@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Nutrientes{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nu { max-width: 900px; }
+  .nu-header { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; }
+  .nu-header h1 {
+    font-family: var(--font-display); font-variation-settings: "wdth" 85, "opsz" 96;
+    font-size: clamp(40px, 7vw, 64px); font-weight: 800; letter-spacing: -.03em; line-height: .95; margin: 10px 0 10px;
+  }
+  .nu-header p { color: var(--cream-soft); margin: 0; max-width: 560px; }
+  .nu-section { margin-bottom: 26px; }
+  .nu-section h2 {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--green); margin: 0 0 10px;
+  }
+  .nu-section h2::before { content: "§ "; color: var(--fine); }
+  .nu-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--rule); border-radius: 14px; background: var(--card); }
+  .nu-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 13px 16px; }
+  .nu-list li + li { border-top: 1px solid var(--rule-soft); }
+  .nu-list li.is-oculto .nu-name { color: var(--fine); }
+  .nu-info { min-width: 0; }
+  .nu-name { font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
+  .nu-meta { font-family: var(--font-mono); font-size: 11px; color: var(--cream-soft); margin-top: 2px; }
+  .nu-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .nu-actions form { margin: 0; }
+  .nu-actions a, .nu-actions button {
+    background: none; border: 1px solid var(--rule); border-radius: 999px; color: var(--cream-soft);
+    font-family: var(--font-body); font-size: 12px; font-weight: 600; padding: 6px 11px; min-height: 34px;
+    text-decoration: none; cursor: pointer; display: inline-flex; align-items: center;
+  }
+  .nu-actions a:hover, .nu-actions button:hover { color: var(--green); border-color: var(--green-deep); }
+  .nu-actions .is-danger:hover { color: var(--rust); border-color: var(--rust); }
+  .nu-list .nu-empty { color: var(--cream-soft); font-size: 14px; }
+  @media (max-width: 575px) {
+    .nu-list li { flex-direction: column; align-items: stretch; }
+    .nu-actions { justify-content: flex-start; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="nu">
+  <header class="nu-header">
+    <div>
+      <div class="label-eyebrow">// catálogo de nutrientes</div>
+      <h1>Nutrientes</h1>
+      <p>Los que cargues acá aparecen al registrar riegos en tus cultivos, junto con el catálogo compartido. Quien colabora en un cultivo tuyo también ve los tuyos ahí.</p>
+    </div>
+    <a href="{% url 'growlog:nutriente_crear' %}" class="btn-brand"><i class="bi bi-plus-lg"></i> Agregar nutriente</a>
+  </header>
+
+  <section class="nu-section" aria-labelledby="propios-t">
+    <h2 id="propios-t">Mis nutrientes</h2>
+    <ul class="nu-list">
+      {% for n in propios %}{% include "growlog/partials/nutriente_item.html" with editable=True %}
+      {% empty %}<li class="nu-empty">Todavía no cargaste nutrientes propios.</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="nu-section" aria-labelledby="compartidos-t">
+    <h2 id="compartidos-t">Catálogo compartido</h2>
+    <ul class="nu-list">
+      {% for n in compartidos %}{% include "growlog/partials/nutriente_item.html" with editable=user.is_superuser %}
+      {% empty %}<li class="nu-empty">No hay nutrientes compartidos.</li>{% endfor %}
+    </ul>
+  </section>
+
+  {% if de_otros %}
+  <section class="nu-section" aria-labelledby="otros-t">
+    <h2 id="otros-t">De cultivos compartidos con vos</h2>
+    <ul class="nu-list">
+      {% for n in de_otros %}{% include "growlog/partials/nutriente_item.html" with editable=False %}{% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

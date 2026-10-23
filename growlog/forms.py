@@ -17,6 +17,7 @@ from .models import (
     MedicionAmbiente,
     MedicionEC,
     MedicionPlanta,
+    Nutriente,
     NutrienteAplicado,
     Planta,
     Riego,
@@ -290,6 +291,42 @@ class MedicionPlantaForm(forms.ModelForm):
         return foto
 
 
+class NutrienteForm(forms.ModelForm):
+    compartido = forms.BooleanField(
+        required=False, label="Compartido con todos",
+        help_text="Lo ven todos los usuarios al registrar. Solo administradores.",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    class Meta:
+        model = Nutriente
+        fields = ["nombre", "marca", "npk", "etapa_recomendada", "dosis_recomendada_min", "dosis_recomendada_max"]
+        labels = {"npk": "NPK", "etapa_recomendada": "Etapa", "dosis_recomendada_min": "Dosis mínima (g/L)",
+                  "dosis_recomendada_max": "Dosis máxima (g/L)"}
+        widgets = {
+            "nombre": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Bio·Grow", "autofocus": True}),
+            "marca": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: BioBizz"}),
+            "npk": forms.TextInput(attrs={"class": "form-control field-narrow", "placeholder": "4-3-6"}),
+            "etapa_recomendada": forms.Select(attrs={"class": "form-select"}),
+            "dosis_recomendada_min": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
+            "dosis_recomendada_max": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
+        }
+
+    def __init__(self, *args, puede_compartir=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        if puede_compartir:
+            self.fields["compartido"].initial = self.instance.pk is not None and self.instance.propietario_id is None
+        else:
+            del self.fields["compartido"]
+
+    def clean(self):
+        data = super().clean()
+        minimo, maximo = data.get("dosis_recomendada_min"), data.get("dosis_recomendada_max")
+        if minimo is not None and maximo is not None and minimo > maximo:
+            self.add_error("dosis_recomendada_max", "La dosis máxima no puede ser menor que la mínima.")
+        return data
+
+
 class NutrienteAplicadoForm(forms.ModelForm):
     class Meta:
         model = NutrienteAplicado
@@ -298,6 +335,11 @@ class NutrienteAplicadoForm(forms.ModelForm):
             "nutriente": forms.Select(attrs={"class": "form-select"}),
             "dosis_g_por_litro": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.001"}),
         }
+
+    def __init__(self, *args, nutrientes, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Solo los nutrientes que se ofrecen en ese cultivo (ver nutrientes_para).
+        self.fields["nutriente"].queryset = nutrientes
 
 
 class MedicionECForm(forms.ModelForm):

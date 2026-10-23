@@ -69,6 +69,14 @@
       </span>
       <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
     </a>
+    <a class="aj-item" href="{% url 'growlog:nutrientes' %}">
+      <i class="bi bi-droplet-half" aria-hidden="true"></i>
+      <span class="aj-item__body">
+        <span class="aj-item__title">Nutrientes</span>
+        <span class="aj-item__val">los que aparecen al registrar un riego</span>
+      </span>
+      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+    </a>
     {% if can_manage_cultivo %}
     <a class="aj-item" href="{% url 'growlog:invitados_panel' %}">
       <i class="bi bi-people" aria-hidden="true"></i>

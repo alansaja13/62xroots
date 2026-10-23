@@ -85,15 +85,15 @@
         <label>pH de solución <small>opcional</small><input name="riego-ph" value="{{ v.riego.ph }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off"></label>
         <label>EC · ×10 µS/cm <small>opcional</small><input name="riego-ec" value="{{ v.riego.ec }}" inputmode="numeric" pattern="[0-9]+" placeholder="120" autocomplete="off"></label>
       </div>
-      {% if nutrientes %}
       <details>
         <summary>Nutrientes aplicados · opcional</summary>
-        <p class="reg-hint">Dosis en g/L, igual que en tu catálogo de nutrientes.</p>
-        <div class="reg-row">
-          {% for n in nutrientes %}<label>{{ n.nutriente }} · g/L<input name="riego-nutriente-{{ n.nutriente.pk }}" value="{{ n.dosis }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" placeholder="No aplicado"></label>{% endfor %}
+        <p class="reg-hint">Dosis en g/L, igual que en tu catálogo. <a href="{% url 'growlog:nutrientes' %}">Agregar o editar nutrientes</a></p>
+        {% for grupo in nutrientes_por_cultivo %}
+        <div class="reg-row" data-cultivo="{{ grupo.cultivo.pk }}"{% if grupo.cultivo != elegido %} hidden{% endif %}>
+          {% for n in grupo.nutrientes %}<label>{{ n.nutriente }} · g/L<input name="riego-nutriente-{{ n.nutriente.pk }}" value="{{ n.dosis }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" placeholder="No aplicado"></label>{% empty %}<p class="reg-hint">Todavía no hay nutrientes cargados para este cultivo.</p>{% endfor %}
         </div>
+        {% endfor %}
       </details>
-      {% endif %}
       <label class="reg-check"><input type="checkbox" name="riego-buscar_runoff"{% if v.riego.buscar_runoff %} checked{% endif %}> Midió runoff (drenaje) en este riego</label>
       <label>Notas <small>opcional</small><textarea name="riego-notas" maxlength="5000" rows="2">{{ v.riego.notas }}</textarea></label>
     </fieldset>
