@@ -60,6 +60,12 @@
         {% endif %}
         {% if user.is_superuser %}
         <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'actividad' %}active{% endif %}"
+             href="{% url 'growlog:actividad' %}">
+            actividad
+          </a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" href="/admin/">
             admin
           </a>

@@ -1,0 +1,78 @@
+/* Actividad · panel de administración, en el lenguaje VERDE (ver verde.css) */
+.act { max-width: 1100px; margin: auto; color: var(--cream); }
+.act-header h1 {
+  font-family: var(--font-display); font-variation-settings: "wdth" 85, "opsz" 96;
+  font-size: clamp(40px, 7vw, 64px); font-weight: 800; letter-spacing: -.03em; line-height: .95;
+  margin: 10px 0 12px;
+}
+.act-header p { color: var(--cream-soft); max-width: 640px; margin-bottom: 22px; }
+
+.act-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+.act-summary > div {
+  display: flex; flex-direction: column; gap: 6px; padding: 16px 18px;
+  border: 1px solid var(--rule); border-radius: 14px; background: var(--card);
+}
+.act-summary strong {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 34px; font-weight: 600; line-height: 1; color: var(--green);
+}
+.act-summary .is-alert strong { color: var(--honey); }
+.act-summary span {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--fine); line-height: 1.5;
+}
+
+.act-panel { border: 1px solid var(--rule); border-radius: 14px; background: var(--card); padding: 18px 20px; margin-bottom: 18px; }
+.act-panel h2 {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--green); margin: 0 0 12px;
+}
+.act-panel h2::before { content: "§ "; color: var(--fine); }
+
+.act-people { list-style: none; margin: 0; padding: 0; }
+.act-people li {
+  display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 8px 18px; align-items: center;
+  padding: 14px 0; border-top: 1px solid var(--rule-soft);
+}
+.act-person { display: flex; align-items: center; gap: 10px; min-width: 0; overflow-wrap: anywhere; }
+.act-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rule); flex-shrink: 0; }
+.act-dot.is-on { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.act-tag {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--cream-soft); border: 1px solid var(--rule); border-radius: 999px; padding: 1px 7px;
+}
+.act-people dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.act-people dt {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--fine); margin-bottom: 4px;
+}
+.act-people dd { margin: 0; font-size: 14px; }
+.act-people dd small { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--cream-soft); }
+.act-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.act-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.act-cols .act-panel { margin-bottom: 0; }
+.act-feed { list-style: none; margin: 0; padding: 0; }
+.act-feed li {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding: 10px 0; border-top: 1px solid var(--rule-soft); font-size: 14px; color: var(--cream-soft);
+}
+.act-feed li strong { color: var(--cream); }
+.act-feed li span { min-width: 0; overflow-wrap: anywhere; }
+.act-feed li a { color: var(--green); }
+.act-feed time { font-family: var(--font-mono); font-size: 11px; color: var(--fine); white-space: nowrap; }
+.act-feed li.is-fail, .act-feed li.is-fail strong { color: var(--honey); }
+.act-empty, .act-note { font-size: 13px; color: var(--cream-soft); margin: 0; }
+.act-note { margin-top: 10px; color: var(--fine); font-size: 12px; }
+
+@media (max-width: 900px) {
+  .act-cols { grid-template-columns: 1fr; }
+  .act-cols .act-panel { margin-bottom: 18px; }
+  .act-people li { grid-template-columns: 1fr; }
+}
+@media (max-width: 575px) {
+  .act-panel { padding: 16px; }
+  .act-summary strong { font-size: 28px; }
+  .act-people dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .act-feed li { flex-direction: column; gap: 2px; }
+}

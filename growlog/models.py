@@ -726,3 +726,22 @@ class LecturaMedidor(models.Model):
 
     def __str__(self):
         return f"{self.cultivo.nombre} · {self.fecha} ({self.kwh_real} kWh)"
+
+
+class Ingreso(models.Model):
+    """Un intento de inicio de sesión. Se guarda el dispositivo en forma corta,
+    no la IP: alcanza para ver quién usa la app sin juntar datos personales."""
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="ingresos")
+    nombre_usado = models.CharField(max_length=150, blank=True)
+    exito = models.BooleanField(default=True)
+    dispositivo = models.CharField(max_length=60, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-creado_en"]
+        verbose_name = "Ingreso"
+        verbose_name_plural = "Ingresos"
+
+    def __str__(self):
+        estado = "ok" if self.exito else "fallido"
+        return f"{self.nombre_usado} · {estado} · {self.creado_en:%d/%m/%Y %H:%M}"

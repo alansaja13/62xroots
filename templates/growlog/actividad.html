@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Actividad{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'growlog/actividad.css' %}">{% endblock %}
+
+{% block content %}
+<div class="act">
+  <header class="act-header">
+    <div class="label-eyebrow">// actividad · solo administradores</div>
+    <h1>Actividad</h1>
+    <p>Quién entra a la app y quién registra. Los registros cuentan por la fecha en que se observó, no por cuándo se cargaron.</p>
+  </header>
+
+  <div class="act-summary">
+    <div><strong>{{ activos_7 }}</strong><span>de {{ personas|length }} usuarios activos en 7 días</span></div>
+    <div{% if fallidos_30 %} class="is-alert"{% endif %}><strong>{{ fallidos_30 }}</strong><span>ingresos fallidos en 30 días</span></div>
+  </div>
+
+  <section class="act-panel" aria-labelledby="personas-t">
+    <h2 id="personas-t">Por persona</h2>
+    <ul class="act-people">
+      {% for p in personas %}
+      <li>
+        <div class="act-person">
+          <span class="act-dot{% if p.activo_7 %} is-on{% endif %}" aria-hidden="true"></span>
+          <strong>{{ p.usuario.username }}</strong>{% if p.usuario.is_superuser %} <span class="act-tag">admin</span>{% endif %}
+        </div>
+        <dl>
+          <div><dt>Último ingreso</dt><dd>{% if p.ultimo_ingreso %}hace {{ p.ultimo_ingreso|timesince }}{% if p.dispositivo %}<small>{{ p.dispositivo }}</small>{% endif %}{% else %}nunca{% endif %}</dd></div>
+          <div><dt>Último registro</dt><dd>{% if p.ultimo_registro %}{{ p.ultimo_registro|date:"d/m/Y" }}{% else %}ninguno{% endif %}</dd></div>
+          <div><dt>Registros 7 / 30 días</dt><dd class="act-num">{{ p.registros_7 }} / {{ p.registros_30 }}</dd></div>
+        </dl>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <div class="act-cols">
+    <section class="act-panel" aria-labelledby="mov-t">
+      <h2 id="mov-t">Últimos movimientos</h2>
+      {% if movimientos %}
+      <ul class="act-feed">
+        {% for m in movimientos %}
+        <li><span><strong>{{ m.usuario.username }}</strong> {{ m.texto }} en <a href="{% url 'growlog:cultivo_detail' m.cultivo.slug %}">{{ m.cultivo.nombre }}</a></span><time datetime="{{ m.momento|date:'c' }}">{{ m.momento|date:"d/m H:i" }}</time></li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="act-empty">Todavía no hay registros.</p>{% endif %}
+    </section>
+
+    <section class="act-panel" aria-labelledby="ing-t">
+      <h2 id="ing-t">Ingresos recientes</h2>
+      {% if ingresos %}
+      <ul class="act-feed">
+        {% for i in ingresos %}
+        <li{% if not i.exito %} class="is-fail"{% endif %}><span><strong>{{ i.nombre_usado|default:"(sin usuario)" }}</strong> {% if i.exito %}entró{% else %}falló la contraseña{% endif %}{% if i.dispositivo %} · {{ i.dispositivo }}{% endif %}</span><time datetime="{{ i.creado_en|date:'c' }}">{{ i.creado_en|date:"d/m H:i" }}</time></li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="act-empty">Los ingresos se registran desde ahora; todavía no hay ninguno.</p>{% endif %}
+      <p class="act-note">Se guardan 90 días. No se guarda la IP.</p>
+    </section>
+  </div>
+</div>
+{% endblock %}

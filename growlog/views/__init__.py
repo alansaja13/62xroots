@@ -2,6 +2,7 @@
 
 Se reexportan aquí para que urls.py siga usando ``views.<nombre>``.
 """
+from .actividad import actividad  # noqa: F401
 from .auth import (  # noqa: F401
     login_view,
     logout_view,

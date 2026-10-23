@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     CambioEtapaCultivo, CambioFotoperiodo, CostoEnergetico, Cultivo, CultivoMiembro, Equipo, LecturaMedidor,
     MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente, NutrienteAplicado,
-    Evento, Planta, PushSubscription, Tarea, TarifaElectrica, ParametroIdeal, Riego,
+    Evento, Ingreso, Planta, PushSubscription, Tarea, TarifaElectrica, ParametroIdeal, Riego,
 )
 
 
@@ -199,3 +199,17 @@ class LecturaMedidorAdmin(admin.ModelAdmin):
     list_filter = ["cultivo"]
     ordering = ["-fecha"]
 
+
+
+@admin.register(Ingreso)
+class IngresoAdmin(admin.ModelAdmin):
+    list_display = ["creado_en", "nombre_usado", "exito", "dispositivo"]
+    list_filter = ["exito"]
+    search_fields = ["nombre_usado"]
+
+    # Es un registro de auditoría: se mira, no se edita.
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
