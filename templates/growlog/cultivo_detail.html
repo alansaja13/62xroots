@@ -48,6 +48,10 @@
   .cd-day-box--plum .cd-day-box__num { color: var(--plum); }
   .cd-day-group { display: flex; gap: 10px; }
   .cd-day-group .cd-day-box { min-width: 140px; flex: 1; }
+  /* Cambiar etapa y Registrar: misma altura, uno al lado del otro. */
+  .cd-cta { display: flex; gap: 10px; }
+  .cd-cta > a { padding: 13px 22px; font-size: 14px; white-space: nowrap; justify-content: center; }
+  .cd-cta > .btn-brand { border: 1px solid transparent; }
 
   /* ── VITALS ── */
   .cd-vitals {
@@ -175,13 +179,11 @@
     .cd-title { font-size: clamp(36px, 11vw, 48px); overflow-wrap: anywhere; }
     .cd-title__accent { font-size: 32px; }
     .cd-actions { flex-direction: row; flex-wrap: wrap; align-items: stretch; }
-    /* "cambiar etapa" baja a su propia fila: al lado de los dos contadores desbordaba el celular */
-    .cd-day-group { flex: 1 1 100%; flex-wrap: wrap; }
-    .cd-day-group > a { flex: 1 1 100%; justify-content: center; }
+    .cd-day-group { flex: 1 1 100%; }
+    .cd-cta { flex: 1 1 100%; }
+    .cd-cta > a { flex: 1; padding: 12px 14px; }
     .cd-day-box { min-width: 0; flex: 1; padding: 10px 20px; }
     .cd-day-box__num { font-size: 56px; }
-    /* Accesos del cultivo en grilla de 2: antes una fila sin corte desbordaba el celular */
-    .cd-actions > .btn-brand--lg { flex: 1; justify-content: center; }
   }
   @media (max-width: 640px) {
     .cd-vital { padding: 12px 14px; }
@@ -327,15 +329,19 @@
         <span class="cd-day-box__num">{{ dia_flora }}</span>
       </div>
       {% endif %}
-      {% if can_edit_cultivo and cultivo.estado != 'finalizado' %}
-      <a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}" class="btn-ghost" style="font-size:11px;padding:6px 10px;white-space:nowrap;">
+    </div>
+    {% if can_edit_cultivo %}
+    <div class="cd-cta">
+      {% if cultivo.estado != 'finalizado' %}
+      <a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}" class="btn-ghost">
         <i class="bi bi-flower1"></i> cambiar etapa
       </a>
       {% endif %}
+      <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="btn-brand">
+        <i class="bi bi-pencil-square"></i> registrar
+      </a>
     </div>
-    {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="btn-brand btn-brand--lg">
-      <i class="bi bi-pencil-square"></i> registrar
-    </a>{% endif %}
+    {% endif %}
   </div>
 </div>
 
@@ -375,14 +381,18 @@
     <div class="label-eyebrow"><i class="bi bi-moisture"></i> EC / pH</div>
     <div class="cd-vital__val{% if not ultima_medicion_ec %} cd-vital__val--empty{% endif %}" style="margin-top: 10px;">
       {% if ultima_medicion_ec %}
-        {% if ultima_medicion_ec.ec %}{{ ultima_medicion_ec.ec|ec_us }}<span class="cd-vital__unit">µS</span>
+        {% if ultima_medicion_ec.ec %}{{ ultima_medicion_ec.ec|ec_us }}<span class="cd-vital__unit">µS/cm</span>
         {% elif ultima_medicion_ec.ph %}{{ ultima_medicion_ec.ph }}<span class="cd-vital__unit">pH</span>
         {% else %}-{% endif %}
       {% else %}-{% endif %}
     </div>
     <div class="cd-vital__status">
       {% if ultima_medicion_ec %}
-        · {% if ultima_medicion_ec.ph and ultima_medicion_ec.ec %}pH {{ ultima_medicion_ec.ph }}{% else %}{{ ultima_medicion_ec.get_tipo_display }}{% endif %}
+        {% if ultima_medicion_ec.ec > 5 %}
+        <span class="c-honey">· valor fuera de lo habitual</span>{% if can_edit_cultivo %} <a href="{% url 'growlog:medicion_ec_editar' ultima_medicion_ec.pk %}" class="c-honey">revisar</a>{% endif %}
+        {% else %}
+        · {% if ultima_medicion_ec.ec %}medidor ×10: {{ ultima_medicion_ec.ec|ec_x10 }}{% if ultima_medicion_ec.ph %} · {% endif %}{% endif %}{% if ultima_medicion_ec.ph and ultima_medicion_ec.ec %}pH {{ ultima_medicion_ec.ph }}{% elif not ultima_medicion_ec.ec %}{{ ultima_medicion_ec.get_tipo_display }}{% endif %}
+        {% endif %}
       {% else %}· sin datos{% endif %}
     </div>
   </div>

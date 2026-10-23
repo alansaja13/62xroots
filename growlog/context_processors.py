@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.urls import reverse
 from django.db.models import OuterRef, Subquery
 from django.utils.functional import SimpleLazyObject
 
@@ -16,6 +17,28 @@ SECCIONES_CULTIVO = {
     "reporte": "reporte",
     "cultivo_ajustes": "ajustes", "cultivo_etapa": "ajustes", "fotoperiodo_list": "ajustes",
 }
+
+# Pestañas del cultivo: (sección, etiqueta, ícono, url name). Las "extra" van
+# al menú "Más" en el celular para que no haya que adivinar un scroll lateral.
+PESTANAS_CULTIVO = [
+    ("resumen", "Resumen", "flower1", "cultivo_detail", False),
+    ("bitacora", "Bitácora", "journal-text", "timeline", False),
+    ("tareas", "Tareas", "check2-square", "tareas_list", False),
+    ("tendencias", "Tendencias", "graph-up", "cultivo_tendencias", True),
+    ("canopy", "Canopy", "grid-3x3-gap", "canopy", True),
+    ("energia", "Energía", "lightning-charge", "energia", True),
+    ("reporte", "Reporte", "clipboard-data", "reporte", True),
+    ("ajustes", "Ajustes", "gear", "cultivo_ajustes", True),
+]
+
+
+def pestanas_cultivo(cultivo, *, puede_editar, seccion):
+    return [
+        {"seccion": clave, "etiqueta": etiqueta, "icono": icono, "extra": extra, "activa": clave == seccion,
+         "url": reverse(f"growlog:{url_name}", args=[cultivo.slug])}
+        for clave, etiqueta, icono, url_name, extra in PESTANAS_CULTIVO
+        if clave != "ajustes" or puede_editar
+    ]
 
 
 def push_settings(request):
@@ -49,9 +72,17 @@ def navegacion(request):
     if not request.user.is_authenticated:
         return {}
     match = request.resolver_match
+    cultivo = getattr(request, "cultivo_actual", None)
+    seccion = SECCIONES_CULTIVO.get(match.url_name if match else None)
+    pestanas = []
+    if cultivo is not None:
+        pestanas = pestanas_cultivo(cultivo, seccion=seccion,
+                                    puede_editar=getattr(request, "puede_editar_cultivo", False))
     return {
-        "cultivo_nav": getattr(request, "cultivo_actual", None),
-        "seccion_cultivo": SECCIONES_CULTIVO.get(match.url_name if match else None),
+        "cultivo_nav": cultivo,
+        "seccion_cultivo": seccion,
+        "pestanas_cultivo": pestanas,
+        "pestana_extra_activa": next((p for p in pestanas if p["extra"] and p["activa"]), None),
         # Perezoso: solo consulta si la plantilla dibuja el selector.
         "nav_cultivos": SimpleLazyObject(lambda: cultivos_del_menu(request.user)),
     }

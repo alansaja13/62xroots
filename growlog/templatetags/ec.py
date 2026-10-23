@@ -14,3 +14,14 @@ def ec_us(valor):
         return f"{(Decimal(str(valor)) * 1000).quantize(Decimal('1')):f}"
     except InvalidOperation:
         return valor
+
+
+@register.filter
+def ec_x10(valor):
+    """Como lo muestra un medidor en escala ×10 µS/cm (1,2 mS/cm → 120)."""
+    if valor in (None, ""):
+        return ""
+    try:
+        return f"{(Decimal(str(valor)) * 100).quantize(Decimal('1')):f}"
+    except InvalidOperation:
+        return valor

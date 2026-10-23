@@ -292,7 +292,9 @@ def _aplicar(obj, body, campos):
 
 _notas = partial(_texto, largo=500)
 _ph = partial(_decimal, minimo=0, maximo=14)
-_ec = partial(_decimal, minimo=0)
+# La API recibe la EC en mS/cm (1.2 = 1200 µS/cm). Ninguna solución real pasa de 20:
+# un valor mayor casi siempre es µS/cm mandado por error.
+_ec = partial(_decimal, minimo=0, maximo=20)
 
 
 def _plantas_por_uuid(qs, uuids, campo):

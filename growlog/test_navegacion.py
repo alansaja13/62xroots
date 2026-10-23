@@ -49,6 +49,14 @@ class NavegacionTests(TestCase):
         self.assertEqual(page.context["seccion_cultivo"], "bitacora")
         self.assertContains(page, reverse("growlog:cultivo_ajustes", args=[self.propio.slug]))
 
+    def test_secciones_extra_van_al_menu_mas(self):
+        page = self.client.get(reverse("growlog:cultivo_ajustes", args=[self.propio.slug]))
+        pestanas = {p["seccion"]: p for p in page.context["pestanas_cultivo"]}
+        self.assertFalse(pestanas["resumen"]["extra"])
+        self.assertTrue(pestanas["reporte"]["extra"])
+        # Si estás en una sección extra, el botón "Más" muestra cuál es.
+        self.assertEqual(page.context["pestana_extra_activa"]["seccion"], "ajustes")
+
     def test_lector_no_ve_ajustes_ni_puede_abrirlos(self):
         detalle = self.client.get(reverse("growlog:cultivo_detail", args=[self.ajeno.slug]))
         self.assertNotContains(detalle, reverse("growlog:cultivo_ajustes", args=[self.ajeno.slug]))

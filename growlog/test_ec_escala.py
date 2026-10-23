@@ -5,7 +5,7 @@ from django.test import SimpleTestCase
 
 from growlog.forms import MedicionECForm, RiegoPlantaEntryForm
 from growlog.models import MedicionEC
-from growlog.templatetags.ec import ec_us
+from growlog.templatetags.ec import ec_us, ec_x10
 
 
 class ECx10FieldTests(SimpleTestCase):
@@ -33,3 +33,7 @@ class ECx10FieldTests(SimpleTestCase):
         self.assertEqual(ec_us(Decimal("1.20")), "1200")
         self.assertEqual(ec_us(Decimal("0.85")), "850")
         self.assertEqual(ec_us(None), "")
+
+    def test_filtro_muestra_la_escala_del_medidor(self):
+        self.assertEqual(ec_x10(Decimal("1.20")), "120")
+        self.assertEqual(ec_x10(None), "")

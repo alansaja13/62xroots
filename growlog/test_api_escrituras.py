@@ -53,6 +53,12 @@ class ApiEscriturasTests(TestCase):
                 self.assertEqual(response.status_code, 400)
         self.assertEqual(NutrienteAplicado.objects.filter(riego=riego).count(), 1)
 
+    def test_ec_en_microsiemens_por_error_se_rechaza(self):
+        # La API va en mS/cm: 630 era µS/cm y quedaba guardado como 630 mS/cm.
+        url = f"{self.base}/mediciones-ec/"
+        self.assertEqual(self.api("post", url, {"ec": 630}).status_code, 400)
+        self.assertEqual(self.api("post", url, {"ec": 1.8}).status_code, 201)
+
     def test_runoff_por_planta_valida_rango_y_mantiene_total(self):
         riego = self.crear_riego()
         url = f"{self.base}/riegos/{riego.pk}/plantas/"

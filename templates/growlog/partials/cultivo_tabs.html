@@ -1,20 +1,17 @@
-{# Menú de secciones del cultivo en el que estás parado. #}
+{# Menú de secciones del cultivo en el que estás parado. En el celular las secciones extra van a "Más". #}
 <nav class="cultivo-tabs" aria-label="Secciones de {{ cultivo_nav.nombre }}">
-  <a href="{% url 'growlog:cultivo_detail' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'resumen' %} active{% endif %}"{% if seccion_cultivo == 'resumen' %} aria-current="page"{% endif %}><i class="bi bi-flower1" aria-hidden="true"></i>Resumen</a>
-  <a href="{% url 'growlog:timeline' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'bitacora' %} active{% endif %}"{% if seccion_cultivo == 'bitacora' %} aria-current="page"{% endif %}><i class="bi bi-journal-text" aria-hidden="true"></i>Bitácora</a>
-  <a href="{% url 'growlog:tareas_list' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'tareas' %} active{% endif %}"{% if seccion_cultivo == 'tareas' %} aria-current="page"{% endif %}><i class="bi bi-check2-square" aria-hidden="true"></i>Tareas</a>
-  <a href="{% url 'growlog:cultivo_tendencias' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'tendencias' %} active{% endif %}"{% if seccion_cultivo == 'tendencias' %} aria-current="page"{% endif %}><i class="bi bi-graph-up" aria-hidden="true"></i>Tendencias</a>
-  <a href="{% url 'growlog:canopy' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'canopy' %} active{% endif %}"{% if seccion_cultivo == 'canopy' %} aria-current="page"{% endif %}><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>Canopy</a>
-  <a href="{% url 'growlog:energia' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'energia' %} active{% endif %}"{% if seccion_cultivo == 'energia' %} aria-current="page"{% endif %}><i class="bi bi-lightning-charge" aria-hidden="true"></i>Energía</a>
-  <a href="{% url 'growlog:reporte' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'reporte' %} active{% endif %}"{% if seccion_cultivo == 'reporte' %} aria-current="page"{% endif %}><i class="bi bi-clipboard-data" aria-hidden="true"></i>Reporte</a>
-  {% if can_edit_cultivo %}
-  <a href="{% url 'growlog:cultivo_ajustes' cultivo_nav.slug %}" class="cultivo-tabs__item{% if seccion_cultivo == 'ajustes' %} active{% endif %}"{% if seccion_cultivo == 'ajustes' %} aria-current="page"{% endif %}><i class="bi bi-gear" aria-hidden="true"></i>Ajustes</a>
-  {% endif %}
+  {% for p in pestanas_cultivo %}
+  <a href="{{ p.url }}" class="cultivo-tabs__item{% if p.extra %} cultivo-tabs__item--extra{% endif %}{% if p.activa %} active{% endif %}"{% if p.activa %} aria-current="page"{% endif %}><i class="bi bi-{{ p.icono }}" aria-hidden="true"></i>{{ p.etiqueta }}</a>
+  {% endfor %}
+  <div class="dropdown cultivo-tabs__mas">
+    <button type="button" class="cultivo-tabs__item{% if pestana_extra_activa %} active{% endif %}" data-bs-toggle="dropdown" aria-expanded="false">
+      {% if pestana_extra_activa %}<i class="bi bi-{{ pestana_extra_activa.icono }}" aria-hidden="true"></i>{{ pestana_extra_activa.etiqueta }}{% else %}<i class="bi bi-three-dots" aria-hidden="true"></i>Más{% endif %}
+      <i class="bi bi-chevron-down cultivo-tabs__caret" aria-hidden="true"></i>
+    </button>
+    <div class="dropdown-menu dropdown-menu-end nav-cultivo__menu">
+      {% for p in pestanas_cultivo %}{% if p.extra %}
+      <a class="dropdown-item{% if p.activa %} active{% endif %}" href="{{ p.url }}"{% if p.activa %} aria-current="page"{% endif %}><span><i class="bi bi-{{ p.icono }}" aria-hidden="true"></i> {{ p.etiqueta }}</span></a>
+      {% endif %}{% endfor %}
+    </div>
+  </div>
 </nav>
-<script>
-  // En el celular las pestañas se desplazan: centrar la activa para que se vea.
-  (function () {
-    var tabs = document.currentScript.previousElementSibling, activa = tabs.querySelector(".active");
-    if (activa) tabs.scrollLeft = activa.offsetLeft - (tabs.clientWidth - activa.offsetWidth) / 2;
-  })();
-</script>
