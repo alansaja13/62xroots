@@ -92,7 +92,7 @@ def cultivo_detail(request, slug):
         flip = get_flip_a_flora(cultivo)
         referencia = cultivo.fecha_referencia
         if flip and flip.fecha_inicio <= referencia:
-            dia_flora = (referencia - flip.fecha_inicio).days + 1
+            dia_flora = (referencia - flip.fecha_inicio).days
     # Días desde el último riego
     ultimo_riego = cultivo.riegos.first()
     dias_sin_riego = None

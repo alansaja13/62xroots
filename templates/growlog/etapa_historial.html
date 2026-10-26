@@ -93,7 +93,7 @@
   <div class="fp-section-title">// etapa actual</div>
   <div style="display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;">
     <span class="fp-valor" style="font-size:22px;">{{ etapa_actual_display|default:"sin etapa registrada" }}</span>
-    {% if dia_flora %}<span class="fp-fecha">día {{ dia_flora }} de flora</span>{% endif %}
+    {% if dia_flora is not None %}<span class="fp-fecha">día {{ dia_flora }} de flora</span>{% endif %}
     {% if planta and not propia %}<span class="fp-fecha">heredada del cultivo</span>{% endif %}
   </div>
   <p class="c-fine" style="font-size:12px; margin:10px 0 0; line-height:1.5;">

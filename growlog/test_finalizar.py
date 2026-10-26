@@ -41,18 +41,18 @@ class CultivoFinalizadoTests(TestCase):
         self.reabrir = reverse("growlog:cultivo_reabrir", args=[self.cultivo.slug])
 
     def test_contadores_se_detienen_en_el_cierre(self):
-        self.assertEqual(self.cultivo.dias_desde_inicio, 80)
-        self.assertEqual(self.cultivo.dia_flora, 50)
+        self.assertEqual(self.cultivo.dias_desde_inicio, 79)
+        self.assertEqual(self.cultivo.dia_flora, 49)
 
     def test_cultivo_abierto_sigue_contando_hasta_hoy(self):
         self.cultivo.fecha_fin = None
-        self.assertEqual(self.cultivo.dias_desde_inicio, 100)
-        self.assertEqual(self.cultivo.dia_flora, 70)
+        self.assertEqual(self.cultivo.dias_desde_inicio, 99)
+        self.assertEqual(self.cultivo.dia_flora, 69)
 
     def test_detalle_muestra_el_cierre_y_no_datos_en_vivo(self):
         self.client.force_login(self.duenio)
         respuesta = self.client.get(self.detalle)
-        self.assertEqual(respuesta.context["dia_flora"], 50)
+        self.assertEqual(respuesta.context["dia_flora"], 49)
         self.assertIsNone(respuesta.context["luz_estado_actual"])
         self.assertIsNone(respuesta.context["dias_sin_riego"])
         self.assertContains(respuesta, "cultivo finalizado el")
@@ -69,7 +69,7 @@ class CultivoFinalizadoTests(TestCase):
         self.cultivo.refresh_from_db()
         self.assertEqual(self.cultivo.estado, "floracion")
         self.assertIsNone(self.cultivo.fecha_fin)
-        self.assertEqual(self.cultivo.dias_desde_inicio, 100)
+        self.assertEqual(self.cultivo.dias_desde_inicio, 99)
 
     def test_reabrir_sin_historial_de_etapas_queda_en_vegetativo(self):
         self.cultivo.cambios_etapa.all().delete()

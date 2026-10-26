@@ -323,7 +323,7 @@
         <span class="cd-day-box__label">// día</span>
         <span class="cd-day-box__num">{{ cultivo.dias_desde_inicio }}</span>
       </div>
-      {% if dia_flora %}
+      {% if dia_flora is not None %}
       <div class="cd-day-box cd-day-box--plum">
         <span class="cd-day-box__label">// flora</span>
         <span class="cd-day-box__num">{{ dia_flora }}</span>

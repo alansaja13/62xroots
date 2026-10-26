@@ -278,7 +278,7 @@ class ReporteViewTests(TestCase):
         )
         r = self.client.get(f'/cultivo/{self.cultivo.slug}/')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.context['dia_flora'], 10)
+        self.assertEqual(r.context['dia_flora'], 9)
 
     def test_cultivo_detail_dias_sin_riego(self):
         r = self.client.get(f'/cultivo/{self.cultivo.slug}/')

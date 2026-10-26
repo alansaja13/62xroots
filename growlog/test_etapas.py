@@ -37,7 +37,7 @@ class EtapaCultivoTests(TestCase):
         cambiar_etapa(self.cultivo, "flora_tardia", self.dia(2))
         self.cultivo.refresh_from_db()
         self.assertEqual(self.cultivo.fecha_inicio_flora, self.dia(20))
-        self.assertEqual(self.cultivo.dia_flora, 21)
+        self.assertEqual(self.cultivo.dia_flora, 20)
         self.assertEqual(self.cultivo.estado, "floracion")
 
     def test_marcar_flora_no_pisa_una_fecha_ya_marcada(self):

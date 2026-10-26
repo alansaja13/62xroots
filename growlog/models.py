@@ -78,20 +78,20 @@ class Cultivo(models.Model):
 
     @property
     def dias_desde_inicio(self):
-        """Día 1 = fecha_inicio (mismo criterio 1-indexado que dia_flora).
+        """Día 0 = fecha_inicio (mismo criterio que dia_flora).
         Un cultivo que todavía no empezó está en el día 0, nunca negativo.
         Un cultivo cerrado queda en el día de su cierre."""
-        return max(0, (self.fecha_referencia - self.fecha_inicio).days + 1)
+        return max(0, (self.fecha_referencia - self.fecha_inicio).days)
 
     @property
     def dia_flora(self):
-        """Día 1 = fecha_inicio_flora. None si todavía no se marcó el flip."""
+        """Día 0 = fecha_inicio_flora (el día del flip). None si todavía no se marcó el flip."""
         if not self.fecha_inicio_flora:
             return None
         referencia = self.fecha_referencia
         if self.fecha_inicio_flora > referencia:
             return None
-        return (referencia - self.fecha_inicio_flora).days + 1
+        return (referencia - self.fecha_inicio_flora).days
 
 
 class CultivoMiembro(models.Model):
