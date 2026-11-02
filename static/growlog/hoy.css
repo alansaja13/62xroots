@@ -4,10 +4,9 @@
 /* ── Encabezado ── */
 .hoy-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin: 4px 0 26px; }
 .hoy-eyebrow {
-  font-family: "JetBrains Mono", monospace; font-size: 10px; font-weight: 500;
-  letter-spacing: .22em; text-transform: uppercase; color: var(--green); margin: 0;
+  font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 500;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--green); margin: 0;
 }
-.hoy-eyebrow::before { content: "// "; color: var(--fine); }
 .hoy-header h1, .hoy-cultivo h3, .hoy-readings dd {
   font-family: var(--font-display);
   font-variation-settings: "wdth" 85, "opsz" 96;
@@ -31,13 +30,13 @@
 }
 .hoy-summary a:hover { border-color: var(--green-deep); opacity: 1; }
 .hoy-summary strong {
-  font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono), monospace; font-variant-numeric: tabular-nums;
   font-size: 34px; font-weight: 600; line-height: 1; color: var(--green);
 }
 .hoy-summary a.is-alert strong { color: var(--honey); }
 .hoy-summary span {
-  font-family: "JetBrains Mono", monospace; font-size: 10px;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--fine); line-height: 1.5;
+  font-family: var(--font-mono), monospace; font-size: 12px;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--fine); line-height: 1.5;
 }
 
 /* ── Paneles ── */
@@ -46,8 +45,8 @@
 .hoy-section-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 14px; }
 .hoy-section-head h2 { margin: 0; }
 .hoy-section-head > span {
-  font-family: "JetBrains Mono", monospace; font-size: 10px;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--fine);
+  font-family: var(--font-mono), monospace; font-size: 12px;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--fine);
 }
 
 /* ── Para revisar ── */
@@ -55,12 +54,12 @@
 .hoy-tasks li { display: flex; justify-content: space-between; align-items: center; gap: 16px; border-top: 1px solid var(--rule-soft); padding: 16px 0; }
 .hoy-tasks li > div { min-width: 0; }
 .hoy-tasks h3 { font-size: 15px; font-weight: 600; line-height: 1.45; margin: 8px 0 4px; overflow-wrap: anywhere; }
-.hoy-tasks p { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fine); margin: 0; }
+.hoy-tasks p { font-family: var(--font-mono), monospace; font-size: 12px; color: var(--fine); margin: 0; }
 .hoy-tasks a { flex-shrink: 0; }
 .hoy-tag {
   display: inline-block; padding: 2px 9px; border-radius: 999px;
   border: 1px solid var(--rule); color: var(--cream-soft);
-  font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .06em;
+  font-family: var(--font-mono), monospace; font-size: 12px; letter-spacing: .06em;
 }
 .hoy-tag--warning { color: var(--honey); border-color: rgba(212,154,62,.45); background: rgba(212,154,62,.10); }
 
@@ -72,7 +71,7 @@
 /* La tarjeta entera abre el cultivo; Registrar queda por encima del enlace. */
 .hoy-cultivo .hoy-actions { position: relative; z-index: 2; }
 .hoy-open {
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
   color: var(--cream-soft); white-space: nowrap; transition: color .15s;
 }
 .hoy-cultivo:has(.stretched-link:focus-visible) { outline: 2px solid var(--green); outline-offset: 3px; }
@@ -84,15 +83,15 @@
   border-top: 1px solid var(--rule-soft); padding-top: 16px; margin: 12px 0 10px;
 }
 .hoy-readings dt {
-  font-family: "JetBrains Mono", monospace; font-size: 9px; font-weight: 500;
-  letter-spacing: .16em; text-transform: uppercase; color: var(--fine); margin-bottom: 6px;
+  font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 500;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--fine); margin-bottom: 6px;
 }
 .hoy-readings dd {
   font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums;
   font-size: 28px; line-height: 1; margin: 0;
 }
-.hoy-readings small { font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 500; letter-spacing: 0; color: var(--cream-soft); }
-.hoy-freshness { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--cream-soft); }
+.hoy-readings small { font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 500; letter-spacing: 0; color: var(--cream-soft); }
+.hoy-freshness { font-family: var(--font-mono), monospace; font-size: 12px; color: var(--cream-soft); }
 .hoy-freshness--old { color: var(--honey); }
 .hoy-missing { padding: 18px 0; }
 .hoy-missing p { font-size: 13px; color: var(--cream-soft); margin-top: 4px; }
@@ -104,7 +103,7 @@
 .hoy-history ul { list-style: none; padding: 0; }
 .hoy-history li { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px 16px; padding: 14px 0; border-bottom: 1px solid var(--rule-soft); }
 .hoy-history li a { font-size: 16px; font-weight: 600; color: var(--cream); overflow-wrap: anywhere; }
-.hoy-history li span { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fine); }
+.hoy-history li span { font-family: var(--font-mono), monospace; font-size: 12px; color: var(--fine); }
 
 .hoy a:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; border-radius: 6px; }
 
@@ -117,7 +116,7 @@
   .hoy-summary { gap: 8px; }
   .hoy-summary a { padding: 12px; }
   .hoy-summary strong { font-size: 28px; }
-  .hoy-summary span { font-size: 9px; letter-spacing: .08em; }
+  .hoy-summary span { font-size: 12px; letter-spacing: .08em; }
   .hoy-tasks li { align-items: flex-start; flex-direction: column; gap: 10px; }
   .hoy-tasks a { align-self: flex-start; }
   .hoy-readings dd { font-size: 24px; }

@@ -12,7 +12,7 @@
     flex-wrap: wrap; gap: 12px;
   }
   .canopy-title {
-    font-family: "Bricolage Grotesque", sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-variation-settings: "wdth" 85, "opsz" 96;
     font-size: 28px; font-weight: 700; color: var(--cream);
     margin: 0;
@@ -44,8 +44,8 @@
     height: 100%;
   }
   .ctrl-section-title {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
+    font-family: var(--font-mono), monospace;
+    font-size: 12px; letter-spacing: .05em; text-transform: uppercase;
     color: var(--fine); margin-bottom: 12px; display: block;
   }
   .planta-stepper {
@@ -54,7 +54,7 @@
   }
   .planta-stepper:last-child { border-bottom: none; }
   .planta-name {
-    font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 700;
+    font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 700;
     display: flex; align-items: center; gap: 8px;
   }
   .planta-dot {
@@ -72,7 +72,7 @@
   }
   .stepper-btn:hover { border-color: var(--green); background: var(--green-wash); color: var(--green); }
   .stepper-count {
-    font-family: "JetBrains Mono", monospace; font-size: 16px; font-weight: 700;
+    font-family: var(--font-mono), monospace; font-size: 16px; font-weight: 700;
     color: var(--cream); min-width: 20px; text-align: center;
   }
 
@@ -93,7 +93,7 @@
     border: none; border-radius: 0; cursor: pointer;
   }
   .scrog-pct {
-    font-family: "JetBrains Mono", monospace; font-size: 22px; font-weight: 700;
+    font-family: var(--font-mono), monospace; font-size: 22px; font-weight: 700;
     color: var(--green);
   }
 
@@ -105,11 +105,11 @@
   }
   .stat-item { display: flex; flex-direction: column; gap: 2px; }
   .stat-label {
-    font-family: "JetBrains Mono", monospace; font-size: 9px;
+    font-family: var(--font-mono), monospace; font-size: 12px;
     letter-spacing: .2em; text-transform: uppercase; color: var(--fine);
   }
   .stat-value {
-    font-family: "JetBrains Mono", monospace; font-size: 18px; font-weight: 700;
+    font-family: var(--font-mono), monospace; font-size: 18px; font-weight: 700;
     color: var(--cream);
   }
   .stat-value--ok    { color: var(--green); }
@@ -118,7 +118,7 @@
 
   .diag-bar {
     flex: 1; min-width: 200px;
-    font-family: "Manrope", sans-serif; font-size: 12px;
+    font-family: var(--font-body), sans-serif; font-size: 12px;
     color: var(--cream-soft); padding: 6px 12px;
     border-left: 1px solid var(--rule);
   }
@@ -132,7 +132,7 @@
     align-items: center; flex-wrap: wrap;
   }
   .btn-guardar {
-    font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .12em;
+    font-family: var(--font-mono), monospace; font-size: 12px; letter-spacing: .05em;
     text-transform: uppercase; padding: 10px 24px;
     background: var(--green); color: #16110b; font-weight: 700;
     border: none; cursor: pointer; transition: opacity .15s;
@@ -140,19 +140,19 @@
   .btn-guardar:hover { opacity: .85; }
   .btn-guardar:disabled { opacity: .4; cursor: not-allowed; }
   .save-msg {
-    font-family: "JetBrains Mono", monospace; font-size: 12px;
+    font-family: var(--font-mono), monospace; font-size: 12px;
     color: var(--green);
   }
 
   /* Snapshot selector */
   .snapshot-sel {
     background: var(--card-alt); border: 1px solid var(--rule);
-    color: var(--cream); font-family: "JetBrains Mono", monospace; font-size: 12px;
+    color: var(--cream); font-family: var(--font-mono), monospace; font-size: 12px;
     padding: 6px 10px; cursor: pointer;
   }
   .notas-input {
     background: var(--card-alt); border: 1px solid var(--rule);
-    color: var(--cream); font-family: "Manrope", sans-serif; font-size: 12px;
+    color: var(--cream); font-family: var(--font-body), sans-serif; font-size: 12px;
     padding: 8px 12px; resize: vertical; width: 100%;
     min-height: 52px;
   }
@@ -160,7 +160,7 @@
 
   .back-link {
     display: inline-flex; align-items: center; gap: 6px;
-    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    font-family: var(--font-mono), monospace; font-size: 12px;
     letter-spacing: .1em; color: var(--cream-soft);
     text-decoration: none; margin-bottom: 14px;
   }
@@ -182,7 +182,7 @@
 
   <div class="canopy-header">
     <h1 class="canopy-title">
-      Canopy Map <span>// {{ cultivo.nombre }}</span>
+      Canopy Map <span>{{ cultivo.nombre }}</span>
     </h1>
     <div x-data x-show="false"><!-- Alpine placeholder --></div>
   </div>
@@ -213,7 +213,7 @@
                  x-effect="renderSVG()">
             </svg>
           </div>
-          <div class="d-flex justify-content-between mt-2" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fine);letter-spacing:.1em">
+          <div class="d-flex justify-content-between mt-2" style="font-family:var(--font-mono),monospace;font-size: 12px;color:var(--fine);letter-spacing:.1em">
             <span>FONDO ▲</span>
             <span>↔ IZQ / DER</span>
             <span>▼ PUERTA</span>
@@ -228,7 +228,7 @@
           <!-- Snapshot selector -->
           <template x-if="snapshots.length > 0">
             <div class="mb-3">
-              <span class="ctrl-section-title">// snapshot histórico</span>
+              <span class="ctrl-section-title">snapshot histórico</span>
               <select class="snapshot-sel w-100"
                       @change="loadSnapshot($event.target.value)">
                 <option value="">Edición actual</option>
@@ -243,7 +243,7 @@
           </template>
 
           <!-- Colas por planta -->
-          <span class="ctrl-section-title">// colas por planta</span>
+          <span class="ctrl-section-title">colas por planta</span>
           <div>
             <template x-for="(p, pi) in plantas" :key="p.uuid">
               <div class="planta-stepper">
@@ -266,13 +266,13 @@
 
           <!-- SCROG: click celdas en el SVG / slider para llenado rápido -->
           <div class="scrog-wrap">
-            <span class="ctrl-section-title">// red scrog llena</span>
+            <span class="ctrl-section-title">red scrog llena</span>
             <div class="d-flex align-items-baseline gap-2 mb-2">
               <span class="scrog-pct" x-text="scrog_fill_pct + '%'"></span>
-              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fine);"
+              <span style="font-family:var(--font-mono),monospace;font-size: 12px;color:var(--fine);"
                     x-text="`${filledCells}/36 celdas`"></span>
             </div>
-            <p style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--fine);margin:0 0 8px">
+            <p style="font-family:var(--font-mono),monospace;font-size: 12px;color:var(--fine);margin:0 0 8px">
               Hacé click en las celdas del SVG para activarlas. El slider llena en bloque.
             </p>
             <input type="range" class="scrog-slider" :disabled="!editable"
@@ -280,12 +280,12 @@
                    :value="scrog_fill_pct"
                    @input="fillUpTo(parseInt($event.target.value))">
             <div class="d-flex justify-content-between mt-1">
-              <button class="stepper-btn" style="font-size:10px;width:auto;padding:2px 8px"
+              <button class="stepper-btn" style="font-size: 12px;width:auto;padding:2px 8px"
                       :disabled="!editable" @click="cellStates = Array(36).fill(false)">limpiar</button>
-              <button class="stepper-btn" style="font-size:10px;width:auto;padding:2px 8px;border-color:var(--green);color:var(--green)"
+              <button class="stepper-btn" style="font-size: 12px;width:auto;padding:2px 8px;border-color:var(--green);color:var(--green)"
                       :disabled="!editable" @click="cellStates = Array(36).fill(true)">llenar</button>
             </div>
-            <div class="mt-1" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--fine);display:flex;justify-content:space-between">
+            <div class="mt-1" style="font-family:var(--font-mono),monospace;font-size: 12px;color:var(--fine);display:flex;justify-content:space-between">
               <span>0%</span>
               <span style="color:var(--honey)">60% flip</span>
               <span style="color:var(--green)">80% óptimo</span>
@@ -294,7 +294,7 @@
 
           <!-- Notas -->
           <div class="mt-3">
-            <span class="ctrl-section-title">// notas del snapshot</span>
+            <span class="ctrl-section-title">notas del snapshot</span>
             <textarea class="notas-input" placeholder="Opcional: describí el estado actual"
                       x-model="notas" :readonly="!editable" rows="2"></textarea>
           </div>
@@ -500,7 +500,7 @@ function canopyApp(cfg) {
                          style="cursor:grab;touch-action:none"/>`;
           h += `<text x="${cola.x}" y="${cola.y}"
                        text-anchor="middle" dominant-baseline="central"
-                       font-family="JetBrains Mono,monospace" font-size="9"
+                       font-family="DM Mono,monospace" font-size="9"
                        font-weight="700" fill="#0f0c07"
                        pointer-events="none">${cola.indice + 1}</text>`;
         });
@@ -511,7 +511,7 @@ function canopyApp(cfg) {
         const fontSize = labelLen <= 3 ? 10 : labelLen <= 5 ? 9 : 7;
         h += `<text x="${p.cx}" y="${p.cy}"
                      text-anchor="middle" dominant-baseline="central"
-                     font-family="JetBrains Mono,monospace" font-size="${fontSize}"
+                     font-family="DM Mono,monospace" font-size="${fontSize}"
                      font-weight="800" fill="#0f0c07"
                      pointer-events="none">${this._esc(p.apodo)}</text>`;
       });
@@ -527,10 +527,10 @@ function canopyApp(cfg) {
       });
 
       // Direction labels
-      h += `<text x="200" y="12" text-anchor="middle" font-size="10" font-family="JetBrains Mono,monospace" fill="rgba(177,209,96,0.35)" letter-spacing="3">FONDO</text>`;
-      h += `<text x="200" y="396" text-anchor="middle" font-size="10" font-family="JetBrains Mono,monospace" fill="rgba(177,209,96,0.35)" letter-spacing="3">PUERTA</text>`;
-      h += `<text x="8" y="200" text-anchor="middle" font-size="10" font-family="JetBrains Mono,monospace" fill="rgba(177,209,96,0.35)" transform="rotate(-90,8,200)">IZQ</text>`;
-      h += `<text x="393" y="200" text-anchor="middle" font-size="10" font-family="JetBrains Mono,monospace" fill="rgba(177,209,96,0.35)" transform="rotate(90,393,200)">DER</text>`;
+      h += `<text x="200" y="12" text-anchor="middle" font-size="10" font-family="DM Mono,monospace" fill="rgba(177,209,96,0.35)" letter-spacing="3">FONDO</text>`;
+      h += `<text x="200" y="396" text-anchor="middle" font-size="10" font-family="DM Mono,monospace" fill="rgba(177,209,96,0.35)" letter-spacing="3">PUERTA</text>`;
+      h += `<text x="8" y="200" text-anchor="middle" font-size="10" font-family="DM Mono,monospace" fill="rgba(177,209,96,0.35)" transform="rotate(-90,8,200)">IZQ</text>`;
+      h += `<text x="393" y="200" text-anchor="middle" font-size="10" font-family="DM Mono,monospace" fill="rgba(177,209,96,0.35)" transform="rotate(90,393,200)">DER</text>`;
 
       svg.innerHTML = h;
     },

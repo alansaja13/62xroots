@@ -1,34 +1,8 @@
-{% with actual=request.resolver_match.url_name %}
-{% if cultivo_nav %}
-<a href="{% url 'growlog:dashboard' %}" class="bottom-nav__item">
-  <i class="bi bi-house" aria-hidden="true"></i><span>Inicio</span>
-</a>
-<a href="{% url 'growlog:cultivo_detail' cultivo_nav.slug %}" class="bottom-nav__item{% if seccion_cultivo == 'resumen' %} active{% endif %}"{% if seccion_cultivo == 'resumen' %} aria-current="page"{% endif %}>
-  <i class="bi bi-flower1" aria-hidden="true"></i><span>Resumen</span>
-</a>
-{% if can_edit_cultivo %}
-<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo_nav.pk }}" class="bottom-nav__item bottom-nav__item--cta">
-  <i class="bi bi-pencil-square" aria-hidden="true"></i><span>Registrar</span>
-</a>
-{% endif %}
-<a href="{% url 'growlog:timeline' cultivo_nav.slug %}" class="bottom-nav__item{% if seccion_cultivo == 'bitacora' %} active{% endif %}"{% if seccion_cultivo == 'bitacora' %} aria-current="page"{% endif %}>
-  <i class="bi bi-journal-text" aria-hidden="true"></i><span>Bitácora</span>
-</a>
-<a href="{% url 'growlog:tareas_list' cultivo_nav.slug %}" class="bottom-nav__item{% if seccion_cultivo == 'tareas' %} active{% endif %}"{% if seccion_cultivo == 'tareas' %} aria-current="page"{% endif %}>
-  <i class="bi bi-check2-square" aria-hidden="true"></i><span>Tareas</span>
-</a>
-{% else %}
-<a href="{% url 'growlog:dashboard' %}" class="bottom-nav__item{% if actual == 'dashboard' %} active{% endif %}"{% if actual == 'dashboard' %} aria-current="page"{% endif %}>
-  <i class="bi bi-house" aria-hidden="true"></i><span>Inicio</span>
-</a>
-<a href="{% url 'growlog:registrar' %}" class="bottom-nav__item bottom-nav__item--cta">
-  <i class="bi bi-pencil-square" aria-hidden="true"></i><span>Registrar</span>
-</a>
-<a href="{% url 'growlog:invitados_panel' %}" class="bottom-nav__item{% if actual == 'invitados_panel' %} active{% endif %}"{% if actual == 'invitados_panel' %} aria-current="page"{% endif %}>
-  <i class="bi bi-people" aria-hidden="true"></i><span>Compartir</span>
-</a>
-<a href="{% url 'growlog:faq' %}" class="bottom-nav__item{% if actual == 'faq' %} active{% endif %}"{% if actual == 'faq' %} aria-current="page"{% endif %}>
-  <i class="bi bi-question-circle" aria-hidden="true"></i><span>Dudas</span>
-</a>
-{% endif %}
+{# Barra fija del celular: Hoy · Cultivo · [+] · Plantas · Más. Tareas y las demás secciones del cultivo cuelgan de "Más" y de las secciones del cultivo. #}
+{% with c=cultivo_destino %}
+<a href="{% url 'growlog:dashboard' %}" class="barra__item{% if nav_activa == 'hoy' %} on{% endif %}"{% if nav_activa == 'hoy' %} aria-current="page"{% endif %}>Hoy</a>
+<a href="{% if c %}{% url 'growlog:cultivo_detail' c.slug %}{% else %}{% url 'growlog:nuevo_cultivo' %}{% endif %}" class="barra__item{% if nav_activa == 'cultivo' or nav_activa == 'tareas' %} on{% endif %}">Cultivo</a>
+<a href="{% url 'growlog:registrar' %}{% if cultivo_nav and can_edit_cultivo %}?cultivo={{ cultivo_nav.pk }}{% endif %}" class="barra__mas" aria-label="Registrar">+</a>
+<a href="{% if c %}{% url 'growlog:cultivo_detail' c.slug %}#plantas{% else %}{% url 'growlog:nuevo_cultivo' %}{% endif %}" class="barra__item{% if nav_activa == 'plantas' %} on{% endif %}">Plantas</a>
+<a href="{% url 'growlog:mas' %}" class="barra__item{% if nav_activa == 'mas' %} on{% endif %}"{% if nav_activa == 'mas' %} aria-current="page"{% endif %}>Más</a>
 {% endwith %}

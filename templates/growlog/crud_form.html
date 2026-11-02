@@ -15,7 +15,7 @@
 <style>
   .cf-back {
     display: inline-flex; align-items: center; gap: 6px;
-    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    font-family: var(--font-mono), monospace; font-size: 12px;
     color: var(--cream-soft); text-decoration: none;
     margin-bottom: 14px; letter-spacing: .1em;
   }
@@ -23,13 +23,13 @@
 
   .cf-header { margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid var(--rule); }
   .cf-title {
-    font-family: "Bricolage Grotesque", sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-variation-settings: "wdth" 85, "opsz" 96;
     font-size: 52px; font-weight: 800; line-height: .95;
     letter-spacing: -.022em; margin: 8px 0 4px; color: var(--cream);
   }
   .cf-subtitle {
-    font-family: "JetBrains Mono", monospace; font-size: 12px;
+    font-family: var(--font-mono), monospace; font-size: 12px;
     color: var(--cream-soft); margin-top: 6px;
   }
 
@@ -45,7 +45,7 @@
     padding: 7px 12px;
     border: 1px solid var(--rule); background: var(--bg-alt);
     color: var(--cream-soft);
-    font-family: "Manrope", sans-serif; font-size: 12px; font-weight: 500;
+    font-family: var(--font-body), sans-serif; font-size: 12px; font-weight: 500;
     cursor: pointer; transition: border-color .12s, color .12s;
     margin-bottom: 0;
     text-transform: none; letter-spacing: 0;
@@ -57,7 +57,7 @@
   .m2m-group input[type=checkbox] { width: 14px; height: 14px; }
 
   .cf-delete-link {
-    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    font-family: var(--font-mono), monospace; font-size: 12px;
     color: var(--fine); text-decoration: none;
     display: inline-flex; align-items: center; gap: 6px;
     letter-spacing: .1em;
@@ -88,7 +88,7 @@
 </a>
 
 <div class="cf-header">
-  <div class="label-eyebrow">// formulario</div>
+  <div class="label-eyebrow">formulario</div>
   <h1 class="cf-title">{{ title }}</h1>
   {% if subtitle %}<p class="cf-subtitle">{{ subtitle }}</p>{% endif %}
 </div>
@@ -98,7 +98,6 @@
     <div class="panel">
       <div class="panel__head">
         <div class="panel__head-left">
-          <span class="panel__sigil">§</span>
           <span class="label-eyebrow panel__title">datos</span>
         </div>
       </div>

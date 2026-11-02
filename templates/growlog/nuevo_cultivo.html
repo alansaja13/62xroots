@@ -8,7 +8,7 @@
     margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid var(--rule);
   }
   .nc-title {
-    font-family: "Bricolage Grotesque", sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-variation-settings: "wdth" 85, "opsz" 96;
     font-size: 84px; font-weight: 800; line-height: .95;
     letter-spacing: -.022em; margin: 8px 0 0; color: var(--cream);
@@ -24,7 +24,7 @@
   .nc-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
   .nc-actions__btns { display: flex; gap: 10px; }
   .nc-ref { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--rule-soft); }
-  .nc-ref span:last-child { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--green); text-align: right; }
+  .nc-ref span:last-child { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--green); text-align: right; }
   @media (max-width: 575px) {
     .nc-actions__btns { width: 100%; }
     .nc-actions__btns > * { flex: 1; justify-content: center; }
@@ -37,7 +37,7 @@
 <!-- HEADER -->
 <div class="nc-header">
   <div>
-    <div class="label-eyebrow">// new cultivo · log book · entry</div>
+    <div class="label-eyebrow">Nuevo cultivo</div>
     <div style="display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap;">
       <h1 class="nc-title">NUEVO</h1>
       <span class="nc-title nc-title__accent">cultivo</span>
@@ -64,7 +64,6 @@
       <div class="panel">
         <div class="panel__head">
           <div class="panel__head-left">
-            <span class="panel__sigil">§</span>
             <span class="label-eyebrow panel__title">identidad · cultivo</span>
           </div>
         </div>
@@ -95,10 +94,9 @@
       <div class="panel">
         <div class="panel__head">
           <div class="panel__head-left">
-            <span class="panel__sigil panel__sigil--slate">§</span>
             <span class="label-eyebrow panel__title">setup físico</span>
           </div>
-          <span class="mono c-fine" style="font-size: 10px;">opcional</span>
+          <span class="mono c-fine" style="font-size: 12px;">opcional</span>
         </div>
         <div class="panel__body">
           <div class="row g-3">
@@ -126,7 +124,6 @@
       <div class="panel">
         <div class="panel__head">
           <div class="panel__head-left">
-            <span class="panel__sigil panel__sigil--honey">§</span>
             <span class="label-eyebrow panel__title">notas iniciales</span>
           </div>
         </div>
@@ -137,7 +134,7 @@
       </div>
 
       <div class="nc-actions">
-        <span class="mono c-soft" style="font-size: 11px;">
+        <span class="mono c-soft" style="font-size: 12px;">
           Una vez creado, podrás agregar plantas y registros desde el detalle.
         </span>
         <div class="nc-actions__btns">
@@ -153,7 +150,6 @@
     <div class="panel">
       <div class="panel__head">
         <div class="panel__head-left">
-          <span class="panel__sigil">§</span>
           <span class="label-eyebrow panel__title">referencia · vege en tierra</span>
         </div>
       </div>
@@ -164,7 +160,7 @@
         <div class="nc-ref"><span class="label-eyebrow">ph riego</span><span>6,0 a 7,0</span></div>
         <div class="nc-ref"><span class="label-eyebrow">ec riego</span><span>0,8 a 1,4 mS/cm</span></div>
         <div class="nc-ref" style="border-bottom: 0;"><span class="label-eyebrow">luz</span><span>18 / 6 h</span></div>
-        <div class="mono c-fine" style="margin-top: 12px; font-size: 10px; line-height: 1.5;">
+        <div class="mono c-fine" style="margin-top: 12px; font-size: 12px; line-height: 1.5;">
           Valores orientativos. La app compara tus mediciones con el rango de la etapa vigente. Más detalle en <a href="{% url 'growlog:faq' %}" class="c-green">dudas frecuentes</a>.
         </div>
       </div>
@@ -173,17 +169,16 @@
     <div class="panel">
       <div class="panel__head">
         <div class="panel__head-left">
-          <span class="panel__sigil panel__sigil--honey">§</span>
           <span class="label-eyebrow panel__title">tips · setup</span>
         </div>
       </div>
       <div class="panel__body" style="font-size: 12.5px; color: var(--cream-soft); line-height: 1.55;">
         <div style="margin-bottom: 10px;">
-          <span class="mono c-green" style="font-size: 10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;">● TIP 1</span>
+          <span class="mono c-green" style="font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;">● TIP 1</span>
           &nbsp;Usá el nombre del strain + número de run para trazabilidad histórica.
         </div>
         <div>
-          <span class="mono c-honey" style="font-size: 10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;">● TIP 2</span>
+          <span class="mono c-honey" style="font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;">● TIP 2</span>
           &nbsp;Anotá la fuente y el batch de las semillas en las notas, sirve para comparar entre runs.
         </div>
       </div>

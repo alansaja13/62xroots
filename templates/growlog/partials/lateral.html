@@ -1,0 +1,15 @@
+{# Barra lateral de la compu: la misma navegación que la barra del celular, más Tareas y Registrar siempre a mano. #}
+{% with c=cultivo_destino %}
+<aside class="lateral" aria-label="Navegación principal">
+  <a href="{% url 'growlog:dashboard' %}" class="lateral__marca">62×ROOTS</a>
+  <a href="{% url 'growlog:dashboard' %}" class="lateral__item{% if nav_activa == 'hoy' %} on{% endif %}"{% if nav_activa == 'hoy' %} aria-current="page"{% endif %}>Hoy</a>
+  <a href="{% if c %}{% url 'growlog:cultivo_detail' c.slug %}{% else %}{% url 'growlog:nuevo_cultivo' %}{% endif %}" class="lateral__item{% if nav_activa == 'cultivo' %} on{% endif %}">Cultivo</a>
+  <a href="{% if c %}{% url 'growlog:cultivo_detail' c.slug %}#plantas{% else %}{% url 'growlog:nuevo_cultivo' %}{% endif %}" class="lateral__item{% if nav_activa == 'plantas' %} on{% endif %}">Plantas</a>
+  {% if c %}<a href="{% url 'growlog:tareas_list' c.slug %}" class="lateral__item{% if nav_activa == 'tareas' %} on{% endif %}">Tareas</a>{% endif %}
+  <a href="{% url 'growlog:mas' %}" class="lateral__item{% if nav_activa == 'mas' %} on{% endif %}">Más</a>
+  <div class="lateral__pie">
+    <a href="{% url 'growlog:registrar' %}{% if cultivo_nav and can_edit_cultivo %}?cultivo={{ cultivo_nav.pk }}{% endif %}" class="btn sm">+ Registrar</a>
+    <div class="lateral__usuario">{{ user.username }}{% if cultivo_nav and not can_edit_cultivo %} · solo lectura{% endif %}</div>
+  </div>
+</aside>
+{% endwith %}

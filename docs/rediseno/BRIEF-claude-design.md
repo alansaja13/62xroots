@@ -1,4 +1,4 @@
-# 62×ROOTS — Brief de rediseño completo (para Claude Design)
+# 62×ROOTS: Brief de rediseño completo (para Claude Design)
 
 > Relevamiento hecho el 2026-11-02 leyendo todo el código (vistas, servicios, modelos, 36 templates, CSS, JS, PWA). Describe **cómo es la app hoy**, qué datos tiene, por dónde se mueve el usuario y qué está roto o confuso. No propone un diseño: el objetivo es que Claude Design defina un **rumbo nuevo** con toda la información a la vista.
 >

@@ -1,12 +1,11 @@
-{# Selector de cultivo de la barra superior: siempre a mano para cambiar de cultivo. #}
-{% with g=nav_cultivos %}{% if g.total %}
+{# "Cultivo ▾": arriba de cada pantalla de un cultivo, para cambiar de cultivo sin salir de la sección. #}
+{% with g=nav_cultivos %}
 <div class="dropdown nav-cultivo">
   <button class="nav-cultivo__btn" type="button" data-bs-toggle="dropdown" aria-expanded="false"
-          aria-label="Cambiar de cultivo{% if cultivo_nav %}, actual: {{ cultivo_nav.nombre }}{% endif %}">
-    <i class="bi bi-flower1" aria-hidden="true"></i>
-    <span class="nav-cultivo__label">{% if cultivo_nav %}{{ cultivo_nav.nombre }}{% else %}Mis cultivos{% endif %}</span>
-    {% if cultivo_nav and not can_edit_cultivo %}<i class="bi bi-eye nav-cultivo__ro" title="Solo lectura" aria-hidden="true"></i><span class="visually-hidden">(solo lectura)</span>{% endif %}
-    <i class="bi bi-chevron-down nav-cultivo__caret" aria-hidden="true"></i>
+          aria-label="Cambiar de cultivo, actual: {{ cultivo_nav.nombre }}">
+    <span class="nav-cultivo__label">Cultivo · <b>{{ cultivo_nav.nombre }}</b></span>
+    {% if not can_edit_cultivo %}<span class="nav-cultivo__ro">· solo lectura</span>{% endif %}
+    <span class="nav-cultivo__caret" aria-hidden="true">▾</span>
   </button>
   <div class="dropdown-menu nav-cultivo__menu">
     {% if g.activos %}
@@ -34,8 +33,8 @@
     {% endfor %}
     {% endif %}
     <div class="dropdown-divider"></div>
-    <a class="dropdown-item" href="{% url 'growlog:dashboard' %}#cultivos"><span><i class="bi bi-grid-1x2" aria-hidden="true"></i> Ver todos</span></a>
-    <a class="dropdown-item" href="{% url 'growlog:nuevo_cultivo' %}"><span><i class="bi bi-plus-circle" aria-hidden="true"></i> Nuevo cultivo</span></a>
+    <a class="dropdown-item" href="{% url 'growlog:dashboard' %}#cultivos"><span>Ver todos</span></a>
+    <a class="dropdown-item" href="{% url 'growlog:nuevo_cultivo' %}"><span>+ Nuevo cultivo</span></a>
   </div>
 </div>
-{% endif %}{% endwith %}
+{% endwith %}

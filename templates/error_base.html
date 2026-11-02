@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{# Base de las páginas de error que se muestran dentro de la app. #}
+{% block content %}
+<div class="vacio" style="min-height: 60vh; display: grid; place-content: center; max-width: 520px; margin: 0 auto;">
+  <div class="mo">Error {% block codigo %}{% endblock %}</div>
+  <h1 class="h1" style="margin: 12px 0 10px;">{% block titulo %}{% endblock %}</h1>
+  <p>{% block texto %}{% endblock %}</p>
+  <div style="display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap;">
+    <a href="/" class="btn sm">Ir a Hoy</a>
+    <button type="button" onclick="history.back()" class="btn g sm">Volver</button>
+  </div>
+</div>
+{% endblock %}

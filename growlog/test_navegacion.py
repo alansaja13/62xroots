@@ -88,3 +88,27 @@ class NavegacionTests(TestCase):
         for cultivo in (self.propio, otro):
             self.client.get(reverse("growlog:cultivo_detail", args=[cultivo.slug]))
             self.assertEqual(self.client.get(reverse("growlog:registrar")).context["elegido"], cultivo)
+
+    def test_barra_lleva_al_ultimo_cultivo_abierto(self):
+        self.client.get(reverse("growlog:cultivo_detail", args=[self.propio.slug]))
+        page = self.client.get("/")
+        self.assertEqual(page.context["nav_activa"], "hoy")
+        self.assertEqual(page.context["cultivo_destino"].pk, self.propio.pk)
+        self.assertContains(page, 'class="barra"')
+        self.assertContains(page, reverse("growlog:mas"))
+
+    def test_mas_muestra_secciones_del_cultivo_y_salir(self):
+        self.client.get(reverse("growlog:cultivo_detail", args=[self.propio.slug]))
+        page = self.client.get(reverse("growlog:mas"))
+        self.assertEqual(page.context["nav_activa"], "mas")
+        self.assertContains(page, reverse("growlog:timeline", args=[self.propio.slug]))
+        self.assertContains(page, reverse("growlog:cultivo_ajustes", args=[self.propio.slug]))
+        self.assertContains(page, reverse("growlog:invitados_panel"))
+        self.assertContains(page, reverse("growlog:logout"))
+
+    def test_mas_del_lector_no_ofrece_ajustes_ni_compartir(self):
+        self.client.force_login(self.amigo)
+        CultivoMiembro.objects.create(cultivo=self.propio, usuario=self.amigo, rol="lector")
+        self.client.get(reverse("growlog:cultivo_detail", args=[self.propio.slug]))
+        page = self.client.get(reverse("growlog:mas"))
+        self.assertNotContains(page, reverse("growlog:cultivo_ajustes", args=[self.propio.slug]))

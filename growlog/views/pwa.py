@@ -65,7 +65,7 @@ def push_unsubscribe(request):
 
 # Mismo fondo que la app (--bg en base.html): la splash de Android y la barra
 # de estado no "saltan" de color al abrir.
-THEME_COLOR = "#0e120c"
+THEME_COLOR = "#15110d"
 
 
 def pwa_manifest(request):

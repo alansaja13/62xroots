@@ -1,9 +1,10 @@
 {% load static %}<!doctype html>
-<html lang="es" data-bs-theme="dark">
+<html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>{% block title %}GrowLog{% endblock %} · 62xroots</title>
+  <title>{% block title %}Hoy{% endblock %} · 62×ROOTS</title>
+  {% include "growlog/partials/tema.html" %}
   {% include "growlog/partials/pwa_head.html" %}
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -11,115 +12,33 @@
 
   {% include "growlog/partials/fonts.html" %}
 
-  <link rel="stylesheet" href="{% static 'growlog/verde.css' %}">
+  <link rel="stylesheet" href="{% static 'growlog/suelo.css' %}">
 
   {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="app">
 
-<nav class="navbar navbar-expand-lg">
-  <div class="container-fluid" style="gap:14px;">
-    <a class="nav-brand" href="{% url 'growlog:dashboard' %}">
-      <img src="{% static 'growlog/icons/icon-96x96.png' %}" alt="" width="38" height="38">
-      <div>
-        <div class="nav-brand__title">62×ROOTS</div>
-        <div class="nav-brand__sub">grower's terminal</div>
-      </div>
-    </a>
+{% if user.is_authenticated %}{% include "growlog/partials/lateral.html" %}{% endif %}
 
-    {% if user.is_authenticated %}{% include "growlog/partials/cultivo_selector.html" %}{% endif %}
-
-    <button class="navbar-toggler border-0 p-1 ms-auto" type="button"
-            data-bs-toggle="collapse" data-bs-target="#navMain"
-            style="color:var(--cream-soft)">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <div class="collapse navbar-collapse" id="navMain">
-      <ul class="navbar-nav ms-auto" style="gap:4px;">
-        <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
-             href="{% url 'growlog:dashboard' %}">
-            hoy
-          </a>
-        </li>
-        {% if user.is_authenticated %}
-        <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'registrar' %}active{% endif %}" href="{% url 'growlog:registrar' %}{% if cultivo_nav and can_edit_cultivo %}?cultivo={{ cultivo_nav.pk }}{% endif %}">registrar</a></li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.url_name == 'invitados_panel' %}active{% endif %}"
-             href="{% url 'growlog:invitados_panel' %}">
-            compartir
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.url_name == 'faq' %}active{% endif %}"
-             href="{% url 'growlog:faq' %}">
-            dudas
-          </a>
-        </li>
-        {% endif %}
-        {% if user.is_superuser %}
-        <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.url_name == 'actividad' %}active{% endif %}"
-             href="{% url 'growlog:actividad' %}">
-            actividad
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/admin/">
-            admin
-          </a>
-        </li>
-        {% endif %}
-      </ul>
-
-      <div id="nav-clock" class="nav-clock d-none d-lg-flex">
-        <span id="nav-clock__date" class="nav-clock__date"></span>
-        <span id="nav-clock__time" class="nav-clock__time"></span>
-      </div>
-
-      {% if user.is_authenticated %}
-      <button id="push-toggle-btn" type="button" class="nav-link" title="Notificaciones push"
-              style="display:none; border:1px solid var(--rule); cursor:pointer;">
-        <i class="bi bi-bell" id="push-toggle-icon"></i>
-      </button>
-      <div class="nav-user">
-        <span class="nav-user__dot{% if request.cultivo_actual and not can_edit_cultivo %} nav-user__dot--guest{% endif %}"></span>
-        <span class="nav-user__name">{{ user.username }}</span>
-        {% if request.cultivo_actual and not can_edit_cultivo %}
-          <span class="nav-user__guest-tag">solo lectura</span>
-        {% endif %}
-        <form method="post" action="{% url 'growlog:logout' %}" id="logout-form" style="display:inline;margin:0;">
-          {% csrf_token %}
-          <input type="hidden" name="push_endpoint" id="logout-push-endpoint">
-          <button type="submit" class="nav-user__logout" title="Cerrar sesión"
-                  style="background:none;border:none;padding:0;cursor:pointer;">
-            <i class="bi bi-box-arrow-right"></i>
-          </button>
-        </form>
-      </div>
-      {% endif %}
-    </div>
-  </div>
-</nav>
-
-<main class="container-fluid" style="padding: 28px 40px 36px; padding-left: max(40px, calc(16px + env(safe-area-inset-left))); padding-right: max(40px, calc(16px + env(safe-area-inset-right)));">
+<main class="app-main">
   {% if cultivo_nav %}{% block cultivo_tabs %}{% include "growlog/partials/cultivo_tabs.html" %}{% endblock %}{% endif %}
 
   {% if messages %}
+  <div class="mensajes">
     {% for msg in messages %}
     <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
       {{ msg }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
     {% endfor %}
+  </div>
   {% endif %}
 
   {% block content %}{% endblock %}
 </main>
 
 {% if user.is_authenticated %}
-<nav class="bottom-nav d-lg-none" aria-label="Navegación principal">
+<nav class="barra" aria-label="Navegación principal">
   {% block bottom_nav %}{% include "growlog/partials/bottom_nav.html" %}{% endblock %}
 </nav>
 {% endif %}
@@ -186,7 +105,7 @@
     if (v === '') { clearFieldError(el); return true; }
     var ok = !isNaN(parseFloat(v)) && isFinite(v);
     if (!ok) {
-      showFieldError(el, 'Número inválido. Usá punto: 26.5');
+      showFieldError(el, 'Ese número no se entiende. Probá con 26.5');
     } else {
       clearFieldError(el);
     }
@@ -208,8 +127,7 @@
     err.textContent = msg;
     var container = el.parentNode;
     container.insertAdjacentElement('afterend', err);
-    el.style.borderColor = 'var(--rust)';
-    el.style.boxShadow = '0 0 0 3px rgba(196,106,62,.15)';
+    el.style.borderColor = 'var(--bad)';
   }
 
   function clearFieldError(el) {
@@ -235,117 +153,8 @@
 {% block extra_js %}{% endblock %}
 
 
-{% if user.is_authenticated %}
-<script>
-(function () {
-  'use strict';
-  var VAPID_PUBLIC_KEY = '{{ vapid_public_key }}';
-  var btn = document.getElementById('push-toggle-btn');
-  var icon = document.getElementById('push-toggle-icon');
 
-  if (!btn || !VAPID_PUBLIC_KEY || !('serviceWorker' in navigator) || !('PushManager' in window)) {
-    return;
-  }
-  btn.style.display = 'inline-flex';
 
-  function urlBase64ToUint8Array(base64String) {
-    var padding = '='.repeat((4 - base64String.length % 4) % 4);
-    var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    var rawData = atob(base64);
-    var outputArray = new Uint8Array(rawData.length);
-    for (var i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
-    return outputArray;
-  }
 
-  function postJSON(url, body) {
-    return fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-      body: JSON.stringify(body),
-    });
-  }
-
-  function updateIcon(subscribed) {
-    icon.className = subscribed ? 'bi bi-bell-fill' : 'bi bi-bell';
-    btn.title = subscribed ? 'Desactivar notificaciones' : 'Activar notificaciones';
-  }
-
-  function refreshState() {
-    navigator.serviceWorker.ready.then(function (reg) {
-      reg.pushManager.getSubscription().then(function (sub) {
-        if (!sub) { updateIcon(false); return; }
-        // Vincula esta suscripción a la sesión actual; jamás reasignar una ajena.
-        postJSON('{% url "growlog:push_subscribe" %}', sub.toJSON()).then(function (response) {
-          if (response.ok) {
-            document.getElementById('logout-push-endpoint').value = sub.endpoint;
-            updateIcon(true);
-          } else {
-            if (response.status === 409) sub.unsubscribe();
-            updateIcon(false);
-          }
-        }).catch(function () { updateIcon(false); });
-      });
-    });
-  }
-
-  btn.addEventListener('click', function () {
-    navigator.serviceWorker.ready.then(function (reg) {
-      reg.pushManager.getSubscription().then(function (sub) {
-        if (sub) {
-          var endpoint = sub.endpoint;
-          sub.unsubscribe().then(function () {
-            postJSON('{% url "growlog:push_unsubscribe" %}', { endpoint: endpoint })
-              .then(function () { updateIcon(false); });
-          });
-          return;
-        }
-        if (Notification.permission === 'denied') {
-          alert('Las notificaciones están bloqueadas para este sitio en el navegador. Habilitalas desde la configuración del sitio y volvé a intentar.');
-          return;
-        }
-        Notification.requestPermission().then(function (perm) {
-          if (perm !== 'granted') return;
-          reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-          }).then(function (newSub) {
-            postJSON('{% url "growlog:push_subscribe" %}', newSub.toJSON())
-              .then(function (response) {
-                if (!response.ok) { newSub.unsubscribe(); updateIcon(false); return; }
-                document.getElementById('logout-push-endpoint').value = newSub.endpoint;
-                updateIcon(true);
-              });
-          }).catch(function (err) {
-            console.error('Error al suscribirse a notificaciones push:', err);
-          });
-        });
-      });
-    });
-  });
-
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.ready.then(refreshState);
-  });
-})();
-</script>
-{% endif %}
-
-<script>
-(function() {
-  var DAYS   = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
-  var MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
-  function pad(n) { return String(n).padStart(2,'0'); }
-  function tick() {
-    var d = new Date();
-    var dateEl = document.getElementById('nav-clock__date');
-    var timeEl = document.getElementById('nav-clock__time');
-    if (!dateEl) return;
-    dateEl.textContent = DAYS[d.getDay()] + ' ' + pad(d.getDate()) + ' ' + MONTHS[d.getMonth()];
-    timeEl.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
-  }
-  tick();
-  setInterval(tick, 1000);
-})();
-</script>
 </body>
 </html>

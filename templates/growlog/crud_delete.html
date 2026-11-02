@@ -25,27 +25,27 @@
     margin-bottom: 22px;
   }
   .del-title {
-    font-family: "Bricolage Grotesque", sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-variation-settings: "wdth" 85, "opsz" 96;
     font-size: 42px; font-weight: 800; letter-spacing: -.022em;
     margin: 0 0 12px; color: var(--cream);
   }
   .del-name {
     display: inline-block;
-    font-family: "JetBrains Mono", monospace; font-size: 13px;
+    font-family: var(--font-mono), monospace; font-size: 13px;
     color: var(--cream); padding: 8px 14px;
     background: var(--card); border: 1px solid var(--rule);
     margin-bottom: 22px;
   }
   .del-warn {
-    font-family: "JetBrains Mono", monospace; font-size: 12px;
+    font-family: var(--font-mono), monospace; font-size: 12px;
     color: var(--rust); margin-bottom: 32px;
     letter-spacing: .05em;
   }
   .btn-danger-brand {
     background: var(--rust); color: var(--bg);
     border: none; padding: 14px 28px;
-    font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 700;
+    font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 700;
     letter-spacing: .2em; text-transform: uppercase;
     cursor: pointer; transition: opacity .15s;
     display: inline-flex; align-items: center; gap: 10px;
@@ -59,7 +59,7 @@
   <div class="del-glyph"><i class="bi bi-exclamation-triangle-fill"></i></div>
   <h1 class="del-title">{{ title }}</h1>
   <div class="del-name">{{ object_name }}</div>
-  <p class="del-warn">// {{ warn|default:"esta acción no se puede deshacer" }}</p>
+  <p class="del-warn">{{ warn|default:"esta acción no se puede deshacer" }}</p>
 
   <div class="d-flex gap-3 justify-content-center flex-wrap">
     <form method="post" style="display: inline;">

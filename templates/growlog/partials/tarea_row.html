@@ -17,7 +17,7 @@
     {% else %}
     <span style="display: inline-flex; align-items: center; justify-content: center;
                  width: 16px; height: 16px; background: var(--green); color: var(--bg);
-                 margin-top: 2px; flex-shrink: 0; font-size: 11px; font-weight: 800;">✓</span>
+                 margin-top: 2px; flex-shrink: 0; font-size: 12px; font-weight: 800;">✓</span>
     {% endif %}
 
     <div style="flex: 1; min-width: 0;">
@@ -40,7 +40,7 @@
 
   {% if can_edit_cultivo %}
   <a href="{% url 'growlog:tarea_editar' tarea.pk %}"
-     style="color: var(--fine); font-size: 11px; text-decoration: none; padding: 4px;" title="Editar">
+     style="color: var(--fine); font-size: 12px; text-decoration: none; padding: 4px;" title="Editar">
     <i class="bi bi-pencil"></i>
   </a>
   {% endif %}

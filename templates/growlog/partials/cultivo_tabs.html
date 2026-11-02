@@ -1,17 +1,9 @@
-{# Menú de secciones del cultivo en el que estás parado. En el celular las secciones extra van a "Más". #}
-<nav class="cultivo-tabs" aria-label="Secciones de {{ cultivo_nav.nombre }}">
-  {% for p in pestanas_cultivo %}
-  <a href="{{ p.url }}" class="cultivo-tabs__item{% if p.extra %} cultivo-tabs__item--extra{% endif %}{% if p.activa %} active{% endif %}"{% if p.activa %} aria-current="page"{% endif %}><i class="bi bi-{{ p.icono }}" aria-hidden="true"></i>{{ p.etiqueta }}</a>
-  {% endfor %}
-  <div class="dropdown cultivo-tabs__mas">
-    <button type="button" class="cultivo-tabs__item{% if pestana_extra_activa %} active{% endif %}" data-bs-toggle="dropdown" aria-expanded="false">
-      {% if pestana_extra_activa %}<i class="bi bi-{{ pestana_extra_activa.icono }}" aria-hidden="true"></i>{{ pestana_extra_activa.etiqueta }}{% else %}<i class="bi bi-three-dots" aria-hidden="true"></i>Más{% endif %}
-      <i class="bi bi-chevron-down cultivo-tabs__caret" aria-hidden="true"></i>
-    </button>
-    <div class="dropdown-menu dropdown-menu-end nav-cultivo__menu">
-      {% for p in pestanas_cultivo %}{% if p.extra %}
-      <a class="dropdown-item{% if p.activa %} active{% endif %}" href="{{ p.url }}"{% if p.activa %} aria-current="page"{% endif %}><span><i class="bi bi-{{ p.icono }}" aria-hidden="true"></i> {{ p.etiqueta }}</span></a>
-      {% endif %}{% endfor %}
-    </div>
-  </div>
-</nav>
+{# Encabezado de las pantallas de un cultivo: selector y secciones a un toque (con scroll lateral en el celular). #}
+<div class="cultivo-head">
+  {% include "growlog/partials/cultivo_selector.html" %}
+  <nav class="cultivo-tabs" aria-label="Secciones de {{ cultivo_nav.nombre }}">
+    {% for p in pestanas_cultivo %}
+    <a href="{{ p.url }}" class="cultivo-tabs__item{% if p.activa %} active{% endif %}"{% if p.activa %} aria-current="page"{% endif %}>{{ p.etiqueta }}</a>
+    {% endfor %}
+  </nav>
+</div>

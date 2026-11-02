@@ -10,7 +10,7 @@
     border-bottom: 1px solid var(--rule); flex-wrap: wrap;
   }
   .tl-title {
-    font-family: "Bricolage Grotesque", sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-variation-settings: "wdth" 85, "opsz" 96;
     font-size: 48px; font-weight: 700; letter-spacing: -.022em;
     line-height: .95; color: var(--cream); margin: 0;
@@ -21,7 +21,7 @@
     display: flex; gap: 6px;
   }
   .td-rango button {
-    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    font-family: var(--font-mono), monospace; font-size: 12px;
     letter-spacing: .1em; text-transform: uppercase;
     padding: 7px 14px; border: 1px solid var(--rule);
     background: transparent; color: var(--cream-soft);
@@ -35,11 +35,11 @@
     display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px;
   }
   .td-chart-title {
-    font-family: "JetBrains Mono", monospace; font-size: 10px;
-    letter-spacing: .22em; text-transform: uppercase; color: var(--fine);
+    font-family: var(--font-mono), monospace; font-size: 12px;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--fine);
   }
   .td-chart-legend {
-    font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fine);
+    font-family: var(--font-mono), monospace; font-size: 12px; color: var(--fine);
     display: flex; gap: 12px; margin-left: auto;
   }
   .td-chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
@@ -47,12 +47,12 @@
 
   .td-empty {
     text-align: center; padding: 48px 24px;
-    color: var(--fine); font-family: "JetBrains Mono", monospace; font-size: 12px;
+    color: var(--fine); font-family: var(--font-mono), monospace; font-size: 12px;
   }
   .td-empty__icon { font-size: 28px; opacity: .3; display: block; margin-bottom: 14px; }
 
   .u-legend { display: none; } /* usamos leyenda propia arriba de cada gráfico */
-  .uplot { font-family: "JetBrains Mono", monospace; }
+  .uplot { font-family: var(--font-mono), monospace; }
 </style>
 {% endblock %}
 
@@ -60,7 +60,7 @@
 
 
 <div class="tl-header">
-  <h1 class="tl-title">tendencias <span class="tl-title__accent">// {{ cultivo.nombre }}</span></h1>
+  <h1 class="tl-title">tendencias <span class="tl-title__accent">{{ cultivo.nombre }}</span></h1>
   <div class="td-rango" id="tdRango">
     <button type="button" data-dias="7">7 días</button>
     <button type="button" data-dias="30" class="active">30 días</button>
@@ -180,19 +180,19 @@
     contenedor.innerHTML = `
       <div class="td-chart-panel">
         <div class="td-chart-head">
-          <span class="td-chart-title">// temperatura (°C)</span>
+          <span class="td-chart-title">temperatura (°C)</span>
         </div>
         <div class="panel" id="chartTemp"></div>
       </div>
       <div class="td-chart-panel">
         <div class="td-chart-head">
-          <span class="td-chart-title">// humedad relativa (%)</span>
+          <span class="td-chart-title">humedad relativa (%)</span>
         </div>
         <div class="panel" id="chartHr"></div>
       </div>
       <div class="td-chart-panel">
         <div class="td-chart-head">
-          <span class="td-chart-title">// vpd (kpa)</span>
+          <span class="td-chart-title">vpd (kpa)</span>
           <span class="td-chart-legend">
             <span><span class="td-dot" style="background:${COLOR.green}"></span>ideal</span>
             <span><span class="td-dot" style="background:${COLOR.rust}"></span>alto</span>

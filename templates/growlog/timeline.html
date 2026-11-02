@@ -13,7 +13,7 @@
     margin-top: 8px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
   }
   .tl-title {
-    font-family: "Bricolage Grotesque", sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-variation-settings: "wdth" 85, "opsz" 96;
     font-size: 56px; font-weight: 700; letter-spacing: -.022em; line-height: .95;
     margin: 0; color: var(--cream);
@@ -42,12 +42,12 @@
   .tl-filter--evento.tl-filter--active { border-color: var(--honey); background: rgba(212,146,58,.08); }
   .tl-filter--ec.tl-filter--active     { border-color: var(--plum);  background: rgba(179,132,216,.08); }
   .tl-filter__label {
-    font-family: "JetBrains Mono", monospace; font-size: 10px; font-weight: 700;
-    letter-spacing: .18em; text-transform: uppercase; color: var(--cream-soft);
+    font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 700;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--cream-soft);
   }
   .tl-filter--active .tl-filter__label { color: var(--cream); }
   .tl-filter__count {
-    font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fine);
+    font-family: var(--font-mono), monospace; font-size: 12px; color: var(--fine);
   }
 
   @media (max-width: 900px) {
@@ -63,7 +63,7 @@
 <!-- HEADER -->
 <div class="tl-header">
   <div>
-    <div class="label-eyebrow">// historial completo · log raw</div>
+    <div class="label-eyebrow">Bitácora</div>
     <div class="tl-title-row">
       <h1 class="tl-title">{{ cultivo.nombre|upper }}</h1>
       <span class="pill pill--{% if cultivo.estado == 'vegetativo' %}green{% elif cultivo.estado == 'floracion' %}plum{% else %}cream{% endif %}">
@@ -124,8 +124,8 @@
       <tr>
         <td class="c-soft" style="white-space:nowrap;" data-col="fecha">
           {{ reg.ts|date:"d/m/y" }}<br>
-          <span class="c-fine" style="font-size:10px;">{{ reg.ts|date:"H:i" }}</span>
-          {% if reg.obj.creado_por %}<br><span class="c-fine" style="font-size:9px; letter-spacing:.05em;">@{{ reg.obj.creado_por.username }}</span>{% endif %}
+          <span class="c-fine" style="font-size: 12px;">{{ reg.ts|date:"H:i" }}</span>
+          {% if reg.obj.creado_por %}<br><span class="c-fine" style="font-size: 12px; letter-spacing:.05em;">@{{ reg.obj.creado_por.username }}</span>{% endif %}
         </td>
         <td data-col="tipo">
           {% if reg.tipo == 'medicion' %}
@@ -143,14 +143,14 @@
             <span style="font-size:14px;">{{ reg.obj.temperatura_c|floatformat:1 }}°C <span class="c-fine" style="font-weight:400;">/</span> {{ reg.obj.humedad_relativa|floatformat:0 }}%HR</span>
           {% elif reg.tipo == 'riego' %}
             <span style="font-size:14px;">{{ reg.obj.volumen_total_ml }} ml</span>
-            <span class="c-fine" style="font-weight:400; font-size:11px; margin-left:6px;">· {{ reg.obj.detalle_plantas.count }} planta{{ reg.obj.detalle_plantas.count|pluralize }}</span>
+            <span class="c-fine" style="font-weight:400; font-size: 12px; margin-left:6px;">· {{ reg.obj.detalle_plantas.count }} planta{{ reg.obj.detalle_plantas.count|pluralize }}</span>
           {% elif reg.tipo == 'medicion_ec' %}
             <span style="font-size:14px;">{{ reg.obj.get_tipo_display }}</span>
           {% else %}
             <span class="c-honey">{{ reg.obj.get_tipo_display|upper }}</span>
           {% endif %}
         </td>
-        <td class="c-soft" style="font-size:11.5px;" data-col="detalle">
+        <td class="c-soft" style="font-size: 12px;" data-col="detalle">
           {% if reg.tipo == 'medicion' %}
             {% with estado=reg.obj.vpd_estado %}<span class="vpd{% if estado %} vpd--{{ estado }}{% endif %}">VPD {{ reg.obj.vpd }} kPa{% if estado %} · {{ estado }}{% endif %}</span>{% endwith %}
           {% elif reg.tipo == 'riego' %}
@@ -164,13 +164,13 @@
           {% else %}
             <span class="c-cream">{{ reg.obj.descripcion|truncatechars:70 }}</span>
             {% if reg.obj.follow_up_fecha and not reg.obj.follow_up_resuelto %}
-            <div class="c-honey mono" style="margin-top:4px; font-size:10px;">
+            <div class="c-honey mono" style="margin-top:4px; font-size: 12px;">
               <i class="bi bi-alarm"></i> Follow-up: {{ reg.obj.follow_up_fecha|date:"d/m/Y" }}: {{ reg.obj.follow_up_descripcion }}
             </div>
             {% endif %}
           {% endif %}
         </td>
-        <td class="c-fine" style="font-size:11px;" data-col="notas">
+        <td class="c-fine" style="font-size: 12px;" data-col="notas">
           {% if reg.tipo == 'medicion' and reg.obj.notas %}
             <span style="font-style:italic; color:var(--cream-soft);">"{{ reg.obj.notas }}"</span>
           {% elif reg.tipo == 'riego' %}

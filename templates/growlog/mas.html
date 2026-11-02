@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Más{% endblock %}
+
+{% block extra_head %}
+<style>
+  .mas { max-width: 640px; }
+  .mas__grupo { margin-top: var(--sp-6); }
+  .mas__grupo > .mo { margin-bottom: 2px; }
+  .mas__salir { margin-top: var(--sp-6); }
+  .mas__salir .btn { width: 100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mas">
+  <div class="mo">{{ user.username }}</div>
+  <h1 class="h1" style="margin-top: 10px;">Más</h1>
+
+  {% if cultivo %}
+  <section class="mas__grupo">
+    <div class="mo">{{ cultivo.nombre }}</div>
+    {% for s in secciones %}
+    <a class="fila" href="{{ s.url }}"><span class="fila__texto">{{ s.etiqueta }}</span><span class="fila__chevron" aria-hidden="true">›</span></a>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <section class="mas__grupo">
+    <div class="mo">General</div>
+    <a class="fila" href="{% url 'growlog:nuevo_cultivo' %}"><span class="fila__texto">Nuevo cultivo</span><span class="fila__chevron" aria-hidden="true">›</span></a>
+    <a class="fila" href="{% url 'growlog:nutrientes' %}"><span class="fila__texto">Nutrientes</span><span class="fila__chevron" aria-hidden="true">›</span></a>
+    {% if es_duenio_de_alguno %}
+    <a class="fila" href="{% url 'growlog:invitados_panel' %}"><span class="fila__texto">Compartir cultivos</span><span class="fila__chevron" aria-hidden="true">›</span></a>
+    {% endif %}
+    <a class="fila" href="{% url 'growlog:faq' %}"><span class="fila__texto">Dudas de cultivo</span><span class="fila__chevron" aria-hidden="true">›</span></a>
+    {% if user.is_superuser %}
+    <a class="fila" href="{% url 'growlog:actividad' %}"><span class="fila__texto">Actividad</span><span class="fila__chevron" aria-hidden="true">›</span></a>
+    <a class="fila" href="/admin/"><span class="fila__texto">Admin</span><span class="fila__chevron" aria-hidden="true">›</span></a>
+    {% endif %}
+  </section>
+
+  <section class="mas__grupo">
+    <div class="mo">Preferencias</div>
+    <div class="fila">
+      <span class="fila__texto">Tema</span>
+      <div class="seg" role="group" aria-label="Tema" id="tema-seg" style="min-width: 220px;">
+        <button type="button" data-tema="auto">Auto</button>
+        <button type="button" data-tema="claro">Claro</button>
+        <button type="button" data-tema="oscuro">Oscuro</button>
+      </div>
+    </div>
+    <div class="fila" id="push-fila" hidden>
+      <span class="fila__texto">Avisos de pendientes<br><span class="mo" style="text-transform:none" id="push-estado">en este dispositivo</span></span>
+      <button type="button" class="tog" id="push-toggle-btn" aria-pressed="false" aria-label="Avisos de pendientes"></button>
+    </div>
+  </section>
+
+  <form method="post" action="{% url 'growlog:logout' %}" class="mas__salir">
+    {% csrf_token %}
+    <input type="hidden" name="push_endpoint" id="logout-push-endpoint">
+    <button type="submit" class="btn g">Salir</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  // Tema: se guarda en este dispositivo.
+  var seg = document.getElementById('tema-seg');
+  var actual = 'auto';
+  try { actual = localStorage.getItem('tema') || 'auto'; } catch (e) {}
+  function marcar(valor) {
+    seg.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.tema === valor); });
+  }
+  marcar(actual);
+  seg.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    try { localStorage.setItem('tema', b.dataset.tema); } catch (e2) {}
+    var oscuro = b.dataset.tema === 'oscuro' || (b.dataset.tema === 'auto' && !matchMedia('(prefers-color-scheme: light)').matches);
+    document.documentElement.dataset.theme = oscuro ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-bs-theme', oscuro ? 'dark' : 'light');
+    marcar(b.dataset.tema);
+  });
+})();
+
+(function () {
+  'use strict';
+  var VAPID_PUBLIC_KEY = '{{ vapid_public_key }}';
+  var btn = document.getElementById('push-toggle-btn');
+  var estado = document.getElementById('push-estado');
+  if (!VAPID_PUBLIC_KEY || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  document.getElementById('push-fila').hidden = false;
+
+  function urlBase64ToUint8Array(base64String) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    var rawData = atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+    for (var i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+  function postJSON(url, body) {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+      body: JSON.stringify(body),
+    });
+  }
+  function marcar(activo, texto) {
+    btn.setAttribute('aria-pressed', activo);
+    estado.textContent = texto || (activo ? 'activados en este dispositivo' : 'apagados en este dispositivo');
+  }
+
+  navigator.serviceWorker.ready.then(function (reg) {
+    reg.pushManager.getSubscription().then(function (sub) {
+      if (!sub) { marcar(false); return; }
+      // Vincula esta suscripción a la sesión actual; nunca reasigna una ajena.
+      postJSON('{% url "growlog:push_subscribe" %}', sub.toJSON()).then(function (r) {
+        if (r.ok) { document.getElementById('logout-push-endpoint').value = sub.endpoint; marcar(true); }
+        else { if (r.status === 409) sub.unsubscribe(); marcar(false); }
+      }).catch(function () { marcar(false); });
+    });
+  });
+
+  btn.addEventListener('click', function () {
+    navigator.serviceWorker.ready.then(function (reg) {
+      reg.pushManager.getSubscription().then(function (sub) {
+        if (sub) {
+          var endpoint = sub.endpoint;
+          sub.unsubscribe().then(function () {
+            postJSON('{% url "growlog:push_unsubscribe" %}', { endpoint: endpoint }).then(function () { marcar(false); });
+          });
+          return;
+        }
+        if (Notification.permission === 'denied') {
+          marcar(false, 'bloqueados en el navegador: habilitalos desde la configuración del sitio');
+          return;
+        }
+        Notification.requestPermission().then(function (perm) {
+          if (perm !== 'granted') return;
+          reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) })
+            .then(function (nueva) {
+              postJSON('{% url "growlog:push_subscribe" %}', nueva.toJSON()).then(function (r) {
+                if (!r.ok) { nueva.unsubscribe(); marcar(false); return; }
+                document.getElementById('logout-push-endpoint').value = nueva.endpoint;
+                marcar(true);
+              });
+            })
+            .catch(function () { marcar(false, 'no se pudieron activar'); });
+        });
+      });
+    });
+  });
+})();
+</script>
+{% endblock %}

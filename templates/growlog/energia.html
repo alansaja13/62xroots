@@ -30,14 +30,14 @@
   .en-stat__val--rust  { color: var(--rust); }
   .en-stat__unit { font-size: 13px; color: var(--cream-soft); font-weight: 600; margin-left: 2px; }
   .en-stat__sub {
-    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    font-family: var(--font-mono), monospace; font-size: 12px;
     color: var(--fine); margin-top: 6px; letter-spacing: .05em;
   }
   .en-alerta {
     background: rgba(196,106,62,.1); border: 1px solid var(--rust);
     padding: 12px 18px; margin-bottom: 18px;
     display: flex; align-items: center; gap: 10px;
-    font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--rust);
+    font-family: var(--font-mono), monospace; font-size: 12px; color: var(--rust);
   }
   .en-cmp-grid {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
@@ -61,8 +61,8 @@
   }
   .en-form__field { display: flex; flex-direction: column; gap: 4px; }
   .en-form__label {
-    font-family: "JetBrains Mono", monospace; font-size: 10px;
-    color: var(--fine); letter-spacing: .12em; text-transform: uppercase;
+    font-family: var(--font-mono), monospace; font-size: 12px;
+    color: var(--fine); letter-spacing: .05em; text-transform: uppercase;
   }
   .en-form input {
     background: var(--card); border: 1px solid var(--rule);
@@ -89,9 +89,9 @@
 <!-- HEADER -->
 <div class="en-header">
   <div>
-    <div class="label-eyebrow">// energía · costos eléctricos</div>
+    <div class="label-eyebrow">energía · costos eléctricos</div>
     <h1 class="en-title">{{ cultivo.nombre }}</h1>
-    <div class="mono c-soft" style="font-size:11px; margin-top:10px;">
+    <div class="mono c-soft" style="font-size: 12px; margin-top:10px;">
       {% if tarifa %}tarifa ${{ tarifa.precio_kwh|floatformat:2 }}/kWh · {{ tarifa.distribuidora }}<span class="c-fine"> · </span>{% endif %}
       ciclo <strong class="c-cream">{{ ciclo }}</strong>
       {% if equipos_rows %}<span class="c-fine"> · </span>{{ equipos_rows|length }} equipos activos{% endif %}
@@ -134,11 +134,10 @@
 <div class="panel" style="margin-bottom:16px;">
   <div class="panel__head">
     <div class="panel__head-left">
-      <span class="panel__sigil panel__sigil--honey">§</span>
       <span class="label-eyebrow panel__title">equipos activos · {{ equipos_rows|length }}</span>
     </div>
     {% if can_edit_cultivo %}
-    <a href="/admin/growlog/costoenergetico/add/" class="btn-ghost" style="font-size:11px;padding:5px 10px;">
+    <a href="/admin/growlog/costoenergetico/add/" class="btn-ghost" style="font-size: 12px;padding:5px 10px;">
       <i class="bi bi-plug"></i> vincular equipo
     </a>
     {% endif %}
@@ -160,7 +159,7 @@
       <tr>
         <td>
           <span class="c-cream" style="font-weight:600;">{{ row.equipo.nombre }}</span>
-          <span class="d-inline d-md-none c-fine" style="font-size:10px; font-family:monospace;"> · {{ row.equipo.horas_dia }}h/día</span>
+          <span class="d-inline d-md-none c-fine" style="font-size: 12px; font-family:monospace;"> · {{ row.equipo.horas_dia }}h/día</span>
         </td>
         <td class="d-none d-md-table-cell">
           <span class="pill pill--{% if row.equipo.categoria == 'lampara' %}plum{% elif row.equipo.categoria == 'extractor' %}slate{% elif row.equipo.categoria == 'ventilador' %}green{% elif row.equipo.categoria == 'humidificador' %}honey{% else %}cream{% endif %}">
@@ -175,7 +174,7 @@
     </tbody>
     <tfoot style="border-top:2px solid var(--rule);">
       <tr>
-        <td class="c-fine mono" style="font-size:10px;letter-spacing:.1em;">TOTAL</td>
+        <td class="c-fine mono" style="font-size: 12px;letter-spacing:.1em;">TOTAL</td>
         <td class="d-none d-md-table-cell"></td>
         <td class="d-none d-md-table-cell"></td>
         <td style="text-align:right;font-weight:800;" class="c-green">{{ total_kwh_mes }}</td>
@@ -200,7 +199,6 @@
 <div class="panel" style="margin-bottom:16px;">
   <div class="panel__head">
     <div class="panel__head-left">
-      <span class="panel__sigil">§</span>
       <span class="label-eyebrow panel__title">histórico mensual · {{ meses|length }} meses</span>
     </div>
   </div>
@@ -231,7 +229,7 @@
     </tbody>
     <tfoot style="border-top:2px solid var(--rule);">
       <tr>
-        <td class="c-fine mono" style="font-size:10px;letter-spacing:.1em;">TOTAL</td>
+        <td class="c-fine mono" style="font-size: 12px;letter-spacing:.1em;">TOTAL</td>
         <td class="d-none d-md-table-cell"></td>
         <td style="text-align:right;font-weight:800;" class="c-green">{{ kwh_acumulado }}</td>
         <td style="text-align:right;font-weight:800;" class="c-honey">${{ costo_acumulado }}</td>
@@ -246,7 +244,6 @@
 <div class="panel">
   <div class="panel__head">
     <div class="panel__head-left">
-      <span class="panel__sigil panel__sigil--slate">§</span>
       <span class="label-eyebrow panel__title">lecturas del medidor{% if lecturas %} · {{ lecturas|length }}{% endif %}</span>
     </div>
   </div>
@@ -257,19 +254,19 @@
     <div class="en-cmp-item">
       <div class="label-eyebrow">kWh estimado</div>
       <div class="en-cmp-val" style="color:var(--green);">{{ kwh_acumulado }}</div>
-      <div class="mono c-fine" style="font-size:10px;margin-top:4px;">calculado por equipos</div>
+      <div class="mono c-fine" style="font-size: 12px;margin-top:4px;">calculado por equipos</div>
     </div>
     <div class="en-cmp-item">
       <div class="label-eyebrow">kWh real (medidor)</div>
       <div class="en-cmp-val" style="color:{% if alerta %}var(--rust){% else %}var(--cream){% endif %};">{{ kwh_real }}</div>
-      <div class="mono c-fine" style="font-size:10px;margin-top:4px;">suma de lecturas</div>
+      <div class="mono c-fine" style="font-size: 12px;margin-top:4px;">suma de lecturas</div>
     </div>
     <div class="en-cmp-item">
       <div class="label-eyebrow">variación</div>
       <div class="en-cmp-val" style="color:{% if alerta %}var(--rust){% elif variacion_pct and variacion_pct > 5 %}var(--honey){% else %}var(--green){% endif %};">
         {% if variacion_pct %}{% if variacion_pct > 0 %}+{% endif %}{{ variacion_pct }}%{% else %}-{% endif %}
       </div>
-      <div class="mono c-fine" style="font-size:10px;margin-top:4px;">{% if alerta %}alerta >15%{% elif variacion_pct %}dentro de rango{% else %}sin datos{% endif %}</div>
+      <div class="mono c-fine" style="font-size: 12px;margin-top:4px;">{% if alerta %}alerta >15%{% elif variacion_pct %}dentro de rango{% else %}sin datos{% endif %}</div>
     </div>
   </div>
   <!-- Lista lecturas -->

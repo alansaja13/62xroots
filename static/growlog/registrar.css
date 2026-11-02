@@ -3,10 +3,9 @@
 .reg { max-width: 760px; }
 .reg [hidden] { display: none !important; }
 .reg-eyebrow {
-  font-family: var(--font-mono); font-size: 10px; font-weight: 500;
-  letter-spacing: .22em; text-transform: uppercase; color: var(--green); margin: 0;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--green); margin: 0;
 }
-.reg-eyebrow::before { content: "// "; color: var(--fine); }
 .reg-title {
   font-family: var(--font-display); font-variation-settings: "wdth" 85, "opsz" 96; font-weight: 800;
   letter-spacing: -.035em; line-height: .95; font-size: clamp(44px, 8vw, 64px); margin: 10px 0 20px;
@@ -15,15 +14,15 @@
 .reg-card { background: var(--card); border: 1px solid var(--rule); border-radius: 14px; padding: 22px; }
 .reg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
 .reg label { margin-bottom: 16px; }
-.reg label small { font-size: 10px; font-weight: 500; letter-spacing: .08em; color: var(--fine); margin-left: 4px; }
+.reg label small { font-size: 12px; font-weight: 500; letter-spacing: .08em; color: var(--fine); margin-left: 4px; }
 .reg label > input, .reg label > select, .reg label > textarea { margin-top: 6px; min-height: 44px; }
 .reg .reg-num-big { padding: 8px 14px; }
 .reg .reg-num-big::placeholder { color: var(--rule); }
 .reg input:user-invalid { border-color: var(--rust); box-shadow: 0 0 0 3px rgba(196,106,62,.14); }
 .reg fieldset { border: 0; margin: 6px 0 0; padding: 0; min-width: 0; }
 .reg legend {
-  font-family: var(--font-mono); font-size: 10px; font-weight: 600; float: none;
-  letter-spacing: .22em; text-transform: uppercase; color: var(--green);
+  font-family: var(--font-mono); font-size: 12px; font-weight: 600; float: none;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--green);
   padding: 0 0 8px; margin-bottom: 14px; width: 100%; border-bottom: 1px solid var(--rule-soft);
 }
 .reg details { margin: 6px 0 18px; }

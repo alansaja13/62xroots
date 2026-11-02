@@ -63,4 +63,6 @@ class FaqTests(TestCase):
         page = self.client.get(reverse("growlog:faq"))
         for texto in ("¿Qué es el pH", "¿Cómo se calcula el VPD?", "Araña roja", "¿Cuándo cosecho?"):
             self.assertContains(page, texto)
-        self.assertContains(self.client.get("/"), reverse("growlog:faq"))
+        # Se llega desde "Más", que está en la barra de todas las pantallas.
+        self.assertContains(self.client.get("/"), reverse("growlog:mas"))
+        self.assertContains(self.client.get(reverse("growlog:mas")), reverse("growlog:faq"))

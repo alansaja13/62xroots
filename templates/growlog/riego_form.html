@@ -6,7 +6,7 @@
 <style>
   .rf-back {
     display: inline-flex; align-items: center; gap: 6px;
-    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    font-family: var(--font-mono), monospace; font-size: 12px;
     color: var(--cream-soft); text-decoration: none;
     margin-bottom: 14px; letter-spacing: .1em;
   }
@@ -17,7 +17,7 @@
     margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid var(--rule);
   }
   .rf-title {
-    font-family: "Bricolage Grotesque", sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-variation-settings: "wdth" 85, "opsz" 96;
     font-size: 64px; font-weight: 800; line-height: .95;
     letter-spacing: -.022em; margin: 8px 0 0; color: var(--cream);
@@ -30,7 +30,7 @@
   /* Big number inputs */
   .rf-num-input input[type=number],
   .rf-num-input input[type=text] {
-    font-family: "Bricolage Grotesque", sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-variation-settings: "wdth" 90, "opsz" 96;
     font-size: 36px; font-weight: 800; color: var(--green);
     letter-spacing: -.02em; line-height: 1.1;
@@ -49,28 +49,28 @@
     background: var(--green-wash); border: 1px solid var(--green-deep);
     display: flex; align-items: center; justify-content: center;
     color: var(--green);
-    font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700;
+    font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 700;
   }
   .rf-na-row__name {
-    font-family: "Bricolage Grotesque", sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-variation-settings: "wdth" 85, "opsz" 96;
     font-size: 16px; font-weight: 700; line-height: 1;
   }
   .rf-na-row__dosis {
-    font-family: "Bricolage Grotesque", sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-variation-settings: "wdth" 85, "opsz" 96;
     font-size: 24px; font-weight: 700; color: var(--green);
     text-align: right;
   }
   .rf-na-row__del {
     background: transparent; border: none; color: var(--fine);
-    font-family: "JetBrains Mono", monospace; font-size: 14px;
+    font-family: var(--font-mono), monospace; font-size: 14px;
     cursor: pointer; padding: 4px;
   }
   .rf-na-row__del:hover { color: var(--rust); }
   .rf-na-empty {
     padding: 24px 16px; text-align: center; color: var(--fine);
-    font-family: "JetBrains Mono", monospace; font-size: 12px;
+    font-family: var(--font-mono), monospace; font-size: 12px;
   }
 
   /* Desglose de riego por planta */
@@ -87,7 +87,7 @@
   }
   .rf-plant-row__head input[type=checkbox] { width: 16px; height: 16px; flex-shrink: 0; }
   .rf-plant-row__name {
-    font-family: "Bricolage Grotesque", sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-variation-settings: "wdth" 85, "opsz" 96;
     font-size: 16px; font-weight: 700; color: var(--cream);
   }
@@ -95,14 +95,14 @@
     margin-top: 12px; padding-top: 12px;
     border-top: 1px solid var(--rule-soft);
   }
-  .rf-plant-row__detail label { font-size: 11px; }
+  .rf-plant-row__detail label { font-size: 12px; }
   .rf-plant-row__total {
     display: flex; justify-content: space-between; align-items: center;
     margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--rule-soft);
   }
 
   .rf-delete-link {
-    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    font-family: var(--font-mono), monospace; font-size: 12px;
     color: var(--fine); text-decoration: none;
     display: inline-flex; align-items: center; gap: 6px;
     letter-spacing: .1em;
@@ -125,7 +125,7 @@
 <!-- HEADER -->
 <div class="rf-header">
   <div>
-    <div class="label-eyebrow">// log · riego</div>
+    <div class="label-eyebrow">riego</div>
     <div style="display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap;">
       <h1 class="rf-title">RIEGO</h1>
       <span class="rf-title rf-title__accent">por planta</span>
@@ -144,9 +144,8 @@
     <div class="panel">
       <div class="panel__head">
         <div class="panel__head-left">
-          <span class="panel__sigil">§</span>
           <span class="label-eyebrow panel__title">sesión de riego</span>
-          <span class="mono c-fine" style="font-size: 10px;">· solución compartida</span>
+          <span class="mono c-fine" style="font-size: 12px;">· solución compartida</span>
         </div>
       </div>
       <div class="panel__body">
@@ -214,7 +213,7 @@
                 <label class="rf-plant-row__head">
                   {{ row.incluida }}
                   <span class="rf-plant-row__name">{{ planta.apodo }}{% if planta.archivado %} · archivada{% endif %}</span>
-                  {% if planta.strain %}<span class="mono c-fine" style="font-size: 10px;">{{ planta.strain }}</span>{% endif %}
+                  {% if planta.strain %}<span class="mono c-fine" style="font-size: 12px;">{{ planta.strain }}</span>{% endif %}
                 </label>
                 <div x-show="incluida" class="rf-plant-row__detail">
                   <div class="row g-2 align-items-end">
@@ -250,7 +249,7 @@
               </div>
               {% endfor %}
               <div class="rf-plant-row__total">
-                <span class="mono c-fine" style="font-size: 10px;">el volumen total se calcula sumando las plantas incluidas</span>
+                <span class="mono c-fine" style="font-size: 12px;">el volumen total se calcula sumando las plantas incluidas</span>
                 <span class="mono c-green" id="rp-total-preview" style="font-size: 14px; font-weight: 700;">0 ml</span>
               </div>
             {% endif %}
@@ -278,9 +277,8 @@
     <div class="panel">
       <div class="panel__head">
         <div class="panel__head-left">
-          <span class="panel__sigil panel__sigil--honey">§</span>
           <span class="label-eyebrow panel__title">nutrientes aplicados</span>
-          <span class="mono c-fine" style="font-size: 10px;">· {{ nutrientes|length }} productos</span>
+          <span class="mono c-fine" style="font-size: 12px;">· {{ nutrientes|length }} productos</span>
         </div>
       </div>
       {% if nutrientes %}
@@ -290,11 +288,11 @@
             <div class="rf-na-row__badge">{{ forloop.counter|stringformat:"02d" }}</div>
             <div>
               <div class="rf-na-row__name">{{ na.nutriente }}</div>
-              <div class="mono c-fine" style="font-size: 10px; margin-top: 2px;">
+              <div class="mono c-fine" style="font-size: 12px; margin-top: 2px;">
                 {% if na.nutriente.npk %}NPK {{ na.nutriente.npk }} · {% endif %}{{ na.nutriente.get_etapa_recomendada_display }}
               </div>
             </div>
-            <div class="rf-na-row__dosis">{{ na.dosis_g_por_litro }}<span class="mono c-soft" style="font-size: 11px; margin-left: 4px;">g/L</span></div>
+            <div class="rf-na-row__dosis">{{ na.dosis_g_por_litro }}<span class="mono c-soft" style="font-size: 12px; margin-left: 4px;">g/L</span></div>
             <form method="post" action="{% url 'growlog:nutriente_aplicado_eliminar' na.pk %}"
                   style="display: inline; text-align: right;"
                   onsubmit="return confirm('¿Eliminar {{ na.nutriente|escapejs }}?')">
@@ -315,7 +313,6 @@
     <div class="panel">
       <div class="panel__head">
         <div class="panel__head-left">
-          <span class="panel__sigil panel__sigil--slate">§</span>
           <span class="label-eyebrow panel__title">agregar nutriente</span>
         </div>
       </div>
@@ -355,7 +352,6 @@
     <div class="panel">
       <div class="panel__head">
         <div class="panel__head-left">
-          <span class="panel__sigil">§</span>
           <span class="label-eyebrow panel__title">resumen</span>
         </div>
       </div>
@@ -363,23 +359,23 @@
         {% if riego %}
         <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
           <span class="label-eyebrow">volumen total</span>
-          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.volumen_total_ml }} ml</span>
+          <span class="mono c-cream" style="font-size: 12px; font-weight: 600;">{{ riego.volumen_total_ml }} ml</span>
         </div>
         {% if riego.ph_agua %}
         <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
           <span class="label-eyebrow">pH solución</span>
-          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.ph_agua }}</span>
+          <span class="mono c-cream" style="font-size: 12px; font-weight: 600;">{{ riego.ph_agua }}</span>
         </div>
         {% endif %}
         {% if riego.ec_solucion %}
         <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
           <span class="label-eyebrow">ec solución</span>
-          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ riego.ec_solucion|ec_us }} µS/cm</span>
+          <span class="mono c-cream" style="font-size: 12px; font-weight: 600;">{{ riego.ec_solucion|ec_us }} µS/cm</span>
         </div>
         {% endif %}
         <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule-soft);">
           <span class="label-eyebrow">nutrientes</span>
-          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">{{ nutrientes|length }} productos</span>
+          <span class="mono c-cream" style="font-size: 12px; font-weight: 600;">{{ nutrientes|length }} productos</span>
         </div>
 
         <div style="padding: 10px 0 4px;">
@@ -387,8 +383,8 @@
         </div>
         {% for rp in riego.detalle_plantas.all %}
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule-soft);">
-          <span class="mono c-soft" style="font-size: 11px;">{{ rp.planta.apodo }}</span>
-          <span class="mono c-cream" style="font-size: 11px; font-weight: 600;">
+          <span class="mono c-soft" style="font-size: 12px;">{{ rp.planta.apodo }}</span>
+          <span class="mono c-cream" style="font-size: 12px; font-weight: 600;">
             {{ rp.volumen_ml }} ml
             {% if rp.runoff_observado %}<i class="bi bi-droplet-half c-green" title="runoff observado"></i>{% endif %}
           </span>

@@ -7,6 +7,7 @@ app_name = "growlog"
 urlpatterns = [
     path("registrar/", views.registrar, name="registrar"),
     path("dudas/", views.faq, name="faq"),
+    path("mas/", views.mas, name="mas"),
     path("actividad/", views.actividad, name="actividad"),
     path("nutrientes/", views.nutrientes, name="nutrientes"),
     path("nutrientes/nuevo/", views.nutriente_crear, name="nutriente_crear"),

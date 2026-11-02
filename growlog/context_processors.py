@@ -68,21 +68,51 @@ def cultivos_del_menu(usuario):
     return grupos
 
 
+# Pantallas globales que cuelgan de "Más" en la barra.
+PANTALLAS_MAS = {"mas", "nutrientes", "nutriente_crear", "nutriente_editar", "invitados_panel", "faq", "actividad"}
+
+
+def cultivo_destino(request, cultivo, grupos):
+    """Cultivo al que llevan "Cultivo", "Plantas" y "Tareas" de la barra: el abierto,
+    el último que se abrió o, si no, el primero activo."""
+    if cultivo is not None:
+        return cultivo
+    vivos = grupos["activos"] + grupos["compartidos"]
+    reciente = request.session.get("cultivo_reciente")
+    return next((c for c in vivos + grupos["historial"] if c.pk == reciente), vivos[0] if vivos else None)
+
+
+def seccion_nav(url_name, seccion):
+    if url_name == "dashboard":
+        return "hoy"
+    if url_name in PANTALLAS_MAS:
+        return "mas"
+    if url_name in ("planta_detail", "planta_etapa_list"):
+        return "plantas"
+    if seccion == "tareas":
+        return "tareas"
+    return "cultivo" if seccion else ""
+
+
 def navegacion(request):
     if not request.user.is_authenticated:
         return {}
     match = request.resolver_match
+    url_name = match.url_name if match else None
     cultivo = getattr(request, "cultivo_actual", None)
-    seccion = SECCIONES_CULTIVO.get(match.url_name if match else None)
+    seccion = SECCIONES_CULTIVO.get(url_name)
     pestanas = []
     if cultivo is not None:
         pestanas = pestanas_cultivo(cultivo, seccion=seccion,
                                     puede_editar=getattr(request, "puede_editar_cultivo", False))
+    # Perezoso: solo consulta si la plantilla dibuja el selector o la barra.
+    grupos = SimpleLazyObject(lambda: cultivos_del_menu(request.user))
     return {
         "cultivo_nav": cultivo,
         "seccion_cultivo": seccion,
         "pestanas_cultivo": pestanas,
         "pestana_extra_activa": next((p for p in pestanas if p["extra"] and p["activa"]), None),
-        # Perezoso: solo consulta si la plantilla dibuja el selector.
-        "nav_cultivos": SimpleLazyObject(lambda: cultivos_del_menu(request.user)),
+        "nav_cultivos": grupos,
+        "cultivo_destino": SimpleLazyObject(lambda: cultivo_destino(request, cultivo, grupos)),
+        "nav_activa": seccion_nav(url_name, seccion),
     }
