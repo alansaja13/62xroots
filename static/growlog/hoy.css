@@ -6,7 +6,10 @@
 
 .hoy-cols { display: grid; gap: var(--sp-6); }
 .hoy-cols > * { min-width: 0; }
-@media (min-width: 992px) { .hoy-cols { grid-template-columns: 1fr 1fr; gap: var(--sp-7); align-items: start; } }
+@media (min-width: 992px) {
+  .hoy-cols { grid-template-columns: 1fr 1fr; gap: var(--sp-7); align-items: start; }
+  .hoy-cols--una { grid-template-columns: minmax(0, 640px); }
+}
 .hoy-cols section + section { margin-top: var(--sp-6); }
 
 .hoy-sec { margin: 0 0 6px; font-family: var(--font-mono); font-weight: 500; }
@@ -54,3 +57,28 @@ button.ck:hover { border-color: var(--ac); }
   position: relative; z-index: 1; display: inline-flex; align-items: center; min-height: var(--toque);
   margin-top: 4px; font: 500 var(--t-xs) var(--font-mono); color: var(--ac);
 }
+
+/* Núcleo: un día por raya, con una capa por tipo de registro. El ancho sigue la edad del cultivo. */
+.hoy-nucleo { display: block; height: 22px; min-width: 24px; margin: 2px 0 10px; border-radius: 5px; background: var(--s1); box-shadow: inset 0 0 0 1px var(--ln); }
+.hoy-nucleo__w { fill: var(--w); background: var(--w); }
+.hoy-nucleo__m { fill: var(--m); background: var(--m); }
+.hoy-nucleo__e { fill: var(--e); background: var(--e); }
+.hoy-nucleo__n { fill: var(--n); background: var(--n); }
+.hoy-leyenda { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: var(--sp-6) 0 var(--sp-2); text-transform: none; letter-spacing: .02em; }
+.hoy-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+.hoy-leyenda span:first-child { color: var(--ink); }
+.hoy-leyenda i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+/* Mapa de aire: solo en compu, al lado de los cultivos. */
+.hoy-aire { display: none; }
+@media (min-width: 992px) {
+  .hoy-aire { display: block; position: sticky; top: var(--sp-5); }
+}
+.hoy-aire__chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.hoy-aire__chips .chip { min-height: 40px; font-size: var(--t-sm); }
+.hoy-aire__mapa { padding: 6px 0 22px 30px; }
+.hoy-aire__mapa svg { display: block; width: 100%; height: auto; overflow: visible; }
+.hoy-aire__leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: var(--sp-2) 0 0 30px; }
+.hoy-aire__leyenda span { display: inline-flex; align-items: center; gap: 6px; font: 400 var(--t-xs) var(--font-mono); color: var(--mu); }
+.hoy-aire__leyenda i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+.hoy-aire .hoy-nota { margin-left: 30px; }

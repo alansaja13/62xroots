@@ -2,6 +2,7 @@
 {% load static %}
 {% block title %}Hoy{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'growlog/hoy.css' %}">{% endblock %}
+{% block extra_js %}{% if mapa %}{{ mapa|json_script:"hoy-mapa-datos" }}<script src="{% static 'growlog/hoy.js' %}" defer></script>{% endif %}{% endblock %}
 {% block content %}
 <div class="hoy">
   <header class="hoy-head">
@@ -16,7 +17,8 @@
     <a href="{% url 'growlog:nuevo_cultivo' %}" class="btn sm">Crear mi primer cultivo</a>
   </section>
   {% else %}
-  <div class="hoy-cols">
+  <div class="hoy-cols{% if not mapa %} hoy-cols--una{% endif %}">
+    <div>
     {% if activos %}
     <section id="atencion" aria-labelledby="atencion-title">
       <h2 class="mo hoy-sec" id="atencion-title">Para revisar · {{ atencion_total }}</h2>
@@ -43,7 +45,13 @@
     </section>
     {% endif %}
 
-    <div>
+      {% if activos %}
+      <div class="hoy-leyenda mo" aria-hidden="true">
+        <span>Núcleo, un día por raya</span>
+        <span><i class="hoy-nucleo__w"></i>riego</span><span><i class="hoy-nucleo__m"></i>medición</span>
+        <span><i class="hoy-nucleo__e"></i>evento</span><span><i class="hoy-nucleo__n"></i>nota</span>
+      </div>
+      {% endif %}
       {% if propios %}
       <section id="cultivos" aria-labelledby="cultivos-title">
         <h2 class="mo hoy-sec" id="cultivos-title">Mis cultivos activos · {{ propios|length }}</h2>
@@ -75,6 +83,24 @@
       </section>
       {% endif %}
     </div>
+
+    {% if mapa %}
+    <aside class="hoy-aire" aria-labelledby="hoy-aire-title">
+      <h2 class="mo hoy-sec" id="hoy-aire-title">Aire ahora · temp × HR</h2>
+      {% if mapa|length > 1 %}
+      <div class="chips hoy-aire__chips" id="hoy-aire-chips" role="group" aria-label="Zonas ideales de">
+        {% for c in mapa %}<button type="button" class="chip{% if forloop.first %} on{% endif %}" data-i="{{ forloop.counter0 }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">{{ c.nombre }}</button>{% endfor %}
+      </div>
+      {% endif %}
+      <div class="hoy-aire__mapa"><svg id="hoy-aire-svg" viewBox="0 0 340 250" role="img" aria-label="Mapa de aire: la última lectura de cada cultivo, con la cola de las últimas 24 horas"></svg></div>
+      <div class="hoy-aire__leyenda" aria-hidden="true">
+        <span><i style="background: var(--z0)"></i>muy bajo</span><span><i style="background: var(--z1)"></i>bajo</span>
+        <span><i style="background: var(--z2)"></i>ideal</span><span><i style="background: var(--z3)"></i>alto</span>
+        <span><i style="background: var(--z4)"></i>muy alto</span>
+      </div>
+      <p class="hoy-nota" id="hoy-aire-nota"></p>
+    </aside>
+    {% endif %}
   </div>
   {% endif %}
 </div>

@@ -5,10 +5,10 @@ from django.utils import timezone
 
 from datetime import timedelta
 
-from ..models import Evento, MedicionAmbiente, ParametroIdeal, Riego, Tarea
+from ..models import Evento, MedicionAmbiente, MedicionEC, ParametroIdeal, Riego, Tarea
 from ..permissions import cultivos_visibles
 from ..utils import etapa_efectiva_cultivo
-from .vpd import estado_de
+from .vpd import _rango, estado_de
 
 # Una lectura de ambiente más vieja que esto se muestra como dato viejo.
 DATO_VIEJO = timedelta(hours=6)
@@ -17,6 +17,10 @@ ALERTA_VPD_HASTA = timedelta(hours=24)
 # Nombre corto de la etapa para el pill de Hoy ("Veg · día 28").
 ETAPA_CORTA = {"plantula": "Plántula", "veg_temprano": "Veg", "veg_tardio": "Veg",
                "flora_temprana": "Flora", "flora_tardia": "Flora", "secado": "Secado", "curado": "Curado"}
+# Núcleo de Hoy: orden de las capas de cada día (riego, medición, evento, nota).
+CAPAS = ("w", "m", "e", "n")
+# Lecturas de las últimas horas que dibujan la cola de cada cultivo en el mapa de Aire.
+COLA_MAPA = timedelta(hours=24)
 
 
 def resumen_hoy(usuario, *, ahora=None):
@@ -52,6 +56,9 @@ def resumen_hoy(usuario, *, ahora=None):
                 "dato_viejo": bool(medicion and ahora - medicion.timestamp > DATO_VIEJO),
                 "dias_sin_riego": (hoy - timezone.localdate(cultivo.ultimo_riego_ts)).days if cultivo.ultimo_riego_ts else None}
         (archivados if cultivo.archivado else finalizados if cultivo.estado == "finalizado" else activos).append(item)
+
+    _sumar_nucleo(activos, hoy)
+    mapa = _mapa_aire(activos, ahora)
 
     # Aire fuera de rango en una lectura reciente: va primero en "Para revisar".
     alertas = [{"tipo": "Aire", "cultivo": item["cultivo"], "medicion": item["ultima_medicion"],
@@ -89,7 +96,59 @@ def resumen_hoy(usuario, *, ahora=None):
             "atencion": atencion[:12], "atencion_total": total + len(alertas), "alertas": alertas,
             "atencion_restante": max(0, total - 12), "tareas_total": conteos["total"],
             "tareas_sin_fecha": conteos["sin_fecha"], "puede_registrar": bool(editables),
-            "sin_medicion_hoy": sum(item["frescura"] != "hoy" for item in activos)}
+            "sin_medicion_hoy": sum(item["frescura"] != "hoy" for item in activos), "mapa": mapa}
+
+
+def _sumar_nucleo(activos, hoy):
+    """Barra de cada cultivo: un día por columna, con una capa por tipo de registro de ese día.
+    El ancho es proporcional a la edad, con el cultivo más viejo ocupando toda la fila."""
+    ids = [item["cultivo"].pk for item in activos]
+    if not ids:
+        return
+    por_dia = {}
+    fuentes = ((Riego.objects.filter(cultivo_id__in=ids), lambda _: "w"),
+               (MedicionAmbiente.objects.filter(cultivo_id__in=ids), lambda _: "m"),
+               (MedicionEC.objects.filter(cultivo_id__in=ids), lambda _: "m"),
+               (Evento.objects.filter(cultivo_id__in=ids), lambda tipo: "n" if tipo == "nota" else "e"))
+    for qs, capa in fuentes:
+        campos = ("cultivo_id", "timestamp", "tipo") if qs.model is Evento else ("cultivo_id", "timestamp")
+        for fila in qs.values_list(*campos):
+            por_dia.setdefault((fila[0], timezone.localdate(fila[1])), set()).add(capa(fila[2] if len(fila) > 2 else None))
+    largo = {item["cultivo"].pk: max(1, (hoy - item["cultivo"].fecha_inicio).days + 1) for item in activos}
+    mayor = max(largo.values())
+    for item in activos:
+        cultivo = item["cultivo"]
+        capas = []
+        for d in range(largo[cultivo.pk]):
+            tipos = [c for c in CAPAS if c in por_dia.get((cultivo.pk, cultivo.fecha_inicio + timedelta(days=d)), ())]
+            alto = 12 // len(tipos) if tipos else 0
+            capas += [{"x": d, "y": i * alto, "alto": alto, "tipo": t} for i, t in enumerate(tipos)]
+        item["nucleo"] = {"dias": largo[cultivo.pk], "capas": capas,
+                          "ancho": max(8, round(100 * largo[cultivo.pk] / mayor))}
+
+
+def _mapa_aire(activos, ahora):
+    """Para el mapa de Hoy en compu: la última lectura de cada cultivo con su cola y el ideal de su etapa."""
+    ids = [item["cultivo"].pk for item in activos if item["ultima_medicion"]]
+    cola = {}
+    for m in MedicionAmbiente.objects.filter(cultivo_id__in=ids, timestamp__gte=ahora - COLA_MAPA,
+                                             timestamp__lte=ahora).order_by("timestamp"):
+        cola.setdefault(m.cultivo_id, []).append({"t": float(m.temperatura_c), "h": float(m.humedad_relativa)})
+    cultivos = []
+    for item in activos:
+        m, cultivo = item["ultima_medicion"], item["cultivo"]
+        if not m:
+            continue
+        param = cultivo.__dict__.get("_parametro_por_etapa", {}).get(item["etapa"])
+        cultivos.append({
+            "nombre": cultivo.nombre, "t": float(m.temperatura_c), "h": float(m.humedad_relativa),
+            "vpd": m.vpd, "estado": item["vpd_estado"], "viejo": item["dato_viejo"],
+            "cola": cola.get(cultivo.pk, [])[-12:], "etapa": item["etapa_nombre"],
+            "rango": _rango(param),
+            "temp": [float(param.temp_min), float(param.temp_max)] if param else None,
+            "hr": [float(param.hr_min), float(param.hr_max)] if param else None,
+        })
+    return cultivos
 
 
 def item_tarea(tarea, *, puede_editar, hoy=None):

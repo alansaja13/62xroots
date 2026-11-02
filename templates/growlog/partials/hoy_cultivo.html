@@ -1,10 +1,17 @@
-{# Un cultivo activo en Hoy: etapa, última lectura con su frescura y días sin riego. Todo el bloque abre el cultivo. #}
+{% load l10n %}
+{# Un cultivo activo en Hoy: etapa, Núcleo, última lectura con su frescura y días sin riego. Todo el bloque abre el cultivo. #}
 {% with c=item.cultivo m=item.ultima_medicion %}
 <article class="hoy-cultivo">
   <div class="hoy-cultivo__fila">
     <h3 class="h2"><a href="{% url 'growlog:cultivo_detail' c.slug %}" class="hoy-cultivo__link">{{ c.nombre }}</a></h3>
     {% if item.etapa %}<span class="pill"><i class="punto" style="color: var({% if item.en_flora %}--flo{% else %}--veg{% endif %})"></i>{{ item.etapa_nombre|default:"Día" }} · día {{ item.dia }}</span>{% endif %}
   </div>
+  {% with n=item.nucleo %}{% if n %}
+  <svg class="hoy-nucleo" style="width: {{ n.ancho }}%" viewBox="0 0 {{ n.dias }} 12" preserveAspectRatio="none" role="img"
+       aria-label="Núcleo: lo que se registró cada día de los {{ n.dias }} días del cultivo">
+    {% localize off %}{% for c in n.capas %}<rect x="{{ c.x }}" y="{{ c.y }}" width="1" height="{{ c.alto }}" class="hoy-nucleo__{{ c.tipo }}"/>{% endfor %}{% endlocalize %}
+  </svg>
+  {% endif %}{% endwith %}
   {% if not item.es_propio %}<div class="mo hoy-meta">{% if item.puede_editar %}Editor{% else %}Solo lectura{% endif %}{% if c.propietario %} · de {{ c.propietario.username }}{% endif %}</div>{% endif %}
   {% if m %}
   <div class="hoy-lectura num">

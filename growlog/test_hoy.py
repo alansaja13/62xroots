@@ -97,8 +97,29 @@ class HoyTests(TestCase):
             result = resumen_hoy(self.user, ahora=self.now)
         self.assertEqual(len(result["activos"]), 9)
         self.assertEqual(len(initial), len(expanded))
-        # Las consultas no crecen con la cantidad de cultivos (etapas y rangos se leen una vez).
-        self.assertLessEqual(len(expanded), 11)
+        # Las consultas no crecen con la cantidad de cultivos (etapas y rangos se leen una vez;
+        # el Núcleo hace una por tipo de registro y el mapa una más).
+        self.assertLessEqual(len(expanded), 16)
+
+    def test_nucleo_marca_cada_dia_con_sus_tipos(self):
+        self.c.fecha_inicio = self.today - timedelta(days=2)
+        self.c.save()
+        self.medir(timestamp=self.now)
+        Evento.objects.create(cultivo=self.c, tipo="nota", descripcion="Hojas bien", timestamp=self.now)
+        Riego.objects.create(cultivo=self.c, volumen_total_ml=1000, timestamp=self.now - timedelta(days=2))
+        nucleo = resumen_hoy(self.user, ahora=self.now)["activos"][0]["nucleo"]
+        self.assertEqual(nucleo["dias"], 3)
+        self.assertEqual([(c["x"], c["tipo"], c["alto"]) for c in nucleo["capas"]], [(0, "w", 12), (2, "m", 6), (2, "n", 6)])
+        self.assertEqual(nucleo["ancho"], 100)
+
+    def test_mapa_trae_ultima_lectura_y_cola_de_24_horas(self):
+        for horas, temp in ((30, 20), (3, 24), (0, 25)):
+            MedicionAmbiente.objects.create(cultivo=self.c, temperatura_c=temp, humedad_relativa=60,
+                                            timestamp=self.now - timedelta(hours=horas))
+        mapa = resumen_hoy(self.user, ahora=self.now)["mapa"]
+        self.assertEqual(len(mapa), 1)
+        self.assertEqual(mapa[0]["t"], 25.0)
+        self.assertEqual([p["t"] for p in mapa[0]["cola"]], [24.0, 25.0])
 
     def test_lista_acotada_mantiene_conteo_y_orden(self):
         for i in range(17):
