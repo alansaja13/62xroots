@@ -81,15 +81,14 @@ class MedicionAmbienteWebTests(TestCase):
 
     def test_editor_elimina(self):
         self.client.force_login(self.duenio)
-        response = self.client.post(reverse("growlog:medicion_ambiente_eliminar", args=[self.medicion.pk]))
-        self.assertRedirects(response, reverse("growlog:cultivo_detail", args=[self.cultivo.slug]))
+        self.client.post(reverse("growlog:registro_borrar", args=["ambiente", self.medicion.pk]))
         self.assertFalse(MedicionAmbiente.objects.filter(pk=self.medicion.pk).exists())
 
     def test_lector_no_puede_corregir_ni_eliminar(self):
         self.client.force_login(self.lector)
         self.assertEqual(self.client.get(self.url).status_code, 403)
         self.assertEqual(self.client.post(self.url, self.datos(temperatura_c="20")).status_code, 403)
-        eliminar = reverse("growlog:medicion_ambiente_eliminar", args=[self.medicion.pk])
+        eliminar = reverse("growlog:registro_borrar", args=["ambiente", self.medicion.pk])
         self.assertEqual(self.client.post(eliminar).status_code, 403)
         self.medicion.refresh_from_db()
         self.assertEqual(self.medicion.temperatura_c, Decimal("26.5"))

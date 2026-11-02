@@ -204,6 +204,3 @@ def canopy_snapshot_json(request, slug, snapshot_id):
             'plantas': plantas_data,
         }
     })
-
-
-# ---------------------------------------------------------------------------

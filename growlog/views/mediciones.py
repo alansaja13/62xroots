@@ -1,4 +1,4 @@
-"""Mediciones de ambiente y EC/pH, y cambios de fotoperiodo."""
+"""Cambios de fotoperiodo."""
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
@@ -7,53 +7,10 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ..forms import CambioFotoperiodoForm
-from ..models import CambioFotoperiodo, Cultivo, MedicionAmbiente, MedicionEC
+from ..models import CambioFotoperiodo, Cultivo
 from ..permissions import objeto_del_cultivo
 from ..utils import get_cambio_fotoperiodo_activo
 
-
-# ---------------------------------------------------------------------------
-# MedicionAmbiente: el alta pasa por Registrar; acá solo corrección y borrado
-# ---------------------------------------------------------------------------
-
-
-@login_required
-def medicion_ambiente_eliminar(request, pk):
-    medicion = objeto_del_cultivo(request, MedicionAmbiente, editar=True, pk=pk)
-    cultivo = medicion.cultivo
-    if request.method == "POST":
-        medicion.delete()
-        messages.success(request, "Medición de ambiente eliminada.")
-        return redirect("growlog:cultivo_detail", cultivo.slug)
-    return render(request, "growlog/crud_delete.html", {
-        "title": "Eliminar medición de ambiente", "object_name": str(medicion),
-        "back_url": reverse("growlog:medicion_ambiente_editar", args=[pk]),
-    })
-
-
-# ---------------------------------------------------------------------------
-# MedicionEC CRUD
-# ---------------------------------------------------------------------------
-
-
-@login_required
-def medicion_ec_eliminar(request, pk):
-    medicion = objeto_del_cultivo(request, MedicionEC, editar=True, pk=pk)
-    cultivo = medicion.cultivo
-    if request.method == "POST":
-        medicion.delete()
-        messages.success(request, "Medición EC/pH eliminada.")
-        return redirect("growlog:cultivo_detail", slug=cultivo.slug)
-    return render(request, "growlog/crud_delete.html", {
-        "title": "Eliminar medición EC/pH", "object_name": str(medicion),
-        "back_url": reverse("growlog:medicion_ec_editar", args=[pk]),
-    })
-
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# CambioFotoperiodo
-# ---------------------------------------------------------------------------
 
 @login_required
 def fotoperiodo_list(request, slug):
@@ -122,6 +79,3 @@ def cambio_fotoperiodo_eliminar(request, pk):
         "object_name": f"{cambio.fotoperiodo} · desde {cambio.fecha_inicio}",
         "back_url": reverse("growlog:cambio_fotoperiodo_editar", args=[pk]),
     })
-
-
-# ---------------------------------------------------------------------------

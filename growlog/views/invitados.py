@@ -87,6 +87,3 @@ def invitado_eliminar(request, pk):
     miembro.delete()
     messages.success(request, "Acceso revocado. La cuenta y los registros se conservan.")
     return redirect("growlog:invitados_panel")
-
-
-# ---------------------------------------------------------------------------

@@ -11,6 +11,7 @@ from django.utils import timezone
 from .models import CambioEtapaCultivo, CambioEtapaPlanta, Cultivo, MedicionAmbiente, ParametroIdeal, Planta
 from .services.etapas import cambiar_etapa
 from .utils import etapa_efectiva_cultivo, etapa_efectiva_planta
+from .services.vpd import estado_de
 
 BASE = dict(temp_min=20, temp_max=28, hr_min=40, hr_max=70, ph_min=6, ph_max=7)
 
@@ -125,16 +126,16 @@ class EtapaCultivoTests(TestCase):
             with self.subTest(url=url):
                 self.assertEqual(self.client.get(url).status_code, 200)
 
-    def test_tendencias_trae_el_rango_vpd_de_cada_fecha(self):
+    def test_el_vpd_se_evalua_con_la_etapa_de_cada_fecha(self):
         parametro("veg_tardio", "0.80", "1.20")
         parametro("flora_tardia", "1.20", "1.50")
         cambiar_etapa(self.cultivo, "veg_tardio", self.dia(40))
         cambiar_etapa(self.cultivo, "flora_tardia", self.dia(5))
-        MedicionAmbiente.objects.create(cultivo=self.cultivo, temperatura_c=25, humedad_relativa=60,
-                                        timestamp=timezone.now() - timedelta(days=20))
-        MedicionAmbiente.objects.create(cultivo=self.cultivo, temperatura_c=25, humedad_relativa=60)
-        datos = self.client.get(reverse("growlog:cultivo_tendencias_json", args=[self.cultivo.slug])).json()
-        self.assertEqual([m["vpd_rango"] for m in datos["mediciones"]], [[0.8, 1.2], [1.2, 1.5]])
+        vieja = MedicionAmbiente.objects.create(cultivo=self.cultivo, temperatura_c=25, humedad_relativa=60,
+                                                timestamp=timezone.now() - timedelta(days=20))
+        nueva = MedicionAmbiente.objects.create(cultivo=self.cultivo, temperatura_c=25, humedad_relativa=60)
+        # El mismo VPD (~1,27) es alto en veg tardío y está bien en flora tardía.
+        self.assertEqual([estado_de(self.cultivo, m) for m in (vieja, nueva)], ["alto", "ideal"])
 
     def test_migracion_hereda_la_etapa_mas_avanzada_de_cada_fecha(self):
         CambioEtapaPlanta.objects.create(planta=self.planta, etapa="flora_temprana", fecha_inicio=self.dia(9))

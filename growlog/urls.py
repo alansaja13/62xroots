@@ -107,13 +107,8 @@ urlpatterns = [
     path("cultivo/<slug:slug>/archivar/", views.cultivo_archivar, name="cultivo_archivar"),
     path("cultivo/<slug:slug>/finalizar/", views.cultivo_finalizar, name="cultivo_finalizar"),
     path("cultivo/<slug:slug>/reabrir/", views.cultivo_reabrir, name="cultivo_reabrir"),
-    path("cultivo/<slug:slug>/tendencias/", views.cultivo_tendencias, name="cultivo_tendencias"),
     path("cultivo/<slug:slug>/aire/", views.cultivo_aire, name="cultivo_aire"),
     path("cultivo/<slug:slug>/ciclo/", views.cultivo_ciclo, name="cultivo_ciclo"),
-    path("cultivo/<slug:slug>/vpd/", views.cultivo_vpd, name="cultivo_vpd"),
-    path("cultivo/<slug:slug>/tendencias.json", views.cultivo_tendencias_json, name="cultivo_tendencias_json"),
-    # Enlace viejo a la carga rápida: Registrar es la única entrada de datos.
-    path("cultivo/<slug:slug>/quick/", views.registrar_en_cultivo, name="registrar_en_cultivo"),
     path("cultivo/<slug:slug>/timeline/", views.timeline, name="timeline"),
     path("cultivo/<slug:slug>/reporte/", views.cultivo_reporte, name="reporte"),
     path("cultivo/<slug:slug>/canopy/", views.canopy_view, name="canopy"),
@@ -132,33 +127,27 @@ urlpatterns = [
     # Tarea (el alta pasa por Registrar; acá solo edición/estado)
     path("cultivo/<slug:slug>/tareas/", views.tareas_list, name="tareas_list"),
     path("tarea/<int:pk>/editar/", views.tarea_editar, name="tarea_editar"),
-    path("tarea/<int:pk>/eliminar/", views.tarea_eliminar, name="tarea_eliminar"),
     path("tarea/<int:pk>/completar/", views.tarea_completar, name="tarea_completar"),
     path("tarea/<int:pk>/descompletar/", views.tarea_descompletar, name="tarea_descompletar"),
 
     # Evento (el alta pasa por Registrar; acá solo edición/estado)
     path("evento/<int:pk>/editar/", views.evento_editar, name="evento_editar"),
-    path("evento/<int:pk>/eliminar/", views.evento_eliminar, name="evento_eliminar"),
     path("evento/<int:pk>/resolver-followup/", views.evento_resolver_followup, name="evento_resolver_followup"),
 
     # Riego (el alta pasa por Registrar; acá solo edición)
     path("riego/<int:pk>/editar/", views.riego_editar, name="riego_editar"),
-    path("riego/<int:pk>/eliminar/", views.riego_eliminar, name="riego_eliminar"),
 
     # NutrienteAplicado
 
     # MedicionPlanta
     path("planta/<int:planta_pk>/medicion/nueva/", views.medicion_planta_crear, name="medicion_planta_crear"),
     path("medicion-planta/<int:pk>/editar/", views.medicion_planta_editar, name="medicion_planta_editar"),
-    path("medicion-planta/<int:pk>/eliminar/", views.medicion_planta_eliminar, name="medicion_planta_eliminar"),
 
     # MedicionAmbiente (el alta pasa por Registrar; acá solo corrección)
     path("medicion-ambiente/<int:pk>/editar/", views.medicion_ambiente_editar, name="medicion_ambiente_editar"),
-    path("medicion-ambiente/<int:pk>/eliminar/", views.medicion_ambiente_eliminar, name="medicion_ambiente_eliminar"),
 
     # MedicionEC (el alta pasa por Registrar; acá solo edición)
     path("medicion-ec/<int:pk>/editar/", views.medicion_ec_editar, name="medicion_ec_editar"),
-    path("medicion-ec/<int:pk>/eliminar/", views.medicion_ec_eliminar, name="medicion_ec_eliminar"),
 
     # CambioFotoperiodo
     path("cultivo/<slug:slug>/fotoperiodo/", views.fotoperiodo_list, name="fotoperiodo_list"),

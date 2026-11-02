@@ -144,7 +144,6 @@ def planta_fotos(request, pk):
 
 
 # ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
 # MedicionPlanta CRUD
 # ---------------------------------------------------------------------------
 
@@ -173,21 +172,6 @@ def medicion_planta_crear(request, planta_pk):
     })
 
 
-@login_required
-def medicion_planta_eliminar(request, pk):
-    medicion = objeto_del_cultivo(request, MedicionPlanta, editar=True, pk=pk)
-    planta_pk = medicion.planta_id
-    if request.method == "POST":
-        medicion.delete()
-        messages.success(request, "Medición eliminada.")
-        return redirect("growlog:planta_detail", pk=planta_pk)
-    return render(request, "growlog/crud_delete.html", {
-        "title": "Eliminar medición", "object_name": str(medicion),
-        "back_url": reverse("growlog:planta_detail", args=[planta_pk]),
-    })
-
-
-# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # CambioEtapaPlanta
 # ---------------------------------------------------------------------------
@@ -273,6 +257,3 @@ def cambio_etapa_planta_eliminar(request, pk):
         "object_name": f"{cambio.get_etapa_display()} · desde {cambio.fecha_inicio}",
         "back_url": reverse("growlog:cambio_etapa_planta_editar", args=[pk]),
     })
-
-
-# ---------------------------------------------------------------------------

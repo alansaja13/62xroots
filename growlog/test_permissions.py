@@ -78,7 +78,7 @@ class CultivoAccessTests(TestCase):
 
     def web_reads(self):
         return [reverse(f"growlog:{name}", args=[self.c.slug]) for name in (
-            "cultivo_detail", "cultivo_tendencias", "cultivo_tendencias_json", "timeline", "reporte", "canopy", "energia", "tareas_list",
+            "cultivo_detail", "cultivo_aire", "timeline", "reporte", "canopy", "energia", "tareas_list",
         )] + [reverse("growlog:planta_detail", args=[self.plant.pk]), reverse("growlog:canopy_snapshot_json", args=[self.c.slug, self.snap.pk]),
               reverse("growlog:planta_etapa_list", args=[self.plant.pk])]
 
@@ -89,12 +89,17 @@ class CultivoAccessTests(TestCase):
         )]
         for prefix, obj in (("planta", self.plant), ("tarea", self.task), ("evento", self.event), ("riego", self.water),
                             ("medicion_planta", self.mp), ("medicion_ec", self.ec), ("medicion_ambiente", self.ma), ("cambio_fotoperiodo", self.cf), ("cambio_etapa_planta", self.stage)):
-            routes.extend([(f"{prefix}_editar", obj.pk), (f"{prefix}_eliminar", obj.pk)])
+            routes.append((f"{prefix}_editar", obj.pk))
+            if prefix in ("planta", "cambio_fotoperiodo", "cambio_etapa_planta"):
+                routes.append((f"{prefix}_eliminar", obj.pk))
+        for tipo, obj in (("tarea", self.task), ("evento", self.event), ("riego", self.water),
+                          ("planta", self.mp), ("ec", self.ec), ("ambiente", self.ma)):
+            routes.append(("registro_borrar", None, tipo, obj.pk))
         routes.extend([
             ("tarea_completar", self.task.pk), ("tarea_descompletar", self.task.pk), ("evento_resolver_followup", self.event.pk),
             ("medicion_planta_crear", self.plant.pk), ("planta_etapa_list", self.plant.pk),
         ])
-        return [reverse(f"growlog:{name}", args=[pk]) for name, pk in routes]
+        return [reverse(f"growlog:{r[0]}", args=list(r[2:]) if r[1] is None else [r[1]]) for r in routes]
 
     def test_web_lectores_y_editores_pueden_leer_su_cultivo(self):
         for user in (self.owner, self.editor, self.reader):

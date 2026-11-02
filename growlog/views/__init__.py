@@ -23,19 +23,14 @@ from .cultivos import (  # noqa: F401
     cultivo_finalizar,
     cultivo_marcar_flora,
     cultivo_reabrir,
-    cultivo_tendencias,
-    cultivo_tendencias_json,
-    cultivo_vpd,
     dashboard,
     nuevo_cultivo,
-    registrar_en_cultivo,
     timeline,
 )
 from .plantas import (  # noqa: F401
     cambio_etapa_planta_editar,
     cambio_etapa_planta_eliminar,
     medicion_planta_crear,
-    medicion_planta_eliminar,
     planta_crear,
     planta_detail,
     planta_editar,
@@ -47,23 +42,16 @@ from .plantas import (  # noqa: F401
 from .tareas import (  # noqa: F401
     tarea_completar,
     tarea_descompletar,
-    tarea_eliminar,
     tareas_list,
     tareas_todas,
 )
 from .eventos import (  # noqa: F401
-    evento_eliminar,
     evento_resolver_followup,
-)
-from .riegos import (  # noqa: F401
-    riego_eliminar,
 )
 from .mediciones import (  # noqa: F401
     cambio_fotoperiodo_editar,
     cambio_fotoperiodo_eliminar,
     fotoperiodo_list,
-    medicion_ambiente_eliminar,
-    medicion_ec_eliminar,
 )
 from .invitados import (  # noqa: F401
     invitado_crear,

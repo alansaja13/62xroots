@@ -69,6 +69,3 @@ def logout_view(request):
         PushSubscription.objects.filter(user=request.user, endpoint=endpoint).delete()
     logout(request)
     return redirect("growlog:login")
-
-
-# ---------------------------------------------------------------------------

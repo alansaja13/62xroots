@@ -13,6 +13,3 @@ def error_404(request, exception=None):
 
 def error_500(request):
     return render(request, '500.html', status=500)
-
-
-# ---------------------------------------------------------------------------

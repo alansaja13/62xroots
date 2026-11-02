@@ -15,7 +15,7 @@ from django.views.decorators.http import require_GET
 
 from .models import (
     APIToken, CambioFotoperiodo, CanopySnapshot, ColaPosicion,
-    CostoEnergetico, Cultivo, Equipo, Evento, LecturaMedidor,
+    CostoEnergetico, Equipo, Evento, LecturaMedidor,
     MedicionAmbiente, MedicionEC, MedicionPlanta, NutrienteAplicado,
     ParametroIdeal, Planta, POSICION_TENT_COORDS, Riego, Tarea, TarifaElectrica,
 )

@@ -1,10 +1,9 @@
-"""Hoy, detalle del cultivo, tendencias, timeline y ciclo de vida del cultivo."""
+"""Hoy, detalle del cultivo, Aire, timeline y ciclo de vida del cultivo."""
 from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -25,7 +24,6 @@ from ..utils import (
     get_cambio_fotoperiodo_activo,
     get_etapa_activa_cultivo,
     get_flip_a_flora,
-    rango_vpd_en,
 )
 from .helpers import build_timeline, evaluar_ambiente
 
@@ -126,8 +124,6 @@ def cultivo_detail(request, slug):
     })
 
 
-
-
 @login_required
 def cultivo_aire(request, slug):
     """Aire: mapa de VPD, curvas de temperatura, HR y VPD con el ideal de cada etapa, y pH/EC."""
@@ -142,48 +138,6 @@ def cultivo_aire(request, slug):
         "ultima_vieja": bool(ultima and timezone.now() - ultima.timestamp > timedelta(hours=6)),
         "etapa_nombre": dict(ParametroIdeal.ETAPA_CHOICES).get(datos["etapa_actual"]),
     })
-
-
-# Direcciones viejas de la misma pantalla (marcadores y links que ya existían).
-cultivo_vpd = cultivo_tendencias = cultivo_aire
-
-
-@login_required
-def cultivo_tendencias_json(request, slug):
-    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
-    try:
-        dias = int(request.GET.get("dias", 30))
-    except ValueError:
-        dias = 30
-    dias = max(0, min(dias, 3650))  # 0 = todo; un valor enorme desbordaría timedelta
-
-    mediciones_qs = cultivo.mediciones.order_by("timestamp")
-    if dias > 0:
-        desde = timezone.now() - timedelta(days=dias)
-        mediciones_qs = mediciones_qs.filter(timestamp__gte=desde)
-
-    mediciones = [{
-        "timestamp": m.timestamp.isoformat(),
-        "temp": float(m.temperatura_c),
-        "hr": float(m.humedad_relativa),
-        "vpd": m.vpd,
-        "vpd_estado": m.vpd_estado,
-        "vpd_rango": rango_vpd_en(cultivo, timezone.localdate(m.timestamp)),
-        "luz_estado": m.luz_estado,
-    } for m in mediciones_qs]
-
-    rango_ideal = None
-    etapa = etapa_efectiva_cultivo(cultivo)
-    if etapa:
-        param = ParametroIdeal.objects.filter(etapa=etapa).first()
-        if param:
-            rango_ideal = {
-                "temp_min": float(param.temp_min), "temp_max": float(param.temp_max),
-                "hr_min": float(param.hr_min), "hr_max": float(param.hr_max),
-                "vpd_min": float(param.vpd_min), "vpd_max": float(param.vpd_max),
-            }
-
-    return JsonResponse({"mediciones": mediciones, "rango_ideal": rango_ideal})
 
 
 @login_required
@@ -379,8 +333,3 @@ def cultivo_archivar(request, slug):
         messages.success(request, f"Cultivo «{cultivo.nombre}» {'archivado' if cultivo.archivado else 'desarchivado'}.")
     return redirect("growlog:cultivo_ajustes", cultivo.slug)
 
-
-@login_required
-def registrar_en_cultivo(request, slug):
-    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
-    return redirect(f"{reverse('growlog:registrar')}?cultivo={cultivo.pk}")

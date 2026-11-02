@@ -159,9 +159,3 @@ def parametro_ideal_de(cultivo, etapa):
         memo[etapa] = ParametroIdeal.objects.filter(etapa=etapa).first()
     return memo[etapa]
 
-
-def rango_vpd_en(cultivo, fecha):
-    """(vpd_min, vpd_max) vigente en `fecha`, o None si no hay parámetro para esa etapa."""
-    etapa = etapa_efectiva_cultivo(cultivo, fecha)
-    param = parametro_ideal_de(cultivo, etapa) if etapa else None
-    return (float(param.vpd_min), float(param.vpd_max)) if param else None

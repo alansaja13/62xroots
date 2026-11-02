@@ -13,8 +13,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .models import (
-    APIToken, CambioEtapaCultivo, CambioEtapaPlanta, CanopySnapshot, Cultivo, CultivoMiembro, MedicionAmbiente, MedicionPlanta,
-    ParametroIdeal, Planta, Riego, Tarea,
+    APIToken, CambioEtapaCultivo, CambioEtapaPlanta, CanopySnapshot, Cultivo, MedicionAmbiente, MedicionPlanta,
+    ParametroIdeal, Planta, Riego,
 )
 from .views.auth import _get_client_ip
 
@@ -155,10 +155,6 @@ class BugfixTests(TestCase):
         cultivo = Cultivo.objects.create(nombre="🌱🌱", fecha_inicio=timezone.localdate(), creado_por=self.owner)
         self.assertEqual(cultivo.slug, "cultivo")
         self.assertEqual(self.client.get(reverse("growlog:dashboard")).status_code, 200)
-
-    def test_tendencias_con_dias_enorme_no_rompe(self):
-        url = reverse("growlog:cultivo_tendencias_json", args=[self.cultivo.slug])
-        self.assertEqual(self.client.get(url, {"dias": "999999999999"}).status_code, 200)
 
     def test_cultivo_que_no_empezo_esta_en_dia_cero(self):
         futuro = Cultivo(nombre="Futuro", fecha_inicio=timezone.localdate() + timedelta(days=3))

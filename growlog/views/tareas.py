@@ -1,29 +1,13 @@
 """Tareas."""
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from ..models import Cultivo, Tarea
 from ..permissions import cultivos_visibles, objeto_del_cultivo
 from ..services.hoy import agrupar_tareas, item_tarea
-
-
-@login_required
-def tarea_eliminar(request, pk):
-    tarea = objeto_del_cultivo(request, Tarea, editar=True, pk=pk)
-    cultivo = tarea.cultivo
-    if request.method == "POST":
-        tarea.delete()
-        messages.success(request, "Tarea eliminada.")
-        return redirect("growlog:cultivo_detail", cultivo.slug)
-    return render(request, "growlog/crud_delete.html", {
-        "title": "Eliminar tarea", "object_name": tarea.titulo,
-        "back_url": reverse("growlog:tarea_editar", args=[pk]),
-    })
 
 
 def _fila_hoy(request, tarea, plantilla):

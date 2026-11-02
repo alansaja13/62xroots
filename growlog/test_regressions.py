@@ -14,8 +14,8 @@ from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 
 from .models import (
-    APIToken, Cultivo, CultivoMiembro, Evento, LecturaMedidor, MedicionAmbiente, MedicionEC,
-    Nutriente, NutrienteAplicado, Planta, Riego, RiegoPlanta, Tarea,
+    APIToken, Cultivo, CultivoMiembro, LecturaMedidor, MedicionAmbiente,
+    Nutriente, NutrienteAplicado, Planta, Riego, RiegoPlanta,
 )
 from .services.riegos import guardar_riego
 
@@ -153,11 +153,6 @@ class BitacoraRegressionTests(TestCase):
         self.assertEqual(riego.nutrientes_aplicados.count(), 1)
         riego.refresh_from_db()
         self.assertEqual(riego.notas, "Observación corregida")
-
-    def test_carga_rapida_vieja_redirige_a_registrar(self):
-        # Registrar es la única pantalla de carga; los marcadores viejos siguen andando.
-        response = self.client.get(f"/cultivo/{self.cultivo.slug}/quick/")
-        self.assertRedirects(response, f"{reverse('growlog:registrar')}?cultivo={self.cultivo.pk}", fetch_redirect_response=False)
 
     def test_pantallas_clasicas_de_alta_ya_no_existen(self):
         # El alta de riego/evento/EC/tarea vive solo en Registrar; estas rutas se dieron de baja.

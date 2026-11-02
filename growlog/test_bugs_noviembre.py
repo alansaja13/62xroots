@@ -183,7 +183,7 @@ class MapaVpdTests(TestCase):
         lector = User.objects.create_user("lector-vpd")
         CultivoMiembro.objects.create(cultivo=self.cultivo, usuario=lector, rol="lector")
         self.client.force_login(lector)
-        self.assertEqual(self.client.get(reverse("growlog:cultivo_vpd", args=[self.cultivo.slug])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("growlog:cultivo_aire", args=[self.cultivo.slug])).status_code, 200)
 
 
 class ResumenCultivoTests(TestCase):
@@ -284,7 +284,7 @@ class AirePhEcTests(TestCase):
         self.assertEqual(sorted((p["fuente"], p["ec"]) for p in puntos),
                          [("entrada", 300.0), ("runoff", 1900.0), ("solucion", 1400.0)])
         self.client.force_login(user)
-        self.assertContains(self.client.get(reverse("growlog:cultivo_tendencias", args=[cultivo.slug])), "solución contra runoff")
+        self.assertContains(self.client.get(reverse("growlog:cultivo_aire", args=[cultivo.slug])), "solución contra runoff")
 
 
 class CicloTests(TestCase):
