@@ -60,11 +60,6 @@
   --plum: var(--flo);
   --slate: var(--w);
 
-  --bs-body-bg: var(--bg);
-  --bs-body-color: var(--ink);
-  --bs-border-color: var(--ln);
-  --bs-body-font-family: var(--font-body);
-  --bs-link-color-rgb: inherit;
   color-scheme: dark;
 }
 
@@ -92,6 +87,18 @@
 
 /* ═══ 2 · BASE ═══════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; }
+/* Lo mínimo que antes ponía Bootstrap: márgenes de texto parejos y controles con la tipografía de la app. */
+h1, h2, h3, h4, h5, h6 { margin: 0 0 .5rem; font-weight: 600; line-height: 1.2; }
+p { margin: 0 0 1rem; }
+ul, ol { margin: 0 0 1rem; padding-left: 1.5rem; }
+img, svg { vertical-align: middle; }
+img { max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; margin: 0; }
+button { cursor: pointer; }
+hr { border: 0; border-top: 1px solid var(--ln); margin: 1rem 0; }
+table { border-collapse: collapse; }
+summary { cursor: pointer; }
+[hidden] { display: none !important; }
 html, body { background: var(--bg); }
 body {
   margin: 0;
@@ -194,37 +201,33 @@ a:hover { color: var(--ac); opacity: .85; }
 .cultivo-head__fila { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .cultivo-head__ro { color: var(--warn); }
 
-.nav-cultivo { min-width: 0; }
+.nav-cultivo { min-width: 0; position: relative; }
 .nav-cultivo__btn {
   display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
-  min-height: var(--toque); padding: 0 var(--sp-1);
-  background: none; border: 0; color: var(--mu); cursor: pointer;
-  font: 500 var(--t-xs) var(--font-mono); letter-spacing: .05em; text-transform: uppercase;
+  min-height: var(--toque); padding: 0 var(--sp-1); list-style: none; cursor: pointer;
+  color: var(--mu); font: 500 var(--t-xs) var(--font-mono); letter-spacing: .05em; text-transform: uppercase;
 }
-.nav-cultivo__btn:hover, .nav-cultivo__btn[aria-expanded="true"] { color: var(--ink); }
+.nav-cultivo__btn::-webkit-details-marker { display: none; }
+.nav-cultivo__btn:hover, .nav-cultivo[open] .nav-cultivo__btn { color: var(--ink); }
 .nav-cultivo__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60vw; }
 .nav-cultivo__label b { color: var(--ink); font-weight: 500; }
 .nav-cultivo__caret { font-size: 10px; }
 .nav-cultivo__ro { color: var(--warn); }
 .nav-cultivo__menu {
-  --bs-dropdown-bg: var(--s1); --bs-dropdown-border-color: var(--ln);
-  --bs-dropdown-link-color: var(--ink); --bs-dropdown-link-hover-bg: var(--s2);
-  --bs-dropdown-link-hover-color: var(--ink);
-  --bs-dropdown-link-active-bg: var(--s2); --bs-dropdown-link-active-color: var(--ink);
-  --bs-dropdown-header-color: var(--mu); --bs-dropdown-divider-bg: var(--ln);
-  min-width: 280px; max-width: min(360px, calc(100vw - 32px));
-  max-height: 70vh; overflow-y: auto; padding: 6px; border-radius: var(--r-lg);
+  position: absolute; left: 0; top: 100%; z-index: 1050;
+  min-width: 280px; max-width: min(360px, calc(100vw - 32px)); max-height: 70vh; overflow-y: auto;
+  padding: 6px; border-radius: var(--r-lg); background: var(--s1); border: 1px solid var(--ln);
   box-shadow: 0 20px 50px -10px rgba(0,0,0,.5);
 }
-.nav-cultivo__menu .dropdown-header {
-  font: 500 var(--t-xs) var(--font-mono); letter-spacing: .05em; text-transform: uppercase; padding: 10px 10px 4px;
-}
-.nav-cultivo__menu .dropdown-item {
+.nav-cultivo__grupo { font: 500 var(--t-xs) var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--mu); padding: 10px 10px 4px; }
+.nav-cultivo__item {
   display: flex; flex-direction: column; gap: 2px; min-height: var(--toque); justify-content: center;
-  padding: 8px 10px; border-radius: 10px; white-space: normal; font-weight: 600; font-size: var(--t-md);
+  padding: 8px 10px; border-radius: 10px; color: var(--ink); font-weight: 600; font-size: var(--t-md);
 }
-.nav-cultivo__menu .dropdown-item small { font: 400 var(--t-xs) var(--font-mono); color: var(--mu); }
-.nav-cultivo__menu .dropdown-item.active { box-shadow: inset 3px 0 0 var(--ac); }
+.nav-cultivo__item:hover { background: var(--s2); color: var(--ink); opacity: 1; }
+.nav-cultivo__item small { font: 400 var(--t-xs) var(--font-mono); color: var(--mu); }
+.nav-cultivo__item.active { background: var(--s2); box-shadow: inset 3px 0 0 var(--ac); }
+.nav-cultivo__linea { border: 0; border-top: 1px solid var(--ln); margin: 6px 4px; }
 
 /* Secciones del cultivo: chips con scroll lateral (en la fase 1 se vuelven Núcleo · Aire · Plantas · Ciclo) */
 .cultivo-tabs {
@@ -264,7 +267,6 @@ a:hover { color: var(--ac); opacity: .85; }
 .chip.on { border-color: var(--ink); background: var(--s1); }
 
 .btn {
-  --bs-btn-padding-y: 0; /* que Bootstrap no pise el alto */
   min-height: 56px; padding: 0 var(--sp-5); border-radius: var(--r-lg); border: 0;
   display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
   background: var(--ac); color: var(--on); font: 700 var(--t-lg) var(--font-display); cursor: pointer;
@@ -346,7 +348,6 @@ a.pill:hover { opacity: .85; }
 .panel__body { padding: var(--sp-4); }
 
 .table {
-  --bs-table-bg: transparent; --bs-table-color: var(--ink); --bs-table-border-color: var(--ln);
   width: 100%; border-collapse: separate; border-spacing: 0; margin: 0;
   font-family: var(--font-mono); font-size: var(--t-sm); color: var(--ink);
 }
@@ -429,15 +430,17 @@ input[type=checkbox], input[type=radio] { width: 20px; height: 20px; accent-colo
 .form-errors__title { font: 500 var(--t-xs) var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--bad); margin-bottom: 6px; }
 
 .alert {
-  margin: 0; padding: var(--sp-3) var(--sp-4); border: 0; border-left: 4px solid var(--ac); border-radius: 6px;
+  display: flex; align-items: center; gap: var(--sp-3);
+  margin: 0; padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-4); border: 0; border-left: 4px solid var(--ac); border-radius: 6px;
   background: var(--s1); color: var(--ink); font-size: var(--t-md);
 }
+.alert > span { flex: 1; }
+.alert__cerrar { flex: none; width: var(--toque); height: var(--toque); border: 0; border-radius: 50%; background: none; color: var(--mu); cursor: pointer; font-size: 16px; }
+.alert__cerrar:hover { background: var(--s2); color: var(--ink); }
 .alert-success { border-left-color: var(--ac); }
 .alert-error, .alert-danger { border-left-color: var(--bad); }
 .alert-warning { border-left-color: var(--warn); }
 .alert-info { border-left-color: var(--w); }
-.btn-close { opacity: .6; }
-:root[data-theme="dark"] .btn-close { filter: invert(1); }
 
 .c-green { color: var(--ac) !important; }
 .c-rust  { color: var(--bad) !important; }
@@ -488,3 +491,33 @@ input[type=checkbox], input[type=radio] { width: 20px; height: 20px; accent-colo
 }
 .toast__accion { background: none; border: 0; padding: 0 4px; min-height: var(--toque); display: inline-flex; align-items: center; color: var(--bg); font-weight: 700; text-decoration: underline; cursor: pointer; }
 .toast__accion:hover { color: var(--bg); opacity: .8; }
+
+
+/* ═══ 6 · UTILIDADES (las que usan las pantallas heredadas) ═══ */
+.visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important;
+  overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+.d-none { display: none !important; } .d-flex { display: flex !important; } .d-inline { display: inline !important; }
+.d-inline-flex { display: inline-flex !important; } .d-block { display: block !important; }
+@media (min-width: 768px) { .d-md-none { display: none !important; } .d-md-table-cell { display: table-cell !important; } .d-md-block { display: block !important; } }
+@media (min-width: 992px) { .d-lg-none { display: none !important; } .d-lg-block { display: block !important; } }
+.flex-wrap { flex-wrap: wrap !important; } .align-items-end { align-items: flex-end !important; } .align-items-center { align-items: center !important; }
+.justify-content-between { justify-content: space-between !important; } .justify-content-center { justify-content: center !important; }
+.gap-2 { gap: var(--sp-2) !important; } .gap-3 { gap: var(--sp-4) !important; }
+.w-100 { width: 100% !important; } .text-center { text-align: center !important; } .text-end { text-align: right !important; }
+.mt-1 { margin-top: 4px !important; } .mt-2 { margin-top: 8px !important; } .mt-3 { margin-top: 16px !important; } .mt-4 { margin-top: 24px !important; }
+.mb-2 { margin-bottom: 8px !important; } .mb-3 { margin-bottom: 16px !important; } .mb-4 { margin-bottom: 24px !important; }
+.p-4 { padding: 24px !important; } .py-3 { padding-top: 16px !important; padding-bottom: 16px !important; }
+.opacity-50 { opacity: .5 !important; } .text-decoration-line-through { text-decoration: line-through !important; }
+/* Grilla simple: .row con columnas .col-*, que en el celular van una debajo de la otra. */
+.row { display: flex; flex-wrap: wrap; margin: 0 -8px; }
+.row > * { flex: 0 0 100%; max-width: 100%; padding: 0 8px; }
+.row.g-3 { row-gap: 16px; }
+@media (min-width: 768px) {
+  .row > .col-md-4 { flex-basis: 33.333%; max-width: 33.333%; } .row > .col-md-5 { flex-basis: 41.667%; max-width: 41.667%; }
+  .row > .col-md-6 { flex-basis: 50%; max-width: 50%; } .row > .col-md-7 { flex-basis: 58.333%; max-width: 58.333%; }
+  .row > .col-md-8 { flex-basis: 66.667%; max-width: 66.667%; }
+}
+@media (min-width: 992px) {
+  .row > .col-lg-4 { flex-basis: 33.333%; max-width: 33.333%; } .row > .col-lg-8 { flex-basis: 66.667%; max-width: 66.667%; }
+}
+.table { width: 100%; }

@@ -1,40 +1,39 @@
 {# "Cultivo ▾": arriba de cada pantalla de un cultivo, para cambiar de cultivo sin salir de la sección. #}
 {% with g=nav_cultivos %}
-<div class="dropdown nav-cultivo">
-  <button class="nav-cultivo__btn" type="button" data-bs-toggle="dropdown" aria-expanded="false"
-          aria-label="Cambiar de cultivo, actual: {{ cultivo_nav.nombre }}">
+<details class="nav-cultivo">
+  <summary class="nav-cultivo__btn" aria-label="Cambiar de cultivo, actual: {{ cultivo_nav.nombre }}">
     <span class="nav-cultivo__label">Cultivo · <b>{{ cultivo_nav.nombre }}</b></span>
     {% if not can_edit_cultivo %}<span class="nav-cultivo__ro">· solo lectura</span>{% endif %}
     <span class="nav-cultivo__caret" aria-hidden="true">▾</span>
-  </button>
-  <div class="dropdown-menu nav-cultivo__menu">
+  </summary>
+  <div class="nav-cultivo__menu">
     {% if g.activos %}
-    <h6 class="dropdown-header">Mis cultivos activos</h6>
+    <div class="nav-cultivo__grupo">Mis cultivos activos</div>
     {% for c in g.activos %}
-    <a class="dropdown-item{% if c.pk == cultivo_nav.pk %} active{% endif %}" href="{% url 'growlog:cultivo_detail' c.slug %}"{% if c.pk == cultivo_nav.pk %} aria-current="page"{% endif %}>
+    <a class="nav-cultivo__item{% if c.pk == cultivo_nav.pk %} active{% endif %}" href="{% url 'growlog:cultivo_detail' c.slug %}"{% if c.pk == cultivo_nav.pk %} aria-current="page"{% endif %}>
       <span>{{ c.nombre }}</span><small>{{ c.get_estado_display }}</small>
     </a>
     {% endfor %}
     {% endif %}
     {% if g.compartidos %}
-    <h6 class="dropdown-header">Compartidos conmigo</h6>
+    <div class="nav-cultivo__grupo">Compartidos conmigo</div>
     {% for c in g.compartidos %}
-    <a class="dropdown-item{% if c.pk == cultivo_nav.pk %} active{% endif %}" href="{% url 'growlog:cultivo_detail' c.slug %}"{% if c.pk == cultivo_nav.pk %} aria-current="page"{% endif %}>
+    <a class="nav-cultivo__item{% if c.pk == cultivo_nav.pk %} active{% endif %}" href="{% url 'growlog:cultivo_detail' c.slug %}"{% if c.pk == cultivo_nav.pk %} aria-current="page"{% endif %}>
       <span>{{ c.nombre }}</span><small>{% if c.rol_miembro == 'editor' %}Editor{% else %}Solo lectura{% endif %}{% if c.propietario %} · de {{ c.propietario.username }}{% endif %}</small>
     </a>
     {% endfor %}
     {% endif %}
     {% if g.historial %}
-    <h6 class="dropdown-header">Historial</h6>
+    <div class="nav-cultivo__grupo">Historial</div>
     {% for c in g.historial %}
-    <a class="dropdown-item{% if c.pk == cultivo_nav.pk %} active{% endif %}" href="{% url 'growlog:cultivo_detail' c.slug %}"{% if c.pk == cultivo_nav.pk %} aria-current="page"{% endif %}>
+    <a class="nav-cultivo__item{% if c.pk == cultivo_nav.pk %} active{% endif %}" href="{% url 'growlog:cultivo_detail' c.slug %}"{% if c.pk == cultivo_nav.pk %} aria-current="page"{% endif %}>
       <span>{{ c.nombre }}</span><small>{% if c.archivado %}Archivado{% else %}Finalizado{% endif %}</small>
     </a>
     {% endfor %}
     {% endif %}
-    <div class="dropdown-divider"></div>
-    <a class="dropdown-item" href="{% url 'growlog:dashboard' %}#cultivos"><span>Ver todos</span></a>
-    <a class="dropdown-item" href="{% url 'growlog:nuevo_cultivo' %}"><span>+ Nuevo cultivo</span></a>
+    <hr class="nav-cultivo__linea">
+    <a class="nav-cultivo__item" href="{% url 'growlog:dashboard' %}#cultivos"><span>Ver todos</span></a>
+    <a class="nav-cultivo__item" href="{% url 'growlog:nuevo_cultivo' %}"><span>+ Nuevo cultivo</span></a>
   </div>
-</div>
+</details>
 {% endwith %}

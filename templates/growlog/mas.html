@@ -81,7 +81,6 @@
     try { localStorage.setItem('tema', b.dataset.tema); } catch (e2) {}
     var oscuro = b.dataset.tema === 'oscuro' || (b.dataset.tema === 'auto' && !matchMedia('(prefers-color-scheme: light)').matches);
     document.documentElement.dataset.theme = oscuro ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-bs-theme', oscuro ? 'dark' : 'light');
     marcar(b.dataset.tema);
   });
 })();

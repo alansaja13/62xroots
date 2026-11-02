@@ -8,6 +8,5 @@
     var oscuro = pref === 'oscuro' || (pref !== 'claro' && !(window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches));
     var raiz = document.documentElement;
     raiz.dataset.theme = oscuro ? 'dark' : 'light';
-    raiz.setAttribute('data-bs-theme', oscuro ? 'dark' : 'light');
   })();
 </script>

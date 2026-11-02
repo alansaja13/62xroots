@@ -30,12 +30,11 @@
     </label>
   </div>
 
-  <fieldset class="reg-tipos">
-    <legend class="visually-hidden">Qué registrás</legend>
+  <div class="reg-tipos" role="radiogroup" aria-label="Qué registrás">
     {% for valor, etiqueta in etiquetas.items %}
     <label class="chip reg-tipo reg-tipo--{{ valor }}"><input type="radio" name="kind" value="{{ valor }}"{% if valor == tipo %} checked{% endif %}><i aria-hidden="true"></i>{{ etiqueta }}</label>
     {% endfor %}
-  </fieldset>
+  </div>
   {% endif %}
 
   <div class="reg-hora" data-hora{% if tipo == 'tarea' %} hidden{% endif %}>
