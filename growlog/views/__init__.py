@@ -14,6 +14,7 @@ from .cultivos import (  # noqa: F401
     cambio_etapa_cultivo_eliminar,
     cultivo_aire,
     cultivo_ajustes,
+    cultivo_ciclo,
     cultivo_archivar,
     cultivo_detail,
     cultivo_editar,

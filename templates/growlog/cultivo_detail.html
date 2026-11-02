@@ -24,7 +24,7 @@
   <h1 class="h1 cd-titulo">{{ cultivo.nombre }}</h1>
 
   <div class="cd-pills">
-    <a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}" class="pill" title="Ver y cambiar la etapa">
+    <a href="{% url 'growlog:cultivo_ciclo' cultivo.slug %}" class="pill" title="Ver el ciclo y cambiar la etapa">
       <i class="punto" style="color: var({% if cultivo.estado == 'floracion' %}--flo{% elif cultivo.estado == 'secado' or cultivo.estado == 'curado' %}--m{% elif cultivo.estado == 'finalizado' %}--mu{% else %}--veg{% endif %})"></i>
       {% if cultivo.estado == 'finalizado' %}{{ cultivo.get_estado_display }}{% else %}{{ etapa_actual_display|default:cultivo.get_estado_display }}{% endif %}
       · {% if dia_flora is not None %}flora día {{ dia_flora }}{% else %}día {{ cultivo.dias_desde_inicio }}{% endif %}
@@ -39,7 +39,7 @@
     <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="on" aria-current="page">Núcleo</a>
     <a href="{% url 'growlog:cultivo_aire' cultivo.slug %}">Aire</a>
     <a href="{% url 'growlog:plantas_list' cultivo.slug %}">Plantas</a>
-    <a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}">Ciclo</a>
+    <a href="{% url 'growlog:cultivo_ciclo' cultivo.slug %}">Ciclo</a>
   </nav>
 
   <div class="cd-cols">

@@ -214,7 +214,7 @@ class ResumenCultivoTests(TestCase):
         page = self.client.get(self.url)
         self.assertEqual(page.context["tareas_vencidas"], 1)
         self.assertContains(page, "1 vencida")
-        for vista in ("cultivo_aire", "cultivo_etapa"):
+        for vista in ("cultivo_aire", "cultivo_ciclo"):
             self.assertContains(page, reverse(f"growlog:{vista}", args=[self.cultivo.slug]))
         # Hechas existe siempre: completar una tarea la agrega ahí por OOB.
         self.assertContains(page, 'id="tareas-done"')
@@ -285,3 +285,40 @@ class AirePhEcTests(TestCase):
                          [("entrada", 300.0), ("runoff", 1900.0), ("solucion", 1400.0)])
         self.client.force_login(user)
         self.assertContains(self.client.get(reverse("growlog:cultivo_tendencias", args=[cultivo.slug])), "solución contra runoff")
+
+
+class CicloTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from datetime import time as dtime
+        from .models import CambioFotoperiodo
+        from .services.etapas import cambiar_etapa
+        cls.user = User.objects.create_user("ciclo")
+        hoy = timezone.localdate()
+        cls.cultivo = Cultivo.objects.create(nombre="Carpa", fecha_inicio=hoy - timedelta(days=30), propietario=cls.user,
+                                             dias_veg_estimados=35, dias_flora_estimados=60)
+        cambiar_etapa(cls.cultivo, "veg_temprano", cls.cultivo.fecha_inicio)
+        CambioFotoperiodo.objects.create(cultivo=cls.cultivo, fotoperiodo="18/6", hora_lights_on=dtime(7),
+                                         fecha_inicio=cls.cultivo.fecha_inicio)
+
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    def test_veg_lleva_30_de_35_estimados(self):
+        from .services.ciclo import resumen_ciclo
+        datos = resumen_ciclo(self.cultivo)
+        veg = next(f for f in datos["filas"] if f["clave"] == "veg")
+        self.assertEqual((veg["real_dias"], veg["estimado"]), (30, 35))
+        self.assertTrue(datos["puede_flip"])
+
+    def test_flip_en_un_paso_cambia_etapa_y_luz(self):
+        from .utils import get_cambio_fotoperiodo_activo
+        respuesta = self.client.post(reverse("growlog:cultivo_marcar_flora", args=[self.cultivo.slug]))
+        self.assertRedirects(respuesta, reverse("growlog:cultivo_ciclo", args=[self.cultivo.slug]), fetch_redirect_response=False)
+        self.cultivo.refresh_from_db()
+        self.assertEqual(self.cultivo.fecha_inicio_flora, timezone.localdate())
+        luz = get_cambio_fotoperiodo_activo(self.cultivo, timezone.now())
+        self.assertEqual((luz.fotoperiodo, luz.hora_lights_on.hour), ("12/12", 7))
+        page = self.client.get(reverse("growlog:cultivo_ciclo", args=[self.cultivo.slug]))
+        self.assertNotContains(page, "Hacer el flip hoy")
+        self.assertContains(page, "faltan 60 días")

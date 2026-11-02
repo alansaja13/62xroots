@@ -15,7 +15,8 @@ SECCIONES_CULTIVO = {
     "canopy": "canopy",
     "energia": "energia",
     "reporte": "reporte",
-    "cultivo_ajustes": "ajustes", "cultivo_etapa": "ajustes", "fotoperiodo_list": "ajustes",
+    "cultivo_ajustes": "ajustes",
+    "cultivo_ciclo": "ciclo", "cultivo_etapa": "ciclo", "fotoperiodo_list": "ciclo",
 }
 
 # Pestañas del cultivo: (sección, etiqueta, ícono, url name). Las "extra" van
@@ -25,6 +26,7 @@ PESTANAS_CULTIVO = [
     ("bitacora", "Bitácora", "journal-text", "timeline", False),
     ("tareas", "Tareas", "check2-square", "tareas_list", False),
     ("tendencias", "Aire", "graph-up", "cultivo_aire", True),
+    ("ciclo", "Ciclo", "calendar3", "cultivo_ciclo", True),
     ("canopy", "Canopy", "grid-3x3-gap", "canopy", True),
     ("energia", "Energía", "lightning-charge", "energia", True),
     ("reporte", "Reporte", "clipboard-data", "reporte", True),

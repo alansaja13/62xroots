@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static ec registros %}
+{% load static ec registros l10n %}
 {% block title %}{{ planta.apodo }} · {{ cultivo.nombre }}{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'growlog/cultivo.css' %}"><link rel="stylesheet" href="{% static 'growlog/plantas.css' %}">{% endblock %}
 
@@ -35,10 +35,10 @@
       <polygon points="8,120 {{ curva_altura }} 332,120" fill="color-mix(in oklch, var(--ac) 13%, transparent)"/>
       <polyline points="{{ curva_altura }}" fill="none" stroke="var(--ac)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
       {% for m in marcas %}
-      <line x1="{{ m.x }}" x2="{{ m.x }}" y1="0" y2="120" stroke="var(--e)" stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>
+      <line x1="{{ m.x|unlocalize }}" x2="{{ m.x|unlocalize }}" y1="0" y2="120" stroke="var(--e)" stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>
       {% endfor %}
     </svg>
-    {% for m in marcas %}<span class="mo" style="position: absolute; top: 6px; left: calc({{ m.x }} / 340 * (100% - 12px) + 10px); color: var(--e); background: var(--s1); padding: 0 3px;">{{ m.texto }}</span>{% endfor %}
+    {% for m in marcas %}<span class="mo" style="position: absolute; top: 6px; left: calc({{ m.x|unlocalize }} / 340 * (100% - 12px) + 10px); color: var(--e); background: var(--s1); padding: 0 3px;">{{ m.texto }}</span>{% endfor %}
     <div class="mo pf-curva__fechas"><span>{{ con_altura.0.fecha|date:"d/m" }}</span><span>{{ ultima.fecha|date:"d/m" }}</span></div>
   </div>
   {% endif %}

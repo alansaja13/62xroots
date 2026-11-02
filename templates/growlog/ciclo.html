@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load static l10n %}
+{% block title %}Ciclo · {{ cultivo.nombre }}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'growlog/cultivo.css' %}">
+<style>
+  .ci { max-width: 760px; }
+  .ci-linea { padding: 16px 14px; margin-top: var(--sp-4); }
+  .ci-fila { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 8px; min-height: 34px; }
+  .ci-pista { position: relative; height: 18px; }
+  .ci-est, .ci-real { position: absolute; top: 0; height: 18px; border-radius: 4px; }
+  .ci-est { border: 1.5px dashed var(--c); opacity: .65; }
+  .ci-real { background: var(--c); }
+  .ci-hoy { position: relative; margin-left: 72px; height: 18px; }
+  .ci-hoy__linea { position: absolute; top: -8px; bottom: 100%; border-left: 1.5px solid var(--ink); }
+  .ci-hoy span { position: absolute; top: 0; transform: translateX(-50%); }
+  .ci-pistas { position: relative; }
+  .ci-pistas__hoy { position: absolute; top: 0; bottom: 0; border-left: 1.5px solid var(--ink); pointer-events: none; }
+  .ci-flip { margin-top: var(--sp-4); border: 1.5px solid var(--ac); background: color-mix(in oklch, var(--ac) 8%, var(--s1)); }
+  .ci-flip .fila { min-height: 44px; }
+  .ci-flip form { margin-top: var(--sp-3); }
+  .ci-flip .btn { width: 100%; }
+  .ci-dato { font: 600 var(--t-2xl) var(--font-display); letter-spacing: -.02em; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ci">
+  <div class="mo">{{ etapa_display|default:"Sin etapa" }} · {% if dia_flora is not None %}flora día {{ dia_flora }}{% else %}día {{ cultivo.dias_desde_inicio }}{% endif %}</div>
+  <h1 class="h1" style="margin-top: 10px;">Ciclo</h1>
+
+  <div class="card ci-linea">
+    <div class="mo" style="margin-bottom: 8px;">Estimado contra real · {{ total }} días</div>
+    {% if filas %}
+    <div class="ci-pistas">
+      {% for f in filas %}
+      <div class="ci-fila" style="--c: var({% if f.clave == 'flora' %}--flo{% elif f.clave == 'secado' %}--m{% elif f.clave == 'curado' %}--n{% else %}--veg{% endif %});">
+        <span class="mo">{{ f.nombre }}</span>
+        <div class="ci-pista">
+          {% if f.estimado %}<div class="ci-est" style="left: {{ f.est_izq|unlocalize }}%; width: {{ f.est_ancho|unlocalize }}%;" title="{{ f.estimado }} días estimados{% if f.orientativo %} (orientativo){% endif %}"></div>{% endif %}
+          {% if f.real_dias is not None %}<div class="ci-real" style="left: {{ f.real_izq|unlocalize }}%; width: {{ f.real_ancho|unlocalize }}%;" title="{{ f.real_dias }} días"></div>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      <div class="ci-pistas__hoy" style="left: calc(72px + (100% - 72px) * {{ hoy_pct|unlocalize }} / 100);"></div>
+    </div>
+    <div class="ci-hoy"><span class="mo" style="left: {{ hoy_pct|unlocalize }}%; color: var(--ink);">hoy</span></div>
+    <p class="mo" style="text-transform: none; margin: var(--sp-3) 0 0;">Punteado: lo estimado. Lleno: lo que lleva o duró.
+      {% if not cultivo.dias_veg_estimados or not cultivo.dias_flora_estimados %}{% if can_edit_cultivo %}<a href="{% url 'growlog:cultivo_editar' cultivo.slug %}">Cargá los días estimados</a> para comparar.{% endif %}{% endif %}</p>
+    {% else %}
+    <p style="color: var(--mu); margin: 0;">Todavía no hay etapas cargadas.</p>
+    {% endif %}
+  </div>
+
+  {% if puede_flip %}
+  <section class="card ci-flip" aria-labelledby="flip-title">
+    <div class="mo" style="color: var(--ac);">Pasar a floración</div>
+    <h2 class="h2" id="flip-title" style="margin: 6px 0 8px;">El flip, en un paso</h2>
+    <div class="fila"><span class="mo" style="width: 96px;">Etapa</span><span class="num" style="color: var(--mu);">{{ etapa_display|default:"-" }}</span><span style="color: var(--mu);">→</span><span class="num">Flora temprana</span></div>
+    <div class="fila"><span class="mo" style="width: 96px;">Fotoperíodo</span><span class="num" style="color: var(--mu);">{{ fotoperiodo.fotoperiodo|default:"sin cargar" }}</span><span style="color: var(--mu);">→</span><span class="num">12/12</span></div>
+    <div class="fila"><span class="mo" style="width: 96px;">Red SCROG</span>{% if scrog_pct is not None %}<span class="num">{{ scrog_pct }} %</span><span class="mo" style="text-transform: none; color: var({% if scrog_pct >= 60 %}--ac{% else %}--warn{% endif %});">{% if scrog_pct >= 60 %}sobre el 60 % ✓{% else %}lo habitual es flipar con 60 %{% endif %}</span>{% else %}<span class="mo" style="text-transform: none;">sin datos de canopy</span>{% endif %}</div>
+    {% if can_edit_cultivo %}
+    <form method="post" action="{% url 'growlog:cultivo_marcar_flora' cultivo.slug %}">
+      {% csrf_token %}
+      <button type="submit" class="btn">Hacer el flip hoy</button>
+    </form>
+    <p class="mo" style="text-transform: none; margin: 8px 0 0;">La luz pasa a 12/12 con la misma hora de encendido. Se corrige después en el historial.</p>
+    {% endif %}
+  </section>
+  {% elif en_flora %}
+  <section class="card" style="margin-top: var(--sp-4);">
+    <div class="mo">Floración</div>
+    <div class="ci-dato">Día {{ dia_flora }}</div>
+    {% if cosecha_estimada %}<p style="margin: 4px 0 0; color: var(--mu);">Cosecha estimada cerca del {{ cosecha_estimada|date:"j/m" }}{% if dias_a_cosecha > 0 %} · faltan {{ dias_a_cosecha }} días{% elif dias_a_cosecha == 0 %} · es hoy{% else %} · ya pasó la fecha estimada{% endif %}.</p>{% endif %}
+  </section>
+  {% endif %}
+
+  <section class="cd-seccion" aria-labelledby="etapas-title">
+    <div class="cd-seccion__head">
+      <h2 class="mo" id="etapas-title">Etapas</h2>
+      {% if can_edit_cultivo %}<a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}" class="mo cd-link">+ cambiar etapa</a>{% endif %}
+    </div>
+    {% for e in etapas %}
+    <div class="cd-reg cd-reg--etapa">
+      <span class="cd-reg__capa" aria-hidden="true" style="background: var({% if 'flora' in e.etapa %}--flo{% elif e.etapa == 'secado' or e.etapa == 'curado' %}--m{% else %}--veg{% endif %});"></span>
+      <div class="cd-reg__texto"><div class="cd-reg__titulo">{{ e.get_etapa_display }}</div><div class="mo cd-reg__meta">desde {{ e.fecha_inicio|date:"d/m/Y" }}{% if e.notas %} · {{ e.notas }}{% endif %}</div></div>
+      {% if can_edit_cultivo %}<a href="{% url 'growlog:cambio_etapa_cultivo_editar' e.pk %}" class="cd-reg__mas" aria-label="Corregir etapa">⋯</a>{% endif %}
+    </div>
+    {% empty %}<p style="color: var(--mu); margin: 0;">Sin cambios de etapa.</p>{% endfor %}
+  </section>
+
+  <section class="cd-seccion" aria-labelledby="foto-title">
+    <div class="cd-seccion__head">
+      <h2 class="mo" id="foto-title">Fotoperíodo</h2>
+      {% if can_edit_cultivo %}<a href="{% url 'growlog:fotoperiodo_list' cultivo.slug %}" class="mo cd-link">+ cambiar fotoperíodo</a>{% endif %}
+    </div>
+    {% for f in fotoperiodos %}
+    <div class="cd-reg">
+      <span class="cd-reg__capa" aria-hidden="true" style="background: var({% if f.fotoperiodo == '12/12' %}--flo{% else %}--veg{% endif %});"></span>
+      <div class="cd-reg__texto"><div class="cd-reg__titulo">{{ f.fotoperiodo }} · enciende {{ f.hora_lights_on|time:"H:i" }}{% if fotoperiodo and f.pk == fotoperiodo.pk %} · <span class="cd-ideal">vigente</span>{% endif %}</div><div class="mo cd-reg__meta">desde {{ f.fecha_inicio|date:"d/m/Y" }}{% if f.notas %} · {{ f.notas }}{% endif %}</div></div>
+      {% if can_edit_cultivo %}<a href="{% url 'growlog:cambio_fotoperiodo_editar' f.pk %}" class="cd-reg__mas" aria-label="Corregir fotoperíodo">⋯</a>{% endif %}
+    </div>
+    {% empty %}<p style="color: var(--mu); margin: 0;">Sin fotoperíodo cargado.</p>{% endfor %}
+  </section>
+</div>
+{% endblock %}

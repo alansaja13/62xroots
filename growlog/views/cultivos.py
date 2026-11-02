@@ -15,6 +15,7 @@ from ..models import CambioEtapaCultivo, CambioEtapaPlanta, Cultivo, ParametroId
 from ..permissions import objeto_del_cultivo
 from ..services.etapas import cambiar_etapa, reabrir_cultivo, sincronizar_cultivo
 from ..services.bitacora import bitacora
+from ..services.ciclo import hacer_flip, resumen_ciclo
 from ..services.hoy import DATO_VIEJO, resumen_hoy
 from ..services.vpd import RANGO_DEFAULT, estado_de, mapa_vpd
 from ..utils import (
@@ -237,13 +238,25 @@ def cultivo_marcar_flora(request, slug):
     el contador nunca se reinicia desde acá."""
     cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
     if request.method == "POST":
-        if cultivo.fecha_inicio_flora:
+        if hacer_flip(cultivo):
+            messages.success(request, "Listo, flip hecho: flora temprana y 12/12 desde hoy.")
+        else:
             messages.info(request, f"Ya está en flora desde el {cultivo.fecha_inicio_flora:%d/%m/%Y}. "
                                    "Para corregirlo, editá la etapa en el historial.")
-        else:
-            cambiar_etapa(cultivo, "flora_temprana", timezone.localdate())
-            messages.success(request, "Cambio a flora marcado hoy.")
-    return redirect("growlog:cultivo_detail", cultivo.slug)
+    return redirect("growlog:cultivo_ciclo", cultivo.slug)
+
+
+@login_required
+def cultivo_ciclo(request, slug):
+    """Ciclo: cada fase contra lo estimado, el flip en un paso y el historial de etapas y fotoperíodo."""
+    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
+    return render(request, "growlog/ciclo.html", {
+        "cultivo": cultivo, **resumen_ciclo(cultivo),
+        "etapas": cultivo.cambios_etapa.order_by("-fecha_inicio", "-pk"),
+        "fotoperiodos": cultivo.cambios_fotoperiodo.order_by("-fecha_inicio", "-pk"),
+        "etapa_display": dict(ParametroIdeal.ETAPA_CHOICES).get(etapa_efectiva_cultivo(cultivo)),
+        "dia_flora": cultivo.dia_flora,
+    })
 
 
 @login_required

@@ -107,6 +107,7 @@ urlpatterns = [
     path("cultivo/<slug:slug>/reabrir/", views.cultivo_reabrir, name="cultivo_reabrir"),
     path("cultivo/<slug:slug>/tendencias/", views.cultivo_tendencias, name="cultivo_tendencias"),
     path("cultivo/<slug:slug>/aire/", views.cultivo_aire, name="cultivo_aire"),
+    path("cultivo/<slug:slug>/ciclo/", views.cultivo_ciclo, name="cultivo_ciclo"),
     path("cultivo/<slug:slug>/vpd/", views.cultivo_vpd, name="cultivo_vpd"),
     path("cultivo/<slug:slug>/tendencias.json", views.cultivo_tendencias_json, name="cultivo_tendencias_json"),
     # Enlace viejo a la carga rápida: Registrar es la única entrada de datos.
