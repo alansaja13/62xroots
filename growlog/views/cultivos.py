@@ -8,11 +8,13 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 
 from ..forms import CambioEtapaCultivoForm, NuevoCultivoForm
 from ..models import CambioEtapaCultivo, CambioEtapaPlanta, Cultivo, ParametroIdeal
 from ..permissions import objeto_del_cultivo
 from ..services.etapas import cambiar_etapa, reabrir_cultivo, sincronizar_cultivo
+from ..services.bitacora import bitacora
 from ..services.hoy import DATO_VIEJO, resumen_hoy
 from ..services.vpd import RANGO_DEFAULT, estado_de, mapa_vpd
 from ..utils import (
@@ -185,22 +187,18 @@ def cultivo_tendencias_json(request, slug):
 @login_required
 def timeline(request, slug):
     cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
-    tipo = request.GET.get("tipo", "")
-    todos = build_timeline(cultivo, limit=200)
-    VALID_TIPOS = {"medicion", "riego", "evento", "medicion_ec"}
-    if tipo in VALID_TIPOS:
-        registros = [r for r in todos if r["tipo"] == tipo]
-    else:
-        tipo = ""
-        registros = todos
-    counts = {t: sum(1 for r in todos if r["tipo"] == t) for t in VALID_TIPOS}
-    return render(request, "growlog/timeline.html", {
-        "cultivo": cultivo,
-        "registros": registros,
-        "tipo_activo": tipo,
-        "counts": counts,
-        "total": len(todos),
-    })
+    try:
+        desde = max(0, int(request.GET.get("desde", 0)))
+    except ValueError:
+        desde = 0
+    try:
+        dia_anterior = parse_date(request.GET.get("dia", ""))
+    except ValueError:
+        dia_anterior = None
+    datos = bitacora(cultivo, request.GET.get("tipo", ""), desde=desde, dia_anterior=dia_anterior)
+    # "Ver más" pide solo las filas siguientes y las agrega abajo.
+    plantilla = "growlog/partials/bitacora_filas.html" if request.htmx and desde else "growlog/timeline.html"
+    return render(request, plantilla, {"cultivo": cultivo, **datos})
 
 
 @login_required

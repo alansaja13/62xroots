@@ -1,231 +1,34 @@
 {% extends "base.html" %}
-{% load ec %}
-{% block title %}Timeline · {{ cultivo.nombre }}{% endblock %}
-
-{% block extra_head %}
-<style>
-  .tl-header {
-    display: grid; grid-template-columns: 1fr auto; gap: 28px;
-    align-items: flex-end; margin-bottom: 18px;
-    padding-bottom: 18px; border-bottom: 1px solid var(--rule);
-  }
-  .tl-title-row {
-    margin-top: 8px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
-  }
-  .tl-title {
-    font-family: var(--font-display), sans-serif;
-    font-variation-settings: "wdth" 85, "opsz" 96;
-    font-size: 56px; font-weight: 700; letter-spacing: -.022em; line-height: .95;
-    margin: 0; color: var(--cream);
-  }
-  .tl-actions { display: flex; gap: 10px; align-items: center; }
-
-  /* FILTERS */
-  .tl-filters {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-  .tl-filter {
-    padding: 6px 12px;
-    border: 1px solid var(--rule);
-    background: transparent;
-    display: inline-flex; align-items: center; gap: 8px;
-    cursor: pointer;
-    text-decoration: none;
-  }
-  .tl-filter--active {
-    border-color: var(--cream);
-    background: rgba(255,255,255,.04);
-  }
-  .tl-filter--med.tl-filter--active    { border-color: var(--slate); background: rgba(121,164,212,.08); }
-  .tl-filter--riego.tl-filter--active  { border-color: var(--green); background: var(--green-wash); }
-  .tl-filter--evento.tl-filter--active { border-color: var(--honey); background: rgba(212,146,58,.08); }
-  .tl-filter--ec.tl-filter--active     { border-color: var(--plum);  background: rgba(179,132,216,.08); }
-  .tl-filter__label {
-    font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 700;
-    letter-spacing: .05em; text-transform: uppercase; color: var(--cream-soft);
-  }
-  .tl-filter--active .tl-filter__label { color: var(--cream); }
-  .tl-filter__count {
-    font-family: var(--font-mono), monospace; font-size: 12px; color: var(--fine);
-  }
-
-  @media (max-width: 900px) {
-    .tl-header { grid-template-columns: 1fr; }
-    .tl-title { font-size: 40px; }
-  }
-</style>
-{% endblock %}
+{% load static %}
+{% block title %}Bitácora · {{ cultivo.nombre }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'growlog/bitacora.css' %}">{% endblock %}
 
 {% block content %}
-
-
-<!-- HEADER -->
-<div class="tl-header">
-  <div>
-    <div class="label-eyebrow">Bitácora</div>
-    <div class="tl-title-row">
-      <h1 class="tl-title">{{ cultivo.nombre|upper }}</h1>
-      <span class="pill pill--{% if cultivo.estado == 'vegetativo' %}green{% elif cultivo.estado == 'floracion' %}plum{% else %}cream{% endif %}">
-        ● {{ cultivo.get_estado_display }}
-      </span>
+<div class="nc">
+  <div class="nc-head">
+    <div>
+      <div class="mo">{{ total }} registro{{ total|pluralize }} · día {{ cultivo.dias_desde_inicio }}</div>
+      <h1 class="h1" style="margin-top: 10px;">Bitácora</h1>
     </div>
-    <div class="mono c-soft" style="margin-top: 8px; font-size: 12px;">
-      día {{ cultivo.dias_desde_inicio }} · desde {{ cultivo.fecha_inicio|date:"d/m/Y" }} · {{ total }} entradas
+    {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="btn sm nc-registrar">+ Registrar</a>{% endif %}
+  </div>
+
+  <nav class="nc-filtros" aria-label="Filtrar por tipo">
+    <a href="?" class="chip{% if not filtro %} on{% endif %}"{% if not filtro %} aria-current="true"{% endif %}>Todo <span class="nc-cuenta">{{ total }}</span></a>
+    {% for f in filtros %}{% if f.cuenta %}
+    <a href="?tipo={{ f.clave }}" class="chip nc-filtro--{{ f.clave }}{% if filtro == f.clave %} on{% endif %}"{% if filtro == f.clave %} aria-current="true"{% endif %}><i aria-hidden="true"></i>{{ f.etiqueta }} <span class="nc-cuenta">{{ f.cuenta }}</span></a>
+    {% endif %}{% endfor %}
+  </nav>
+
+  <div class="nc-lista">
+    {% include "growlog/partials/bitacora_filas.html" %}
+    {% if not registros %}
+    <div class="vacio">
+      <h2 class="h2">{% if filtro %}No hay registros de este tipo{% else %}Todavía no hay registros{% endif %}</h2>
+      <p>{% if filtro %}Probá con otro filtro.{% else %}El primer riego o medición arranca la bitácora.{% endif %}</p>
+      {% if can_edit_cultivo and not filtro %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="btn sm">Registrar el primero</a>{% endif %}
     </div>
-  </div>
-  <div class="tl-actions">
-    {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="btn-brand">
-      <i class="bi bi-pencil-square"></i> registrar
-    </a>{% endif %}
+    {% endif %}
   </div>
 </div>
-
-<!-- FILTERS -->
-<div class="tl-filters">
-  <span class="label-eyebrow">filtrar:</span>
-  <a href="?" class="tl-filter {% if not tipo_activo %}tl-filter--active{% endif %}">
-    <span class="tl-filter__label">todo</span>
-    <span class="tl-filter__count">{{ total }}</span>
-  </a>
-  <a href="?tipo=medicion" class="tl-filter tl-filter--med {% if tipo_activo == 'medicion' %}tl-filter--active{% endif %}">
-    <span class="tl-filter__label">med</span>
-    <span class="tl-filter__count">{{ counts.medicion }}</span>
-  </a>
-  <a href="?tipo=riego" class="tl-filter tl-filter--riego {% if tipo_activo == 'riego' %}tl-filter--active{% endif %}">
-    <span class="tl-filter__label">riego</span>
-    <span class="tl-filter__count">{{ counts.riego }}</span>
-  </a>
-  <a href="?tipo=evento" class="tl-filter tl-filter--evento {% if tipo_activo == 'evento' %}tl-filter--active{% endif %}">
-    <span class="tl-filter__label">evento</span>
-    <span class="tl-filter__count">{{ counts.evento }}</span>
-  </a>
-  <a href="?tipo=medicion_ec" class="tl-filter tl-filter--ec {% if tipo_activo == 'medicion_ec' %}tl-filter--active{% endif %}">
-    <span class="tl-filter__label">ec/ph</span>
-    <span class="tl-filter__count">{{ counts.medicion_ec }}</span>
-  </a>
-</div>
-
-<!-- TABLE -->
-<div class="panel">
-  <table class="table table-zebra tbl-log">
-    <thead>
-      <tr>
-        <th style="width:110px;">Fecha · hora</th>
-        <th style="width:90px;">Tipo</th>
-        <th style="width:180px;">Dato principal</th>
-        <th style="width:280px;">Detalle</th>
-        <th>Notas / Extra</th>
-        <th style="width:40px; text-align:right;"></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for reg in registros %}
-      <tr>
-        <td class="c-soft" style="white-space:nowrap;" data-col="fecha">
-          {{ reg.ts|date:"d/m/y" }}<br>
-          <span class="c-fine" style="font-size: 12px;">{{ reg.ts|date:"H:i" }}</span>
-          {% if reg.obj.creado_por %}<br><span class="c-fine" style="font-size: 12px; letter-spacing:.05em;">@{{ reg.obj.creado_por.username }}</span>{% endif %}
-        </td>
-        <td data-col="tipo">
-          {% if reg.tipo == 'medicion' %}
-            <span class="tc tc--med">med</span>
-          {% elif reg.tipo == 'riego' %}
-            <span class="tc tc--riego">riego</span>
-          {% elif reg.tipo == 'medicion_ec' %}
-            <span class="tc tc--med" style="border-left-color:var(--plum);color:var(--plum);background:rgba(179,132,216,.08);">ec/ph</span>
-          {% else %}
-            <span class="tc tc--evento">{{ reg.obj.get_tipo_display|lower }}</span>
-          {% endif %}
-        </td>
-        <td class="c-cream" style="font-weight:600;" data-col="dato">
-          {% if reg.tipo == 'medicion' %}
-            <span style="font-size:14px;">{{ reg.obj.temperatura_c|floatformat:1 }}°C <span class="c-fine" style="font-weight:400;">/</span> {{ reg.obj.humedad_relativa|floatformat:0 }}%HR</span>
-          {% elif reg.tipo == 'riego' %}
-            <span style="font-size:14px;">{{ reg.obj.volumen_total_ml }} ml</span>
-            <span class="c-fine" style="font-weight:400; font-size: 12px; margin-left:6px;">· {{ reg.obj.detalle_plantas.count }} planta{{ reg.obj.detalle_plantas.count|pluralize }}</span>
-          {% elif reg.tipo == 'medicion_ec' %}
-            <span style="font-size:14px;">{{ reg.obj.get_tipo_display }}</span>
-          {% else %}
-            <span class="c-honey">{{ reg.obj.get_tipo_display|upper }}</span>
-          {% endif %}
-        </td>
-        <td class="c-soft" style="font-size: 12px;" data-col="detalle">
-          {% if reg.tipo == 'medicion' %}
-            {% with estado=reg.obj.vpd_estado %}<span class="vpd{% if estado %} vpd--{{ estado }}{% endif %}">VPD {{ reg.obj.vpd }} kPa{% if estado %} · {{ estado }}{% endif %}</span>{% endwith %}
-          {% elif reg.tipo == 'riego' %}
-            {% if reg.obj.ph_agua %}<span>pH <span class="c-cream">{{ reg.obj.ph_agua }}</span></span>{% endif %}
-            {% if reg.obj.ec_solucion %}<span class="c-fine"> · </span><span>EC <span class="c-cream">{{ reg.obj.ec_solucion|ec_us }}</span> µS/cm</span>{% endif %}
-            {% if reg.obj.runoff_observado %}<span class="c-fine"> · </span><span class="c-green">runoff ✓</span>{% endif %}
-          {% elif reg.tipo == 'medicion_ec' %}
-            {% if reg.obj.ph %}<span>pH <span class="c-cream">{{ reg.obj.ph }}</span></span>{% endif %}
-            {% if reg.obj.ec %}<span class="c-fine">{% if reg.obj.ph %} · {% endif %}</span><span>EC <span class="c-cream">{{ reg.obj.ec|ec_us }}</span> µS/cm</span>{% endif %}
-            {% if reg.obj.temp_agua %}<span class="c-fine"> · </span><span>{{ reg.obj.temp_agua }}°C</span>{% endif %}
-          {% else %}
-            <span class="c-cream">{{ reg.obj.descripcion|truncatechars:70 }}</span>
-            {% if reg.obj.follow_up_fecha and not reg.obj.follow_up_resuelto %}
-            <div class="c-honey mono" style="margin-top:4px; font-size: 12px;">
-              <i class="bi bi-alarm"></i> Follow-up: {{ reg.obj.follow_up_fecha|date:"d/m/Y" }}: {{ reg.obj.follow_up_descripcion }}
-            </div>
-            {% endif %}
-          {% endif %}
-        </td>
-        <td class="c-fine" style="font-size: 12px;" data-col="notas">
-          {% if reg.tipo == 'medicion' and reg.obj.notas %}
-            <span style="font-style:italic; color:var(--cream-soft);">"{{ reg.obj.notas }}"</span>
-          {% elif reg.tipo == 'riego' %}
-            {% if reg.obj.detalle_plantas.exists %}
-              <span style="display:inline-flex; gap:5px; flex-wrap:wrap;">
-                {% for rp in reg.obj.detalle_plantas.all %}
-                  <span class="tc tc--baja" style="font-weight:600; letter-spacing:.05em;">{{ rp.planta.apodo }} · {{ rp.volumen_ml }}ml</span>
-                {% endfor %}
-              </span>
-            {% endif %}
-            {% if reg.obj.nutrientes_aplicados.exists %}
-              <span style="display:inline-flex; gap:5px; flex-wrap:wrap; margin-top:4px;">
-                {% for na in reg.obj.nutrientes_aplicados.all %}
-                  <span class="tc tc--riego" style="font-weight:600; letter-spacing:.05em;">{{ na.nutriente }} · {{ na.dosis_g_por_litro }}g/L</span>
-                {% endfor %}
-              </span>
-            {% endif %}
-            {% if reg.obj.notas %}<div style="margin-top:4px; color:var(--cream-soft); font-style:italic;">{{ reg.obj.notas }}</div>{% endif %}
-          {% elif reg.tipo == 'medicion_ec' and reg.obj.notas %}
-            <span style="font-style:italic; color:var(--cream-soft);">"{{ reg.obj.notas }}"</span>
-          {% elif reg.tipo == 'evento' %}
-            {% if reg.obj.plantas_afectadas.exists %}
-              <span style="display:inline-flex; gap:5px; flex-wrap:wrap;">
-                {% for p in reg.obj.plantas_afectadas.all %}
-                  <span class="tc tc--baja" style="font-weight:600; letter-spacing:.05em;">{{ p.apodo }}</span>
-                {% endfor %}
-              </span>
-            {% endif %}
-          {% endif %}
-        </td>
-        <td style="text-align:right;" data-col="action">
-          {% if can_edit_cultivo %}
-          {% if reg.tipo == 'riego' %}
-            <a href="{% url 'growlog:riego_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
-          {% elif reg.tipo == 'evento' %}
-            <a href="{% url 'growlog:evento_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
-          {% elif reg.tipo == 'medicion_ec' %}
-            <a href="{% url 'growlog:medicion_ec_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
-          {% elif reg.tipo == 'medicion' %}
-            <a href="{% url 'growlog:medicion_ambiente_editar' reg.obj.pk %}" class="c-fine" title="Corregir"><i class="bi bi-three-dots"></i></a>
-          {% endif %}
-          {% endif %}
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="6" style="text-align:center; padding:60px 16px; color:var(--fine);">
-          <i class="bi bi-journal-x" style="font-size:24px; display:block; margin-bottom:10px; opacity:.5;"></i>
-          Todavía no hay registros.
-          {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="c-green">Anotá el primero →</a>{% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
 {% endblock %}

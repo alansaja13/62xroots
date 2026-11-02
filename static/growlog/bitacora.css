@@ -1,0 +1,39 @@
+/* Bitácora (Núcleo): una capa de color por registro y la fila legible al lado. */
+.nc { max-width: 860px; }
+.nc-head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--sp-3); }
+.nc-registrar { flex: none; }
+@media (max-width: 991px) { .nc-registrar { display: none; } } /* en el celular está el + de la barra */
+
+.nc-filtros { display: flex; gap: var(--sp-2); margin: var(--sp-4) calc(var(--sp-4) * -1) var(--sp-3); padding: 0 var(--sp-4) 2px; overflow-x: auto; scrollbar-width: none; }
+.nc-filtros::-webkit-scrollbar { display: none; }
+@media (min-width: 992px) { .nc-filtros { margin: var(--sp-4) 0 var(--sp-3); padding: 0; flex-wrap: wrap; } }
+.nc-filtros .chip { flex: none; min-height: 40px; font-size: var(--t-sm); color: var(--ink); }
+.nc-filtros .chip i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.nc-filtro--medicion i { background: var(--m); }
+.nc-filtro--riego i { background: var(--w); }
+.nc-filtro--evento i { background: var(--e); }
+.nc-filtro--medicion_ec i { background: var(--flo); }
+.nc-filtro--ciclo i { background: var(--veg); }
+.nc-filtro--planta i { background: var(--ac); }
+.nc-cuenta { font: 400 var(--t-xs) var(--font-mono); color: var(--mu); }
+
+.nc-dia { padding: var(--sp-4) 0 6px; }
+.nc-reg { display: flex; align-items: stretch; gap: var(--sp-3); min-height: 58px; }
+.nc-dia + .nc-reg .nc-capa { border-top-left-radius: 9px; border-top-right-radius: 9px; }
+.nc-capa { width: 18px; flex: none; background: var(--n); border-top: 1px solid rgba(0,0,0,.2); }
+.nc-reg--riego .nc-capa { background: var(--w); }
+.nc-reg--medicion .nc-capa { background: var(--m); }
+.nc-reg--evento .nc-capa { background: var(--e); }
+.nc-reg--medicion_ec .nc-capa { background: var(--flo); }
+.nc-reg--etapa .nc-capa, .nc-reg--fotoperiodo .nc-capa { background: var(--veg); }
+.nc-reg--planta .nc-capa { background: var(--ac); }
+.nc-texto { flex: 1; min-width: 0; padding: 9px 0; border-top: 1px solid var(--ln); }
+.nc-titulo { font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.nc-titulo a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--ln); text-underline-offset: 3px; }
+.nc-tag { font: 500 var(--t-xs) var(--font-mono); color: var(--e); text-transform: lowercase; }
+.nc-meta { text-transform: none; letter-spacing: .02em; margin-top: 3px; overflow-wrap: anywhere; }
+.nc-ideal { color: var(--ac); } .nc-alto { color: var(--bad); } .nc-bajo { color: var(--w); } .nc-x { color: var(--mu); }
+.nc-warn { color: var(--warn); }
+.nc-mas { flex: none; align-self: center; display: grid; place-items: center; width: var(--toque); height: var(--toque); border-radius: var(--r-md); color: var(--mu); font-size: 20px; }
+.nc-mas:hover { background: var(--s1); color: var(--ink); opacity: 1; }
+.nc-mas-pagina { width: 100%; margin-top: var(--sp-4); }

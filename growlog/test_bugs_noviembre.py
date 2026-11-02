@@ -212,3 +212,53 @@ class ResumenCultivoTests(TestCase):
             self.assertContains(page, reverse(f"growlog:{vista}", args=[self.cultivo.slug]))
         # Hechas existe siempre: completar una tarea la agrega ahí por OOB.
         self.assertContains(page, 'id="tareas-done"')
+
+
+class BitacoraTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from .models import CambioFotoperiodo, MedicionPlanta
+        from .services.etapas import cambiar_etapa
+        cls.owner = User.objects.create_user("bitacora")
+        hoy = timezone.localdate()
+        cls.cultivo = Cultivo.objects.create(nombre="Carpa", fecha_inicio=hoy - timedelta(days=30), propietario=cls.owner)
+        cambiar_etapa(cls.cultivo, "veg_temprano", cls.cultivo.fecha_inicio)
+        CambioFotoperiodo.objects.create(cultivo=cls.cultivo, fotoperiodo="18/6", hora_lights_on=time(6), fecha_inicio=cls.cultivo.fecha_inicio)
+        planta = Planta.objects.create(cultivo=cls.cultivo, apodo="Luna")
+        MedicionPlanta.objects.create(planta=planta, fecha=hoy - timedelta(days=1), altura_cm=30)
+        ahora = timezone.now()
+        for i in range(60):
+            MedicionAmbiente.objects.create(cultivo=cls.cultivo, temperatura_c=24, humedad_relativa=60, timestamp=ahora - timedelta(hours=3 * i))
+
+    def setUp(self):
+        self.client.force_login(self.owner)
+        self.url = reverse("growlog:timeline", args=[self.cultivo.slug])
+
+    def test_incluye_ciclo_y_plantas_y_cuenta_todo(self):
+        from .services.bitacora import bitacora
+        datos = bitacora(self.cultivo, por_pagina=500)
+        tipos = {r["tipo"] for r in datos["registros"]}
+        self.assertTrue({"medicion", "etapa", "fotoperiodo", "planta"} <= tipos)
+        self.assertEqual(datos["total"], 63)
+        self.assertEqual({f["clave"]: f["cuenta"] for f in datos["filtros"]}["ciclo"], 2)
+        self.assertEqual([r["tipo"] for r in bitacora(self.cultivo, "planta")["registros"]], ["planta"])
+
+    def test_paginas_sin_repetir_ni_perder(self):
+        from .services.bitacora import bitacora
+        primera = bitacora(self.cultivo)
+        self.assertTrue(primera["hay_mas"])
+        segunda = bitacora(self.cultivo, desde=primera["siguiente"], dia_anterior=primera["ultimo_dia"])
+        pks = [(r["tipo"], r["obj"].pk) for r in primera["registros"] + segunda["registros"]]
+        self.assertEqual(len(pks), 63)
+        self.assertEqual(len(set(pks)), 63)
+        self.assertFalse(segunda["hay_mas"])
+        # El separador de día no se repite si la página siguiente sigue en el mismo día.
+        self.assertEqual(segunda["registros"][0]["nuevo_dia"], segunda["registros"][0]["dia"] != primera["ultimo_dia"])
+
+    def test_ver_mas_devuelve_solo_filas(self):
+        page = self.client.get(self.url)
+        self.assertContains(page, "Ver más")
+        mas = self.client.get(self.url + "?desde=50", HTTP_HX_REQUEST="true")
+        self.assertNotContains(mas, "<h1")
+        self.assertContains(mas, "nc-reg")
+        self.assertEqual(self.client.get(self.url + "?desde=x&dia=2026-99-99").status_code, 200)
