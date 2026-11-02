@@ -24,7 +24,7 @@
     {% elif tipo == 'riego' %}
       {% if obj.ph_agua is not None %}<div><dt class="mo">pH solución</dt><dd>{{ obj.ph_agua|floatformat:1 }}</dd></div>{% endif %}
       {% if obj.ec_solucion is not None %}<div><dt class="mo">EC solución</dt><dd>{% ec obj.ec_solucion %} · {{ obj.ec_solucion|ec_x10 }} medidor</dd></div>{% endif %}
-      {% for na in obj.nutrientes_aplicados.all %}<div><dt class="mo">{{ na.nutriente }}</dt><dd>{{ na.dosis_g_por_litro.normalize }} g/L</dd></div>{% endfor %}
+      {% for na in obj.nutrientes_aplicados.all %}<div><dt class="mo">{{ na.nutriente }}</dt><dd>{{ na.dosis_g_por_litro.normalize }} {{ na.nutriente.get_unidad_display }}</dd></div>{% endfor %}
     {% elif tipo == 'ec' %}
       <div><dt class="mo">Qué se midió</dt><dd>{{ obj.get_tipo_display }}</dd></div>
       {% if obj.ec is not None %}<div><dt class="mo">En el medidor</dt><dd>{{ obj.ec|ec_x10 }} (×10 µS/cm)</dd></div>{% endif %}

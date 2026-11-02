@@ -34,7 +34,7 @@ def _reporte_csv(cultivo):
     for r in cultivo.riegos.all():
         ts = timezone.localtime(r.timestamp)
         nutris = " + ".join(
-            f"{na.nutriente} {na.dosis_g_por_litro}g/L"
+            f"{na.nutriente} {na.dosis_g_por_litro} {na.nutriente.get_unidad_display()}"
             for na in r.nutrientes_aplicados.select_related("nutriente")
         )
         notas = f"{nutris} | {r.notas}".strip(" |") if nutris else r.notas
@@ -86,7 +86,7 @@ def cultivo_reporte(request, slug):
     nutrientes = (
         NutrienteAplicado.objects
         .filter(riego__cultivo=cultivo)
-        .values("nutriente__nombre", "nutriente__marca")
+        .values("nutriente__nombre", "nutriente__marca", "nutriente__unidad")
         .annotate(
             aplicaciones=Count("id"),
             dosis_avg=Avg("dosis_g_por_litro"),

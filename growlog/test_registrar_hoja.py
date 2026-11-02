@@ -296,3 +296,21 @@ class FotosPlantaTests(TestCase):
         self.assertEqual([f.dia for f in page.context["fotos"]], [20, 10])
         self.assertContains(page, "Comparar")
         self.assertContains(self.client.get(reverse("growlog:planta_detail", args=[luna.pk])), url)
+
+
+class UnidadNutrienteTests(TestCase):
+    def test_ml_por_litro_en_registrar_bitacora_y_aviso(self):
+        from .models import Nutriente
+        user = User.objects.create_user("unidad")
+        cultivo = Cultivo.objects.create(nombre="Carpa", fecha_inicio=timezone.localdate(), propietario=user)
+        luna = Planta.objects.create(cultivo=cultivo, apodo="Luna")
+        grow = Nutriente.objects.create(nombre="Bio Grow", unidad="ml")
+        self.client.force_login(user)
+        url = reverse("growlog:registrar")
+        self.assertContains(self.client.get(url + f"?cultivo={cultivo.pk}&kind=riego"), "ml/L")
+        page = self.client.post(url, {"cultivo": cultivo.pk, "kind": "riego", "observado_modo": "ahora",
+                                      f"riego-planta-{luna.pk}": "500", f"riego-nutriente-{grow.pk}": "12"})
+        self.assertContains(page, "Dosis 12 ml/L")
+        self.client.post(url, {"cultivo": cultivo.pk, "kind": "riego", "observado_modo": "ahora",
+                               f"riego-planta-{luna.pk}": "500", f"riego-nutriente-{grow.pk}": "4"})
+        self.assertContains(self.client.get(reverse("growlog:timeline", args=[cultivo.slug])), "Bio Grow 4 ml/L")

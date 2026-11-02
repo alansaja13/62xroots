@@ -111,20 +111,23 @@ class NutrienteForm(forms.ModelForm):
 
     class Meta:
         model = Nutriente
-        fields = ["nombre", "marca", "npk", "etapa_recomendada", "dosis_recomendada_min", "dosis_recomendada_max"]
-        labels = {"npk": "NPK", "etapa_recomendada": "Etapa", "dosis_recomendada_min": "Dosis mínima (g/L)",
-                  "dosis_recomendada_max": "Dosis máxima (g/L)"}
+        fields = ["nombre", "marca", "npk", "etapa_recomendada", "unidad", "dosis_recomendada_min", "dosis_recomendada_max"]
+        labels = {"npk": "NPK", "etapa_recomendada": "Etapa", "dosis_recomendada_min": "Dosis mínima (por litro)",
+                  "dosis_recomendada_max": "Dosis máxima (por litro)"}
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Bio·Grow", "autofocus": True}),
             "marca": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: BioBizz"}),
             "npk": forms.TextInput(attrs={"class": "form-control field-narrow", "placeholder": "4-3-6"}),
             "etapa_recomendada": forms.Select(attrs={"class": "form-select"}),
+            "unidad": forms.Select(attrs={"class": "form-select field-narrow"}),
             "dosis_recomendada_min": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
             "dosis_recomendada_max": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
         }
 
     def __init__(self, *args, puede_compartir=False, **kwargs):
         super().__init__(*args, **kwargs)
+        # Sin elegir, queda en g/L como estaban todos los nutrientes antes.
+        self.fields["unidad"].required = False
         if puede_compartir:
             self.fields["compartido"].initial = self.instance.pk is not None and self.instance.propietario_id is None
         else:
@@ -135,6 +138,7 @@ class NutrienteForm(forms.ModelForm):
         minimo, maximo = data.get("dosis_recomendada_min"), data.get("dosis_recomendada_max")
         if minimo is not None and maximo is not None and minimo > maximo:
             self.add_error("dosis_recomendada_max", "La dosis máxima no puede ser menor que la mínima.")
+        data["unidad"] = data.get("unidad") or "g"
         return data
 
 

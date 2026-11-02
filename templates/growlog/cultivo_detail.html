@@ -110,7 +110,7 @@
             </div>
             <div class="mo cd-reg__meta">
               {{ reg.ts|date:"d/m H:i" }}
-              {% if reg.tipo == 'riego' %}{% with n=reg.obj.detalle_plantas.all|length %}{% if n %} · {{ n }} planta{{ n|pluralize }}{% endif %}{% endwith %}{% for na in reg.obj.nutrientes_aplicados.all %} · {{ na.nutriente.nombre }} {{ na.dosis_g_por_litro|floatformat:"-2" }} g/L{% endfor %}{% for rp in reg.obj.detalle_plantas.all %}{% if rp.runoff_observado and forloop.first %} · runoff{% endif %}{% endfor %}{% endif %}
+              {% if reg.tipo == 'riego' %}{% with n=reg.obj.detalle_plantas.all|length %}{% if n %} · {{ n }} planta{{ n|pluralize }}{% endif %}{% endwith %}{% for na in reg.obj.nutrientes_aplicados.all %} · {{ na.nutriente.nombre }} {{ na.dosis_g_por_litro|floatformat:"-2" }} {{ na.nutriente.get_unidad_display }}{% endfor %}{% for rp in reg.obj.detalle_plantas.all %}{% if rp.runoff_observado and forloop.first %} · runoff{% endif %}{% endfor %}{% endif %}
               {% if reg.tipo == 'medicion_ec' %} · {{ reg.obj.get_tipo_display|lower }}{% endif %}
               {% if reg.tipo == 'evento' %}{% for p in reg.obj.plantas_afectadas.all %}{% if forloop.first %} · {% else %}, {% endif %}{{ p.apodo }}{% endfor %}{% endif %}
               {% if reg.obj.creado_por %} · {{ reg.obj.creado_por.username }}{% endif %}

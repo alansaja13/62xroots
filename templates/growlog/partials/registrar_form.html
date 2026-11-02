@@ -87,13 +87,13 @@
     <div class="reg-nutrientes" data-cultivo="{{ grupo.cultivo.pk }}">
       {% if grupo.habituales %}<div class="mo">Nutrientes · los de siempre</div>{% endif %}
       {% for n in grupo.habituales %}
-      <label class="reg-planta"><span>{{ n.nutriente }}</span><input name="riego-nutriente-{{ n.nutriente.pk }}" data-nutriente="{{ n.nutriente.pk }}" value="{{ n.dosis }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" placeholder="no"><span class="mo">g/L</span></label>
+      <label class="reg-planta"><span>{{ n.nutriente }}</span><input name="riego-nutriente-{{ n.nutriente.pk }}" data-nutriente="{{ n.nutriente.pk }}" value="{{ n.dosis }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" placeholder="no"><span class="mo">{{ n.nutriente.get_unidad_display }}</span></label>
       {% endfor %}
       {% if grupo.otros %}
       <details{% for n in grupo.otros %}{% if n.dosis %} open{% endif %}{% endfor %}>
         <summary class="mo">{% if grupo.habituales %}Otros nutrientes{% else %}Nutrientes · opcional{% endif %}</summary>
         {% for n in grupo.otros %}
-        <label class="reg-planta"><span>{{ n.nutriente }}</span><input name="riego-nutriente-{{ n.nutriente.pk }}" data-nutriente="{{ n.nutriente.pk }}" value="{{ n.dosis }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" placeholder="no"><span class="mo">g/L</span></label>
+        <label class="reg-planta"><span>{{ n.nutriente }}</span><input name="riego-nutriente-{{ n.nutriente.pk }}" data-nutriente="{{ n.nutriente.pk }}" value="{{ n.dosis }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" placeholder="no"><span class="mo">{{ n.nutriente.get_unidad_display }}</span></label>
         {% endfor %}
       </details>
       {% endif %}

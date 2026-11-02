@@ -366,6 +366,8 @@ def _nutriente_aplicado(na):
     return {
         'id': na.id, 'nutriente_id': na.nutriente_id, 'nutriente': str(na.nutriente),
         'dosis_g_por_litro': str(na.dosis_g_por_litro),
+        # La dosis es por litro en la unidad del nutriente (g/L o ml/L); el nombre de arriba queda por compatibilidad.
+        'dosis': str(na.dosis_g_por_litro), 'unidad': na.nutriente.get_unidad_display(),
     }
 
 
@@ -515,6 +517,8 @@ def _nutriente_y_dosis(item, request):
     if not isinstance(item, dict):
         raise ApiInputError('Cada nutriente debe ser un objeto')
     nutriente_id = _entero(item, 'nutriente_id', requerido=True)
+    if 'dosis_g_por_litro' not in item and 'dosis' in item:
+        item = {**item, 'dosis_g_por_litro': item['dosis']}
     dosis = _decimal(item, 'dosis_g_por_litro', requerido=True, positivo=True)
     nutriente = nutrientes_para(request.api_user, request.api_cultivo).filter(pk=nutriente_id).first()
     if nutriente is None:
@@ -1534,6 +1538,7 @@ def nutrientes_list(request):
             'etapa_recomendada_display': n.get_etapa_recomendada_display(),
             'dosis_recomendada_min': _num(n.dosis_recomendada_min),
             'dosis_recomendada_max': _num(n.dosis_recomendada_max),
+            'unidad': n.get_unidad_display(),
         }
         for n in nutrientes_visibles(request.api_user)
     ])

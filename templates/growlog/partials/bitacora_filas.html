@@ -27,7 +27,7 @@
     </div>
     <div class="mo nc-meta">
       {% if reg.tipo == 'etapa' or reg.tipo == 'fotoperiodo' or reg.tipo == 'planta' %}{{ reg.dia|date:"d/m" }}{% else %}{{ reg.ts|date:"H:i" }}{% endif %}
-      {% if reg.tipo == 'riego' %}{% with n=o.detalle_plantas.all|length %}{% if n %} · {% for rp in o.detalle_plantas.all %}{{ rp.planta.apodo }} {{ rp.volumen_ml }}{% if rp.runoff_observado %} (runoff){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}{% endwith %}{% for na in o.nutrientes_aplicados.all %} · {{ na.nutriente.nombre }} {{ na.dosis_g_por_litro|floatformat:"-2" }} g/L{% endfor %}{% endif %}
+      {% if reg.tipo == 'riego' %}{% with n=o.detalle_plantas.all|length %}{% if n %} · {% for rp in o.detalle_plantas.all %}{{ rp.planta.apodo }} {{ rp.volumen_ml }}{% if rp.runoff_observado %} (runoff){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}{% endwith %}{% for na in o.nutrientes_aplicados.all %} · {{ na.nutriente.nombre }} {{ na.dosis_g_por_litro|floatformat:"-2" }} {{ na.nutriente.get_unidad_display }}{% endfor %}{% endif %}
       {% if reg.tipo == 'medicion_ec' %} · {{ o.get_tipo_display|lower }}{% endif %}
       {% if reg.tipo == 'evento' %}{% for p in o.plantas_afectadas.all %}{% if forloop.first %} · {% else %}, {% endif %}{{ p.apodo }}{% endfor %}{% if o.follow_up_fecha and not o.follow_up_resuelto %} · <span class="nc-warn">revisar el {{ o.follow_up_fecha|date:"d/m" }}</span>{% endif %}{% endif %}
       {% if reg.tipo == 'planta' and o.sintomas %} · {{ o.sintomas|truncatechars:60 }}{% endif %}

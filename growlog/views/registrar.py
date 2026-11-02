@@ -162,10 +162,11 @@ def _avisos(tipo, datos, plantas, nutrientes):
         if fila.get("ph_runoff"):
             revisar(f"phrunoff-{fila['planta_id']}", fila["ph_runoff"], "pH", "", 4, 9,
                     f" (runoff de {nombres[fila['planta_id']]})")
-    dosis_nombres = {n.pk: str(n) for n in nutrientes}
+    por_pk = {n.pk: n for n in nutrientes}
     for fila in datos.get("nutrientes", []):
-        revisar(f"nutriente-{fila['nutriente_id']}", fila["dosis_g_por_litro"], "Dosis", " g/L", 0, 10,
-                f" ({dosis_nombres[fila['nutriente_id']]})")
+        n = por_pk[fila["nutriente_id"]]
+        revisar(f"nutriente-{fila['nutriente_id']}", fila["dosis_g_por_litro"], "Dosis", f" {n.get_unidad_display()}", 0, 10,
+                f" ({n})")
     return avisos
 
 

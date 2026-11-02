@@ -355,6 +355,9 @@ class Nutriente(models.Model):
     marca = models.CharField(max_length=120, blank=True)
     npk = models.CharField(max_length=30, blank=True, help_text="Ej: 25-2.8-6.9")
     etapa_recomendada = models.CharField(max_length=10, choices=ETAPA_CHOICES, default="veg")
+    # Los líquidos se dosifican en ml por litro; los polvos y sales, en gramos.
+    UNIDAD_CHOICES = [("g", "g/L"), ("ml", "ml/L")]
+    unidad = models.CharField(max_length=2, choices=UNIDAD_CHOICES, default="g", verbose_name="Se dosifica en")
     dosis_recomendada_min = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     dosis_recomendada_max = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     # Sin propietario es del catálogo compartido; con propietario lo ve solo
@@ -406,7 +409,7 @@ class NutrienteAplicado(models.Model):
         verbose_name_plural = "Nutrientes aplicados"
 
     def __str__(self):
-        return f"{self.nutriente} @ {self.dosis_g_por_litro}g/L"
+        return f"{self.nutriente} @ {self.dosis_g_por_litro} {self.nutriente.get_unidad_display()}"
 
 
 class RiegoPlanta(models.Model):

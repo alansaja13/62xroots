@@ -1,7 +1,7 @@
 <li{% if n.oculto %} class="is-oculto"{% endif %}>
   <div class="nu-info">
     <div class="nu-name">{{ n }}{% if n.oculto %} · oculto{% endif %}</div>
-    <div class="nu-meta">{{ n.get_etapa_recomendada_display }}{% if n.npk %} · NPK {{ n.npk }}{% endif %}{% if n.dosis_recomendada_min or n.dosis_recomendada_max %} · {{ n.dosis_recomendada_min|default:"?" }} a {{ n.dosis_recomendada_max|default:"?" }} g/L{% endif %}{% if n.propietario and not editable %} · de {{ n.propietario.username }}{% endif %}</div>
+    <div class="nu-meta">{{ n.get_etapa_recomendada_display }}{% if n.npk %} · NPK {{ n.npk }}{% endif %}{% if n.dosis_recomendada_min or n.dosis_recomendada_max %} · {{ n.dosis_recomendada_min|default:"?" }} a {{ n.dosis_recomendada_max|default:"?" }} {{ n.get_unidad_display }}{% endif %}{% if n.propietario and not editable %} · de {{ n.propietario.username }}{% endif %}</div>
   </div>
   {% if editable %}
   <div class="nu-actions">

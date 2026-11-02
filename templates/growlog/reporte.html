@@ -158,8 +158,8 @@
           <tr>
             <td class="c-cream" style="font-weight:600;">{% if n.nutriente__marca %}{{ n.nutriente__marca }} {% endif %}{{ n.nutriente__nombre }}</td>
             <td style="text-align:right;" class="c-soft">{{ n.aplicaciones }}</td>
-            <td style="text-align:right;" class="c-soft">{{ n.dosis_avg|floatformat:2 }} g/L</td>
-            <td style="text-align:right; font-weight:700;" class="c-green">{{ n.gramos_totales|floatformat:1 }} g</td>
+            <td style="text-align:right;" class="c-soft">{{ n.dosis_avg|floatformat:2 }} {% if n.nutriente__unidad == 'ml' %}ml/L{% else %}g/L{% endif %}</td>
+            <td style="text-align:right; font-weight:700;" class="c-green">{{ n.gramos_totales|floatformat:1 }} {% if n.nutriente__unidad == 'ml' %}ml{% else %}g{% endif %}</td>
           </tr>
           {% endfor %}
         </tbody>
