@@ -28,6 +28,7 @@
   <section class="mas__grupo">
     <div class="mo">General</div>
     <a class="fila" href="{% url 'growlog:nuevo_cultivo' %}"><span class="fila__texto">Nuevo cultivo</span><span class="fila__chevron" aria-hidden="true">›</span></a>
+    <a class="fila" href="{% url 'growlog:tareas_todas' %}"><span class="fila__texto">Tareas de todos los cultivos</span><span class="fila__chevron" aria-hidden="true">›</span></a>
     <a class="fila" href="{% url 'growlog:nutrientes' %}"><span class="fila__texto">Nutrientes</span><span class="fila__chevron" aria-hidden="true">›</span></a>
     {% if es_duenio_de_alguno %}
     <a class="fila" href="{% url 'growlog:invitados_panel' %}"><span class="fila__texto">Compartir cultivos</span><span class="fila__chevron" aria-hidden="true">›</span></a>

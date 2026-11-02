@@ -322,3 +322,25 @@ class CicloTests(TestCase):
         page = self.client.get(reverse("growlog:cultivo_ciclo", args=[self.cultivo.slug]))
         self.assertNotContains(page, "Hacer el flip hoy")
         self.assertContains(page, "faltan 60 días")
+
+
+class TareasAgrupadasTests(TestCase):
+    def test_grupos_y_todos_los_cultivos(self):
+        user = User.objects.create_user("tareas")
+        hoy = timezone.localdate()
+        a = Cultivo.objects.create(nombre="A", fecha_inicio=hoy, propietario=user)
+        b = Cultivo.objects.create(nombre="B", fecha_inicio=hoy, propietario=user)
+        Tarea.objects.create(cultivo=a, titulo="Vieja", fecha_objetivo=hoy - timedelta(days=2))
+        Tarea.objects.create(cultivo=a, titulo="Mañana", fecha_objetivo=hoy + timedelta(days=1), categoria="compra")
+        Tarea.objects.create(cultivo=b, titulo="Cuando pueda")
+        Tarea.objects.create(cultivo=b, titulo="Lista", completada=True, completada_en=timezone.now())
+        self.client.force_login(user)
+        page = self.client.get(reverse("growlog:tareas_list", args=[a.slug]))
+        self.assertEqual([(g["clave"], [i["titulo"] for i in g["items"]]) for g in page.context["grupos"]],
+                         [("vencidas", ["Vieja"]), ("proximas", ["Mañana"])])
+        todas = self.client.get(reverse("growlog:tareas_todas"))
+        self.assertEqual(todas.context["pendientes_total"], 3)
+        self.assertEqual([i["titulo"] for i in todas.context["hechas"]], ["Lista"])
+        self.assertEqual(todas.context["nav_activa"], "tareas")
+        compra = self.client.get(reverse("growlog:tareas_todas") + "?categoria=compra")
+        self.assertEqual(compra.context["pendientes_total"], 1)

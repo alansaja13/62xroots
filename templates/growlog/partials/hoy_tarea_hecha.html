@@ -3,9 +3,11 @@
   <span class="ck hoy-ck--hecha" aria-hidden="true">✓</span>
   <span class="fila__texto">
     <span class="hoy-titulo">{{ item.titulo|truncatechars:120 }}</span>
-    <span class="mo hoy-meta">hecha</span>
+    <span class="mo hoy-meta">{% if reabrir %}{{ item.cultivo.nombre }} · {% endif %}hecha</span>
   </span>
+  {% if item.puede_editar %}
   <button type="button" class="pill hoy-deshacer"
           hx-post="{% url 'growlog:tarea_descompletar' item.pk %}" hx-vals='{"origen": "hoy"}'
-          hx-target="#hoy-tarea-{{ item.pk }}" hx-swap="outerHTML">Deshacer</button>
+          hx-target="#hoy-tarea-{{ item.pk }}" hx-swap="outerHTML">{% if reabrir %}Reabrir{% else %}Deshacer{% endif %}</button>
+  {% endif %}
 </div>

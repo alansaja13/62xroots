@@ -99,4 +99,20 @@ def item_tarea(tarea, *, puede_editar, hoy=None):
             "fecha": tarea.fecha_objetivo, "urgente": tarea.prioridad == "urgente",
             "prioridad": {"urgente": 0, "normal": 1, "baja": 2}.get(tarea.prioridad, 1), "pk": tarea.pk,
             "puede_editar": puede_editar, "vencido": bool(tarea.fecha_objetivo and tarea.fecha_objetivo < hoy),
-            "categoria": tarea.get_categoria_display()}
+            "categoria": tarea.get_categoria_display(), "prioridad_clave": tarea.prioridad, "completada": tarea.completada}
+
+
+def agrupar_tareas(tareas, *, hoy=None, editables=()):
+    """Pendientes en grupos: vencidas, hoy y próximas (por fecha) y sin fecha (urgentes primero)."""
+    hoy = hoy or timezone.localdate()
+    orden_prioridad = {"urgente": 0, "normal": 1, "baja": 2}
+    vencidas, proximas, sin_fecha = [], [], []
+    for t in tareas:
+        item = item_tarea(t, puede_editar=t.cultivo_id in editables, hoy=hoy)
+        (sin_fecha if not t.fecha_objetivo else vencidas if t.fecha_objetivo < hoy else proximas).append(item)
+    clave = lambda i: (i["fecha"] or hoy, orden_prioridad.get(i["prioridad_clave"], 1), i["pk"])
+    return [g for g in (
+        {"clave": "vencidas", "titulo": "Vencidas", "items": sorted(vencidas, key=clave)},
+        {"clave": "proximas", "titulo": "Hoy y próximas", "items": sorted(proximas, key=clave)},
+        {"clave": "sin_fecha", "titulo": "Sin fecha", "items": sorted(sin_fecha, key=lambda i: (orden_prioridad.get(i["prioridad_clave"], 1), i["pk"]))},
+    ) if g["items"]]

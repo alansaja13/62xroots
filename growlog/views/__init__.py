@@ -47,6 +47,7 @@ from .tareas import (  # noqa: F401
     tarea_descompletar,
     tarea_eliminar,
     tareas_list,
+    tareas_todas,
 )
 from .eventos import (  # noqa: F401
     evento_eliminar,
