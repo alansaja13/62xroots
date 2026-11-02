@@ -439,6 +439,7 @@ class Evento(models.Model):
         ("diagnostico", "Diagnóstico"),
         ("ajuste_ambiente", "Ajuste de ambiente"),
         ("cambio_ciclo", "Cambio de ciclo"),
+        ("nota", "Nota"),
         ("otro", "Otro"),
     ]
 

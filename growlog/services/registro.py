@@ -1,15 +1,18 @@
-"""Alta de registros diarios desde Registrar: ambiente, riego, observación, EC/pH y tarea."""
+"""Alta de registros diarios desde Registrar: ambiente, riego, evento, nota, EC/pH, tarea y medición de planta."""
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
+from django.utils import timezone
+
+from growlog.forms import MedicionPlantaForm
 from growlog.models import Evento, MedicionAmbiente, MedicionEC, Riego, Tarea
-from growlog.permissions import nutrientes_para
+from growlog.permissions import nutrientes_para, puede_subir_fotos
 from growlog.registration_forms import (
-    AmbienteForm, ObservacionForm, ECForm, NutrienteForm, PendienteForm, RiegoSolucionForm, VolumenForm,
+    AmbienteForm, ObservacionForm, ECForm, NotaForm, NutrienteForm, PendienteForm, RiegoSolucionForm, VolumenForm,
 )
 from .riegos import guardar_riego
 
-TIPOS = ("ambiente", "riego", "evento", "ec", "tarea")
+TIPOS = ("ambiente", "riego", "evento", "nota", "ec", "tarea", "planta")
 
 
 class RegistroError(Exception):
@@ -26,7 +29,7 @@ def validar(form_class, datos):
 
 
 @transaction.atomic
-def guardar_registro(usuario, cultivo, tipo, observado, datos):
+def guardar_registro(usuario, cultivo, tipo, observado, datos, archivos=None):
     """Crea el registro. La vista ya comprobó que `usuario` puede editar `cultivo`.
 
     `datos` trae los campos del formulario del tipo; riego suma `plantas`
@@ -42,6 +45,20 @@ def guardar_registro(usuario, cultivo, tipo, observado, datos):
         if len(plantas_afectadas) != len(set(plantas_ids)):
             raise RegistroError("Una planta ya no está disponible en este cultivo. Revisá el evento.")
         obj = Evento(timestamp=observado, **common, **validar(ObservacionForm, datos))
+    elif tipo == "nota":
+        obj = Evento(timestamp=observado, tipo="nota", **common, **validar(NotaForm, datos))
+    elif tipo == "planta":
+        planta = cultivo.plantas.activas().filter(pk=datos.get("planta_id") or 0).first()
+        if planta is None:
+            raise RegistroError("Elegí la planta que mediste.", campos={"planta_id": ["Elegí una planta."]})
+        form = MedicionPlantaForm({**datos, "fecha": timezone.localdate(observado)}, archivos or {},
+                                  permitir_foto=puede_subir_fotos(usuario))
+        if not form.is_valid():
+            raise RegistroError("Revisá los campos señalados.", campos=form.errors)
+        obj = form.save(commit=False)
+        obj.planta, obj.creado_por = planta, usuario
+        obj.save()
+        return obj
     elif tipo == "ec":
         obj = MedicionEC(timestamp=observado, **common, **validar(ECForm, datos))
     elif tipo == "tarea":
@@ -53,7 +70,13 @@ def guardar_registro(usuario, cultivo, tipo, observado, datos):
         disponibles = {p.pk: p for p in cultivo.plantas.activas()}
         detalles = []
         for row in plantas:
-            values = validar(VolumenForm, row)
+            try:
+                values = validar(VolumenForm, row)
+            except RegistroError as exc:
+                # El error dice de qué planta es y marca su campo.
+                nombre = getattr(disponibles.get(int(row.get("planta_id") or 0)), "apodo", "una planta")
+                raise RegistroError(f"Revisá el riego de {nombre}.",
+                                    campos={f"planta-{row.get('planta_id')}": [m for ms in exc.campos.values() for m in ms]})
             planta = disponibles.get(values.pop("planta_id"))
             if planta is None:
                 raise RegistroError("Una planta ya no está disponible en este cultivo. Revisá el riego.")

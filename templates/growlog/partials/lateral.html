@@ -8,7 +8,7 @@
   {% if c %}<a href="{% url 'growlog:tareas_list' c.slug %}" class="lateral__item{% if nav_activa == 'tareas' %} on{% endif %}">Tareas</a>{% endif %}
   <a href="{% url 'growlog:mas' %}" class="lateral__item{% if nav_activa == 'mas' %} on{% endif %}">Más</a>
   <div class="lateral__pie">
-    <a href="{% url 'growlog:registrar' %}{% if cultivo_nav and can_edit_cultivo %}?cultivo={{ cultivo_nav.pk }}{% endif %}" class="btn sm">+ Registrar</a>
+    <a href="{% url 'growlog:registrar' %}{% if cultivo_nav and can_edit_cultivo %}?cultivo={{ cultivo_nav.pk }}{% endif %}" class="btn sm" {% if request.resolver_match.url_name != 'registrar' %}hx-get="{% url 'growlog:registrar' %}?hoja=1{% if cultivo_nav and can_edit_cultivo %}&cultivo={{ cultivo_nav.pk }}{% endif %}" hx-target="#hoja"{% endif %}>+ Registrar</a>
     <div class="lateral__usuario">{{ user.username }}{% if cultivo_nav and not can_edit_cultivo %} · solo lectura{% endif %}</div>
   </div>
 </aside>

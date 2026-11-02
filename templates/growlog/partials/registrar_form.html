@@ -1,0 +1,214 @@
+{# Formulario de Registrar: el mismo en la página y en la hoja. Sin JavaScript funciona igual, solo muestra todo junto. #}
+<form method="post" action="{% url 'growlog:registrar' %}" enctype="multipart/form-data" class="reg-form" data-reg>
+  {% csrf_token %}
+  {% if volver %}<input type="hidden" name="volver" value="{{ volver }}">{% endif %}
+
+  {% if error %}
+  <div class="aviso aviso--bad reg-aviso" role="alert">
+    <b>{{ error }}</b>
+    {% if errores %}<ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+  {% endif %}
+  {% if avisos %}
+  <div class="aviso reg-aviso" role="alert">
+    <b>Estos valores son poco comunes. Revisalos o guardá igual.</b>
+    <ul>{% for a in avisos %}<li>{{ a.texto }} <a href="#" class="reg-corregir" data-campo="{{ a.campo }}">Corregir</a></li>{% endfor %}</ul>
+    <button type="submit" name="aviso_ok" value="{{ avisos_clave }}" class="btn g sm">Guardar igual</button>
+  </div>
+  {% endif %}
+
+  <div class="reg-arriba">
+    <label class="reg-cultivo">
+      <span class="visually-hidden">Cultivo</span>
+      <select name="cultivo" data-cultivo-select>
+        {% for c in cultivos %}<option value="{{ c.pk }}"{% if c == elegido %} selected{% endif %}>{{ c.nombre }}{% if c.archivado %} · archivado{% endif %}</option>{% endfor %}
+      </select>
+    </label>
+  </div>
+
+  <fieldset class="reg-tipos">
+    <legend class="visually-hidden">Qué registrás</legend>
+    {% for valor, etiqueta in etiquetas.items %}
+    <label class="chip reg-tipo reg-tipo--{{ valor }}"><input type="radio" name="kind" value="{{ valor }}"{% if valor == tipo %} checked{% endif %}><i aria-hidden="true"></i>{{ etiqueta }}</label>
+    {% endfor %}
+  </fieldset>
+
+  <div class="reg-hora" data-hora{% if tipo == 'tarea' %} hidden{% endif %}>
+    <input type="hidden" name="observado_modo" value="{% if hora_elegida %}elegida{% else %}ahora{% endif %}" data-hora-modo>
+    <button type="button" class="chip reg-hora__chip" data-hora-chip aria-expanded="{% if hora_elegida %}true{% else %}false{% endif %}">◷ <span data-hora-texto>{% if hora_elegida %}Otra hora{% else %}Ahora{% endif %}</span></button>
+    <label class="reg-hora__campo" data-hora-campo{% if not hora_elegida %} hidden{% endif %}>
+      <span class="visually-hidden">Cuándo ocurrió</span>
+      <input name="observado_en" type="datetime-local" value="{{ observado }}">
+    </label>
+  </div>
+
+  {# ── Riego ── #}
+  <fieldset data-kind="riego" class="reg-bloque">
+    <legend class="visually-hidden">Riego</legend>
+    {% for c in cultivos %}{% with d=c.reg %}{% if d.ultimo_riego %}
+    <div class="card reg-atajo" data-cultivo="{{ c.pk }}">
+      <div class="reg-atajo__texto"><div class="mo">Atajo</div><b>Repetir riego del {{ d.ultimo_riego.fecha }}</b><div class="mo reg-meta">{{ d.resumen }}</div></div>
+      <button type="button" class="pill reg-atajo__btn" data-repetir="{{ c.pk }}">Repetir</button>
+    </div>
+    {% endif %}{% endwith %}{% endfor %}
+
+    <label class="reg-switch">
+      <span>Mismo volumen para todas<br><span class="mo reg-meta" data-total></span></span>
+      <input type="checkbox" name="riego-mismo" class="tog" data-mismo{% if mismo_volumen %} checked{% endif %}>
+    </label>
+    <div class="reg-stepper" data-stepper>
+      <button type="button" class="st" data-paso="-25" aria-label="25 ml menos">−</button>
+      <label><span class="visually-hidden">ml por planta</span><input name="riego-volumen_todas" value="{{ v.riego.volumen_todas }}" inputmode="numeric" pattern="[0-9]+" autocomplete="off" placeholder="0" class="reg-num-gigante{% if 'riego-volumen_todas' in campos_error %} has-error{% endif %}"></label>
+      <span class="mo">ml c/u</span>
+      <button type="button" class="st" data-paso="25" aria-label="25 ml más">+</button>
+    </div>
+    {% for grupo in plantas_por_cultivo %}
+    <div class="reg-plantas" data-cultivo="{{ grupo.cultivo.pk }}" data-plantas="{{ grupo.plantas|length }}">
+      {% for fila in grupo.plantas %}
+      <label class="reg-planta{% if fila.error %} has-error{% endif %}"><span>{{ fila.planta.apodo }}</span><input name="riego-planta-{{ fila.planta.pk }}" data-planta="{{ fila.planta.pk }}" value="{{ fila.volumen }}" inputmode="numeric" pattern="[0-9]+" autocomplete="off" placeholder="sin riego"><span class="mo">ml</span></label>
+      {% empty %}
+      <p class="reg-nota">Este cultivo no tiene plantas activas. Cargalas desde el cultivo para registrar riegos.</p>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+    <div class="reg-dos">
+      <label class="card reg-medida{% if 'riego-ph' in campos_error %} has-error{% endif %}"><span class="mo">pH solución</span><input name="riego-ph" value="{{ v.riego.ph }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" placeholder="6,2" data-ph><span class="mo reg-meta" data-ph-hint></span></label>
+      <label class="card reg-medida{% if 'riego-ec' in campos_error %} has-error{% endif %}"><span class="mo">EC · medidor ×10</span><input name="riego-ec" value="{{ v.riego.ec }}" inputmode="numeric" pattern="[0-9]+" autocomplete="off" placeholder="140" data-ec><span class="mo reg-meta" data-ec-hint>120 = 1200 µS</span></label>
+    </div>
+
+    {% for grupo in nutrientes_por_cultivo %}
+    <div class="reg-nutrientes" data-cultivo="{{ grupo.cultivo.pk }}">
+      {% if grupo.habituales %}<div class="mo">Nutrientes · los de siempre</div>{% endif %}
+      {% for n in grupo.habituales %}
+      <label class="reg-planta"><span>{{ n.nutriente }}</span><input name="riego-nutriente-{{ n.nutriente.pk }}" data-nutriente="{{ n.nutriente.pk }}" value="{{ n.dosis }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" placeholder="no"><span class="mo">g/L</span></label>
+      {% endfor %}
+      {% if grupo.otros %}
+      <details{% for n in grupo.otros %}{% if n.dosis %} open{% endif %}{% endfor %}>
+        <summary class="mo">{% if grupo.habituales %}Otros nutrientes{% else %}Nutrientes · opcional{% endif %}</summary>
+        {% for n in grupo.otros %}
+        <label class="reg-planta"><span>{{ n.nutriente }}</span><input name="riego-nutriente-{{ n.nutriente.pk }}" data-nutriente="{{ n.nutriente.pk }}" value="{{ n.dosis }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" placeholder="no"><span class="mo">g/L</span></label>
+        {% endfor %}
+      </details>
+      {% endif %}
+      {% if not grupo.habituales and not grupo.otros %}<p class="reg-nota">No hay nutrientes cargados. <a href="{% url 'growlog:nutrientes' %}">Agregalos acá</a>.</p>{% endif %}
+    </div>
+    {% endfor %}
+
+    <label class="reg-switch">
+      <span>Hubo runoff</span>
+      <input type="checkbox" name="riego-hubo_runoff" class="tog" data-runoff{% if v.riego.hubo_runoff %} checked{% endif %}>
+    </label>
+    {% for grupo in plantas_por_cultivo %}
+    <div class="reg-runoff" data-cultivo="{{ grupo.cultivo.pk }}" data-runoff-bloque>
+      {% for fila in grupo.plantas %}
+      <div class="reg-runoff__fila">
+        <span>{{ fila.planta.apodo }}</span>
+        <label><span class="visually-hidden">pH runoff de {{ fila.planta.apodo }}</span><input name="riego-phrunoff-{{ fila.planta.pk }}" value="{{ fila.ph_runoff }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" placeholder="pH"></label>
+        <label><span class="visually-hidden">EC runoff de {{ fila.planta.apodo }}</span><input name="riego-ecrunoff-{{ fila.planta.pk }}" value="{{ fila.ec_runoff }}" inputmode="numeric" pattern="[0-9]+" autocomplete="off" placeholder="EC ×10"></label>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+    <label class="reg-campo">Notas <span class="mo">opcional</span><textarea name="riego-notas" maxlength="5000" rows="2">{{ v.riego.notas }}</textarea></label>
+  </fieldset>
+
+  {# ── Ambiente ── #}
+  <fieldset data-kind="ambiente" class="reg-bloque">
+    <legend class="visually-hidden">Ambiente</legend>
+    <div class="reg-dos">
+      <label class="card reg-medida{% if 'ambiente-temperatura_c' in campos_error %} has-error{% endif %}"><span class="mo">Temperatura · °C</span><input name="ambiente-temperatura_c" value="{{ v.ambiente.temperatura_c }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" required placeholder="24,5" class="reg-num-gigante" data-temp></label>
+      <label class="card reg-medida{% if 'ambiente-humedad_relativa' in campos_error %} has-error{% endif %}"><span class="mo">Humedad · %</span><input name="ambiente-humedad_relativa" value="{{ v.ambiente.humedad_relativa }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" required placeholder="60" class="reg-num-gigante" data-hr></label>
+    </div>
+    <p class="reg-vivo" data-vpd aria-live="polite"></p>
+    <label class="reg-campo">Notas <span class="mo">opcional</span><textarea name="ambiente-notas" maxlength="5000" rows="2" placeholder="¿Algo para recordar?">{{ v.ambiente.notas }}</textarea></label>
+  </fieldset>
+
+  {# ── Evento ── #}
+  <fieldset data-kind="evento" class="reg-bloque">
+    <legend class="visually-hidden">Evento</legend>
+    <label class="reg-campo">Qué fue
+      <select name="evento-tipo">{% for valor, etiqueta in opciones.eventos %}<option value="{{ valor }}"{% if valor == v.evento.tipo|default:"otro" %} selected{% endif %}>{{ etiqueta }}</option>{% endfor %}</select>
+    </label>
+    <label class="reg-campo{% if 'evento-descripcion' in campos_error %} has-error{% endif %}">Qué pasó<textarea name="evento-descripcion" maxlength="5000" required rows="3" placeholder="Lo que viste o hiciste">{{ v.evento.descripcion }}</textarea></label>
+    {% for grupo in plantas_por_cultivo %}{% if grupo.plantas %}
+    <div class="reg-chips" data-cultivo="{{ grupo.cultivo.pk }}">
+      <div class="mo">Plantas · opcional</div>
+      {% for fila in grupo.plantas %}<label class="chip"><input type="checkbox" name="evento-planta-{{ fila.planta.pk }}"{% if fila.afectada %} checked{% endif %}> {{ fila.planta.apodo }}</label>{% endfor %}
+    </div>
+    {% endif %}{% endfor %}
+    <details{% if v.evento.follow_up_fecha %} open{% endif %}>
+      <summary class="mo">Programar un seguimiento</summary>
+      <p class="reg-nota">Aparece en "Para revisar" de Hoy hasta que lo resuelvas.</p>
+      <label class="reg-campo">Para cuándo<input name="evento-follow_up_fecha" type="date" value="{{ v.evento.follow_up_fecha }}"></label>
+      <label class="reg-campo">Qué revisar<textarea name="evento-follow_up_descripcion" maxlength="5000" rows="2">{{ v.evento.follow_up_descripcion }}</textarea></label>
+    </details>
+  </fieldset>
+
+  {# ── Nota ── #}
+  <fieldset data-kind="nota" class="reg-bloque">
+    <legend class="visually-hidden">Nota</legend>
+    <label class="reg-campo{% if 'nota-descripcion' in campos_error %} has-error{% endif %}"><span class="visually-hidden">Nota</span><textarea name="nota-descripcion" maxlength="5000" required rows="4" placeholder="Hojas más firmes después del riego…">{{ v.nota.descripcion }}</textarea></label>
+  </fieldset>
+
+  {# ── pH / EC ── #}
+  <fieldset data-kind="ec" class="reg-bloque">
+    <legend class="visually-hidden">pH y EC</legend>
+    <label class="reg-campo">Qué mediste
+      <select name="ec-tipo">{% for valor, etiqueta in opciones.ec %}<option value="{{ valor }}"{% if valor == v.ec.tipo|default:"solucion" %} selected{% endif %}>{{ etiqueta }}</option>{% endfor %}</select>
+    </label>
+    <div class="reg-dos">
+      <label class="card reg-medida{% if 'ec-ph' in campos_error %} has-error{% endif %}"><span class="mo">pH</span><input name="ec-ph" value="{{ v.ec.ph }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off" placeholder="6,2" data-ph><span class="mo reg-meta" data-ph-hint></span></label>
+      <label class="card reg-medida{% if 'ec-ec' in campos_error %} has-error{% endif %}"><span class="mo">EC · medidor ×10</span><input name="ec-ec" value="{{ v.ec.ec }}" inputmode="numeric" pattern="[0-9]+" autocomplete="off" placeholder="140" data-ec><span class="mo reg-meta" data-ec-hint>120 = 1200 µS</span></label>
+    </div>
+    <p class="reg-nota">Completá al menos pH o EC. El cero también vale.</p>
+    <label class="reg-campo">Temperatura del agua · °C <span class="mo">opcional</span><input name="ec-temp_agua" value="{{ v.ec.temp_agua }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off"></label>
+    <label class="reg-campo">Notas <span class="mo">opcional</span><textarea name="ec-notas" maxlength="5000" rows="2">{{ v.ec.notas }}</textarea></label>
+  </fieldset>
+
+  {# ── Tarea ── #}
+  <fieldset data-kind="tarea" class="reg-bloque">
+    <legend class="visually-hidden">Tarea</legend>
+    <label class="reg-campo{% if 'tarea-titulo' in campos_error %} has-error{% endif %}">Qué hay que hacer<input name="tarea-titulo" value="{{ v.tarea.titulo }}" maxlength="200" required placeholder="Revisar el sensor"></label>
+    <div class="reg-dos">
+      <label class="reg-campo">Categoría
+        <select name="tarea-categoria">{% for valor, etiqueta in opciones.categorias %}<option value="{{ valor }}"{% if valor == v.tarea.categoria|default:"mantenimiento" %} selected{% endif %}>{{ etiqueta }}</option>{% endfor %}</select>
+      </label>
+      <label class="reg-campo">Prioridad
+        <select name="tarea-prioridad">{% for valor, etiqueta in opciones.prioridades %}<option value="{{ valor }}"{% if valor == v.tarea.prioridad|default:"normal" %} selected{% endif %}>{{ etiqueta }}</option>{% endfor %}</select>
+      </label>
+    </div>
+    <label class="reg-campo">Para cuándo <span class="mo">opcional</span><input name="tarea-fecha_objetivo" type="date" value="{{ v.tarea.fecha_objetivo }}"></label>
+    <label class="reg-campo">Detalle <span class="mo">opcional</span><textarea name="tarea-descripcion" maxlength="5000" rows="2">{{ v.tarea.descripcion }}</textarea></label>
+  </fieldset>
+
+  {# ── Medición de planta ── #}
+  <fieldset data-kind="planta" class="reg-bloque">
+    <legend class="visually-hidden">Medición de planta</legend>
+    {% for grupo in plantas_por_cultivo %}
+    <div class="reg-chips{% if 'planta-planta_id' in campos_error %} has-error{% endif %}" data-cultivo="{{ grupo.cultivo.pk }}">
+      <div class="mo">Qué planta</div>
+      {% for fila in grupo.plantas %}<label class="chip"><input type="radio" name="planta-planta_id" value="{{ fila.planta.pk }}"{% if v.planta.planta_id == fila.planta.pk|stringformat:"s" %} checked{% endif %}> {{ fila.planta.apodo }}</label>
+      {% empty %}<p class="reg-nota">Este cultivo no tiene plantas activas.</p>{% endfor %}
+    </div>
+    {% endfor %}
+    <div class="reg-tres">
+      <label class="card reg-medida{% if 'planta-altura_cm' in campos_error %} has-error{% endif %}"><span class="mo">Altura · cm</span><input name="planta-altura_cm" value="{{ v.planta.altura_cm }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off"></label>
+      <label class="card reg-medida{% if 'planta-nudos_count' in campos_error %} has-error{% endif %}"><span class="mo">Nudos</span><input name="planta-nudos_count" value="{{ v.planta.nudos_count }}" inputmode="numeric" pattern="[0-9]+" autocomplete="off"></label>
+      <label class="card reg-medida{% if 'planta-ancho_canopy_cm' in campos_error %} has-error{% endif %}"><span class="mo">Canopy · cm</span><input name="planta-ancho_canopy_cm" value="{{ v.planta.ancho_canopy_cm }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off"></label>
+    </div>
+    <div class="reg-chips">
+      <div class="mo">Aspecto</div>
+      {% for valor, etiqueta in opciones.aspectos %}<label class="chip"><input type="radio" name="planta-aspecto_general" value="{{ valor }}"{% if valor == v.planta.aspecto_general|default:"bueno" %} checked{% endif %}> {{ etiqueta }}</label>{% endfor %}
+    </div>
+    <label class="reg-campo">Síntomas <span class="mo">opcional</span><textarea name="planta-sintomas" maxlength="5000" rows="2" placeholder="Puntas amarillas, manchas…">{{ v.planta.sintomas }}</textarea></label>
+    {% if fotos %}
+    <label class="reg-campo{% if 'planta-foto' in campos_error %} has-error{% endif %}">Foto <span class="mo">opcional, hasta 5 MB</span><input type="file" name="planta-foto" accept="image/*" capture="environment"></label>
+    {% endif %}
+  </fieldset>
+
+  <div class="reg-acciones">
+    <button type="submit" class="btn reg-guardar" data-guardar>Guardar</button>
+  </div>
+</form>
+{{ por_cultivo|json_script:"reg-datos" }}

@@ -1,60 +1,115 @@
-/* Registrar. Inputs, labels, botones y tokens vienen de verde.css; acá solo el
-   layout propio. Clases con prefijo reg- para no chocar con Bootstrap (.row, .card). */
-.reg { max-width: 760px; }
-.reg [hidden] { display: none !important; }
-.reg-eyebrow {
-  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
-  letter-spacing: .05em; text-transform: uppercase; color: var(--green); margin: 0;
-}
-.reg-title {
-  font-family: var(--font-display); font-variation-settings: "wdth" 85, "opsz" 96; font-weight: 800;
-  letter-spacing: -.035em; line-height: .95; font-size: clamp(44px, 8vw, 64px); margin: 10px 0 20px;
+/* Registrar: página y hoja comparten el formulario. */
+.reg { max-width: 640px; }
+.reg .h1 { margin-bottom: var(--sp-4); }
+.reg-form { display: grid; gap: var(--sp-3); }
+.reg-form fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.reg-bloque { display: grid; gap: var(--sp-3); }
+.reg-aviso ul { margin: 6px 0 10px; padding-left: 18px; }
+.reg-aviso li + li { margin-top: 4px; }
+.reg-corregir { margin-left: 6px; }
+
+.reg-arriba { display: flex; justify-content: flex-start; }
+.reg-cultivo { margin: 0; text-transform: none; letter-spacing: 0; }
+.reg-cultivo select {
+  width: auto; max-width: 100%; min-height: 40px; border-radius: 20px; background-color: var(--s2); border: 0;
+  font: 500 var(--t-sm) var(--font-mono); padding: 0 34px 0 14px;
 }
 
-.reg-card { background: var(--card); border: 1px solid var(--rule); border-radius: 14px; padding: 22px; }
-.reg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
-.reg label { margin-bottom: 16px; }
-.reg label small { font-size: 12px; font-weight: 500; letter-spacing: .08em; color: var(--fine); margin-left: 4px; }
-.reg label > input, .reg label > select, .reg label > textarea { margin-top: 6px; min-height: 44px; }
-.reg .reg-num-big { padding: 8px 14px; }
-.reg .reg-num-big::placeholder { color: var(--rule); }
-.reg input:user-invalid { border-color: var(--rust); box-shadow: 0 0 0 3px rgba(196,106,62,.14); }
-.reg fieldset { border: 0; margin: 6px 0 0; padding: 0; min-width: 0; }
-.reg legend {
-  font-family: var(--font-mono); font-size: 12px; font-weight: 600; float: none;
-  letter-spacing: .05em; text-transform: uppercase; color: var(--green);
-  padding: 0 0 8px; margin-bottom: 14px; width: 100%; border-bottom: 1px solid var(--rule-soft);
+.reg-tipos { display: flex; gap: var(--sp-2); overflow-x: auto; scrollbar-width: none; margin: 0 calc(var(--sp-4) * -1); padding: 2px var(--sp-4); }
+.reg-tipos::-webkit-scrollbar { display: none; }
+@media (min-width: 992px) { .reg-tipos { flex-wrap: wrap; margin: 0; padding: 0; } }
+.reg-tipo { flex: none; margin: 0; text-transform: none; letter-spacing: 0; color: var(--ink); font-size: var(--t-md); }
+.reg-tipo input { position: absolute; opacity: 0; pointer-events: none; }
+.reg-tipo i { width: 11px; height: 11px; border-radius: 3px; background: var(--n); }
+.reg-tipo--riego i { background: var(--w); } .reg-tipo--ambiente i { background: var(--m); }
+.reg-tipo--evento i { background: var(--e); } .reg-tipo--ec i { background: var(--flo); }
+.reg-tipo--tarea i { background: var(--mu); } .reg-tipo--planta i { background: var(--ac); }
+.reg-tipo:has(input:checked) { border-color: var(--ink); background: var(--s1); }
+.reg-tipo:has(input:focus-visible) { outline: 2px solid var(--ac); outline-offset: 2px; }
+
+.reg-hora { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.reg-hora__chip { min-height: 40px; font-size: var(--t-sm); }
+.reg-hora__campo { margin: 0; flex: 1; min-width: 200px; }
+
+.reg-atajo { display: flex; flex-direction: row; align-items: center; gap: var(--sp-3); background: var(--s2); }
+.reg-atajo__texto { flex: 1; min-width: 0; }
+.reg-atajo__texto b { display: block; margin-top: 2px; }
+.reg-atajo__btn { height: 40px; padding: 0 16px; border: 0; background: var(--ink); color: var(--bg); font-weight: 600; cursor: pointer; }
+.reg-meta { text-transform: none; letter-spacing: .02em; }
+
+.reg-switch { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin: 0;
+  background: var(--s1); border-radius: var(--r-lg); padding: var(--sp-3) var(--sp-4);
+  font: 600 var(--t-md) var(--font-body); text-transform: none; letter-spacing: 0; color: var(--ink); cursor: pointer; }
+/* Interruptor hecho con un checkbox: pisa el tamaño que el sistema le da a los checkbox. */
+.reg-switch input.tog {
+  appearance: none; -webkit-appearance: none; cursor: pointer; margin: 0; flex: none;
+  width: 52px; height: 30px; border-radius: 15px; border: 1.5px solid var(--ln); background: var(--bg); position: relative;
 }
-.reg details { margin: 6px 0 18px; }
-.reg summary { cursor: pointer; margin-bottom: 12px; font-weight: 600; }
-.reg-hint { font-size: 12px; color: var(--cream-soft); }
-.reg-hint a { color: var(--green); }
+.reg-switch input.tog::after { content: ""; position: absolute; top: 2px; left: 2px; width: 23px; height: 23px; border-radius: 50%; background: var(--mu); transition: left .15s; }
+.reg-switch input.tog:checked { background: var(--ac); border-color: var(--ac); }
+.reg-switch input.tog:checked::after { left: 24px; background: var(--on); }
 
-/* Checkbox + texto en una fila: buscar runoff, runoff por planta, plantas afectadas */
-.reg .reg-check {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 12px; cursor: pointer;
-  font-size: 14px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--cream);
+.reg-stepper { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); }
+.reg-stepper .st {
+  width: 52px; height: 52px; border-radius: var(--r-md); border: 0; flex: none; cursor: pointer;
+  background: var(--s2); color: var(--ink); font: 600 26px var(--font-mono); display: grid; place-items: center;
 }
-.reg-check input[type=checkbox] { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--green); }
+.reg-stepper label { margin: 0; }
+.reg-num-gigante { font: 600 44px/1 var(--font-display) !important; letter-spacing: -.03em; text-align: center; padding: 6px 8px !important; }
+.reg-stepper .reg-num-gigante { width: 150px; }
+.reg-medida .reg-num-gigante { text-align: left; font-size: 34px !important; }
 
-/* Fila de planta en Riego: volumen y su runoff plegado aparte */
-.reg-plant { margin-bottom: 14px; }
-.reg-plant details { margin: 8px 0 0; padding-left: 2px; }
-.reg-plant summary { font-size: 12px; font-weight: 500; color: var(--cream-soft); margin-bottom: 10px; }
+.reg-plantas, .reg-nutrientes, .reg-runoff { display: grid; gap: 0; }
+.reg-planta { display: flex; align-items: center; gap: var(--sp-3); margin: 0; min-height: 56px; border-top: 1px solid var(--ln);
+  font: 600 var(--t-md) var(--font-body); text-transform: none; letter-spacing: 0; color: var(--ink); }
+.reg-planta > span:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.reg-planta input { width: 110px; text-align: right; }
+.reg-nutrientes > .mo, .reg-nutrientes summary { padding: var(--sp-2) 0; }
+.reg-nutrientes summary { cursor: pointer; min-height: var(--toque); display: flex; align-items: center; }
 
-.reg-notice {
-  border: 1px solid var(--rule); border-left: 3px solid var(--green); border-radius: 12px;
-  background: var(--bg-alt); padding: 12px 16px; font-size: 13px; margin-bottom: 18px;
+.reg-runoff__fila { display: grid; grid-template-columns: 1fr 90px 100px; gap: var(--sp-2); align-items: center; min-height: 56px; border-top: 1px solid var(--ln); font-weight: 600; }
+.reg-runoff__fila label { margin: 0; }
+
+.reg-dos { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+.reg-tres { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+.reg-medida { margin: 0; display: flex; flex-direction: column; gap: 6px; text-transform: none; letter-spacing: 0; }
+.reg-medida input { background: transparent; border: 0; padding: 0; min-height: 40px; font: 600 28px var(--font-display); box-shadow: none !important; }
+.reg-medida:focus-within { outline: 2px solid var(--ac); outline-offset: 0; }
+.reg-medida.has-error { outline: 2px solid var(--bad); }
+.reg-fuera { color: var(--warn); }
+.reg-vivo { margin: 0; font: 500 var(--t-md) var(--font-mono); min-height: 22px; }
+.reg-vivo[data-estado="ideal"] { color: var(--ac); }
+.reg-vivo[data-estado="alto"] { color: var(--bad); }
+.reg-vivo[data-estado="bajo"] { color: var(--w); }
+
+.reg-campo { margin: 0; display: block; }
+.reg-campo > input, .reg-campo > textarea, .reg-campo > select { margin-top: 6px; }
+.reg-campo .mo { display: inline; margin-left: 4px; text-transform: none; }
+.reg-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+.reg-chips > .mo { width: 100%; }
+.reg-chips .chip { margin: 0; text-transform: none; letter-spacing: 0; color: var(--ink); min-height: 40px; font-size: var(--t-sm); }
+.reg-chips .chip:has(input:checked) { border-color: var(--ink); background: var(--s1); }
+.reg-chips.has-error .chip { border-color: var(--bad); }
+.reg-form details summary { cursor: pointer; }
+.reg-nota { color: var(--mu); font-size: var(--t-sm); margin: 0; }
+.has-error input, input.has-error, .has-error textarea { border-color: var(--bad) !important; }
+
+.reg-acciones { position: sticky; bottom: 0; padding: var(--sp-3) 0 calc(var(--sp-2) + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 30%); }
+.reg-guardar { width: 100%; }
+
+/* Hoja (desde el + de la barra) */
+.hoja-fondo { position: fixed; inset: 0; z-index: 1200; background: rgba(0,0,0,.55); }
+.hoja {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1201; max-height: 92vh; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--bg); border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: 0 -20px 50px -10px rgba(0,0,0,.7);
+  padding: 0 var(--sp-4) 0;
 }
-.reg-notice p { margin: 0 0 6px; font-weight: 600; }
-.reg-notice ul { margin: 0 0 6px; padding-left: 18px; }
-.reg-notice--warning { border-left-color: var(--honey); }
-.reg-notice--error { border-left-color: var(--rust); }
-
-.reg-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
-
-@media (max-width: 640px) {
-  .reg-card { padding: 18px 16px; }
-  .reg-actions .btn-brand, .reg-actions .btn-ghost { flex: 1 1 auto; justify-content: center; }
+.hoja::before { content: ""; display: block; width: 40px; height: 5px; border-radius: 3px; background: var(--ln); margin: 10px auto 0; }
+.hoja .reg-acciones { background: linear-gradient(transparent, var(--bg) 30%); }
+@media (min-width: 992px) {
+  .hoja { left: 50%; right: auto; bottom: auto; top: 6vh; width: 620px; transform: translateX(-50%); border-radius: var(--r-xl); max-height: 88vh; }
+  .hoja::before { display: none; }
 }
-@media (max-width: 360px) { .reg-row { grid-template-columns: 1fr; } }
+.hoja__head { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--bg); z-index: 1; padding: var(--sp-2) 0; }
+.hoja__cerrar { width: var(--toque); height: var(--toque); border: 0; border-radius: 50%; background: var(--s1); color: var(--ink); font-size: 18px; cursor: pointer; }
+body.hoja-abierta { overflow: hidden; }

@@ -486,3 +486,5 @@ input[type=checkbox], input[type=radio] { width: 20px; height: 20px; accent-colo
   .panel__action { min-height: var(--toque); display: inline-flex; align-items: center; }
   a.pill { min-height: 36px; }
 }
+.toast__accion { background: none; border: 0; padding: 0 4px; min-height: var(--toque); display: inline-flex; align-items: center; color: var(--bg); font-weight: 700; text-decoration: underline; cursor: pointer; }
+.toast__accion:hover { color: var(--bg); opacity: .8; }

@@ -13,6 +13,7 @@
   {% include "growlog/partials/fonts.html" %}
 
   <link rel="stylesheet" href="{% static 'growlog/suelo.css' %}">
+  {% if user.is_authenticated %}<link rel="stylesheet" href="{% static 'growlog/registrar.css' %}">{% endif %}
 
   {% block extra_head %}{% endblock %}
 </head>
@@ -26,10 +27,26 @@
   {% if messages %}
   <div class="mensajes">
     {% for msg in messages %}
+    {% if 'registro' in msg.tags %}
+    {# Lo recién guardado: aviso abajo con Ver y Deshacer (vale un minuto). #}
+    {% with u=request.session.ultimo_registro %}
+    <div class="toast" role="status" data-toast>
+      <span style="flex: 1;">{{ msg }}</span>
+      {% if u %}
+      <a href="{{ u.bitacora }}" class="toast__accion">Ver</a>
+      <form method="post" action="{% url 'growlog:registrar_deshacer' %}" style="margin: 0;">
+        {% csrf_token %}<input type="hidden" name="volver" value="{{ request.get_full_path }}">
+        <button type="submit" class="toast__accion">Deshacer</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endwith %}
+    {% else %}
     <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
       {{ msg }}
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
+    {% endif %}
     {% endfor %}
   </div>
   {% endif %}
@@ -38,6 +55,7 @@
 </main>
 
 {% if user.is_authenticated %}
+<div id="hoja"></div>
 <nav class="barra" aria-label="Navegación principal">
   {% block bottom_nav %}{% include "growlog/partials/bottom_nav.html" %}{% endblock %}
 </nav>
@@ -61,6 +79,28 @@
   });
 </script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+{% if user.is_authenticated %}
+<script src="{% static 'growlog/registrar.js' %}"></script>
+<script>
+// Hoja de Registrar: se abre con el + (HTMX la trae a #hoja) y se cierra con ✕, el fondo o Escape.
+(function () {
+  var hoja = document.getElementById('hoja');
+  function cerrar() { hoja.innerHTML = ''; document.body.classList.remove('hoja-abierta'); }
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    if (e.target === hoja && hoja.children.length) {
+      document.body.classList.add('hoja-abierta');
+      var primero = hoja.querySelector('input[name="kind"]:checked');
+      if (primero) primero.focus({ preventScroll: true });
+    }
+  });
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-cerrar-hoja]')) cerrar(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && hoja.children.length) cerrar(); });
+  // El aviso de lo guardado se va solo a los 10 segundos.
+  var toast = document.querySelector('[data-toast]');
+  if (toast) setTimeout(function () { toast.remove(); }, 10000);
+})();
+</script>
+{% endif %}
 
 <script>
 (function () {

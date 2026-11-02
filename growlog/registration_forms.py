@@ -22,6 +22,10 @@ class ObservacionForm(forms.Form):
     follow_up_descripcion = forms.CharField(required=False, max_length=5000)
 
 
+class NotaForm(forms.Form):
+    descripcion = forms.CharField(max_length=5000)
+
+
 class SolucionForm(NotasForm):
     ph = forms.DecimalField(required=False, max_digits=4, decimal_places=2, min_value=0, max_value=14)
     ec = forms.DecimalField(required=False, max_digits=5, decimal_places=2, min_value=0)

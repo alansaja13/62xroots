@@ -1,0 +1,14 @@
+{# Registrar como hoja sobre la pantalla actual (la abre el + de la barra por HTMX). #}
+{% load static %}
+<div class="hoja-fondo" data-cerrar-hoja></div>
+<section class="hoja" role="dialog" aria-modal="true" aria-labelledby="hoja-titulo">
+  <div class="hoja__head">
+    <h2 class="h2" id="hoja-titulo">Registrar</h2>
+    <button type="button" class="hoja__cerrar" data-cerrar-hoja aria-label="Cerrar">✕</button>
+  </div>
+  {% if cultivos %}
+  {% include "growlog/partials/registrar_form.html" %}
+  {% else %}
+  <div class="vacio"><p>No tenés cultivos con permiso para registrar.</p><a href="{% url 'growlog:nuevo_cultivo' %}" class="btn sm">Crear un cultivo</a></div>
+  {% endif %}
+</section>
