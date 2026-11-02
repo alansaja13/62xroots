@@ -68,6 +68,9 @@
   .cd-vital--alto  { border-left-color: var(--rust); }
   .cd-vital--bajo  { border-left-color: var(--honey); }
   .cd-vital--neutral { border-left-color: var(--rule); }
+  .cd-vital--link { display: block; color: inherit; }
+  .cd-vital--link:hover { color: inherit; opacity: 1; background: var(--s2); }
+  .cd-vital__ver { float: right; color: var(--ac); text-transform: none; }
   .cd-vital__val {
     font-family: var(--font-display), sans-serif;
     font-variation-settings: "wdth" 85, "opsz" 96;
@@ -370,15 +373,15 @@
     </div>
   </div>
 
-  <div class="cd-vital cd-vital--{% if semaforo %}{{ semaforo.vpd }}{% else %}neutral{% endif %}">
-    <div class="label-eyebrow"><i class="bi bi-activity"></i> VPD</div>
+  <a href="{% url 'growlog:cultivo_vpd' cultivo.slug %}" class="cd-vital cd-vital--link cd-vital--{% if semaforo %}{{ semaforo.vpd }}{% else %}neutral{% endif %}" aria-label="VPD: ver el mapa con el historial">
+    <div class="label-eyebrow"><i class="bi bi-activity"></i> VPD <span class="cd-vital__ver">mapa ›</span></div>
     <div class="cd-vital__val{% if not ultima_medicion %} cd-vital__val--empty{% endif %}" style="margin-top: 10px;">
       {% if ultima_medicion %}{{ ultima_medicion.vpd }}<span class="cd-vital__unit">kPa</span>{% else %}-{% endif %}
     </div>
     <div class="cd-vital__status">
       · {% if semaforo %}{{ semaforo.vpd }}{% else %}sin ref.{% endif %}
     </div>
-  </div>
+  </a>
 
   <div class="cd-vital cd-vital--neutral">
     <div class="label-eyebrow"><i class="bi bi-moisture"></i> EC / pH</div>

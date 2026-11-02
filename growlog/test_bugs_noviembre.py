@@ -128,3 +128,53 @@ class BugsNoviembreTests(TestCase):
         response = self.client.get(reverse("growlog:cultivo_detail", args=[self.cultivo.slug]))
         self.assertContains(response, "archivadas · 1")
         self.assertContains(response, reverse("growlog:planta_detail", args=[archivada.pk]))
+
+
+class MapaVpdTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from .models import ParametroIdeal
+        from .services.etapas import cambiar_etapa
+        cls.owner = User.objects.create_user("vpd")
+        hoy = timezone.localdate()
+        cls.cultivo = Cultivo.objects.create(nombre="Carpa", fecha_inicio=hoy - timedelta(days=40), propietario=cls.owner)
+        cambiar_etapa(cls.cultivo, "veg_temprano", hoy - timedelta(days=40))
+        cambiar_etapa(cls.cultivo, "flora_temprana", hoy - timedelta(days=3))
+        for etapa, vmin, vmax in (("veg_temprano", "0.8", "1.0"), ("flora_temprana", "1.0", "1.3"), ("secado", "0", "0")):
+            ParametroIdeal.objects.update_or_create(etapa=etapa, defaults=dict(
+                temp_min=20, temp_max=28, hr_min=40, hr_max=70, ph_min=6, ph_max=7, vpd_min=vmin, vpd_max=vmax))
+        ahora = timezone.now()
+        # 24,2° y 62% dan 1,15 kPa: alto en veg temprano, ideal en flora temprana.
+        MedicionAmbiente.objects.create(cultivo=cls.cultivo, temperatura_c=24.2, humedad_relativa=62, timestamp=ahora - timedelta(days=6))
+        MedicionAmbiente.objects.create(cultivo=cls.cultivo, temperatura_c=24.2, humedad_relativa=62, timestamp=ahora - timedelta(hours=1))
+        MedicionAmbiente.objects.create(cultivo=cls.cultivo, temperatura_c=24, humedad_relativa=60, timestamp=ahora - timedelta(days=20))
+
+    def setUp(self):
+        self.client.force_login(self.owner)
+
+    def test_cada_lectura_se_juzga_con_su_etapa(self):
+        from .services.vpd import mapa_vpd
+        datos = mapa_vpd(self.cultivo, "7d")
+        self.assertEqual([l["estado"] for l in datos["lecturas"]], ["alto", "ideal"])
+        self.assertEqual(datos["en_rango"], 50)
+        self.assertEqual(len(mapa_vpd(self.cultivo, "ciclo")["lecturas"]), 3)
+
+    def test_etapa_sin_ideal_de_vpd_no_juzga(self):
+        from .services.vpd import mapa_vpd
+        secado = next(e for e in mapa_vpd(self.cultivo)["etapas"] if e["clave"] == "secado")
+        self.assertIsNone(secado["vpd"])
+
+    def test_pantalla_y_enlace_desde_el_cultivo(self):
+        url = reverse("growlog:cultivo_vpd", args=[self.cultivo.slug])
+        self.assertContains(self.client.get(reverse("growlog:cultivo_detail", args=[self.cultivo.slug])), url)
+        page = self.client.get(url + "?rango=cualquiera")
+        self.assertEqual(page.context["datos"]["rango"], "7d")
+        self.assertEqual(page.context["ultima_estado"], "ideal")
+        self.assertContains(page, 'id="vpd-datos"')
+
+    def test_lector_puede_ver_el_mapa(self):
+        from .models import CultivoMiembro
+        lector = User.objects.create_user("lector-vpd")
+        CultivoMiembro.objects.create(cultivo=self.cultivo, usuario=lector, rol="lector")
+        self.client.force_login(lector)
+        self.assertEqual(self.client.get(reverse("growlog:cultivo_vpd", args=[self.cultivo.slug])).status_code, 200)

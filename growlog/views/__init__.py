@@ -22,6 +22,7 @@ from .cultivos import (  # noqa: F401
     cultivo_reabrir,
     cultivo_tendencias,
     cultivo_tendencias_json,
+    cultivo_vpd,
     dashboard,
     nuevo_cultivo,
     registrar_en_cultivo,

@@ -11,7 +11,7 @@ SECCIONES_CULTIVO = {
     "cultivo_detail": "resumen", "planta_detail": "resumen", "planta_etapa_list": "resumen",
     "timeline": "bitacora",
     "tareas_list": "tareas",
-    "cultivo_tendencias": "tendencias",
+    "cultivo_tendencias": "tendencias", "cultivo_vpd": "tendencias",
     "canopy": "canopy",
     "energia": "energia",
     "reporte": "reporte",

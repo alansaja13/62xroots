@@ -14,6 +14,7 @@ from ..models import CambioEtapaCultivo, CambioEtapaPlanta, Cultivo, ParametroId
 from ..permissions import objeto_del_cultivo
 from ..services.etapas import cambiar_etapa, reabrir_cultivo, sincronizar_cultivo
 from ..services.hoy import resumen_hoy
+from ..services.vpd import RANGO_DEFAULT, estado_de, mapa_vpd
 from ..utils import (
     calcular_luz_estado,
     etapa_efectiva_cultivo,
@@ -123,6 +124,21 @@ def cultivo_detail(request, slug):
 def cultivo_tendencias(request, slug):
     cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
     return render(request, "growlog/tendencias.html", {"cultivo": cultivo})
+
+
+@login_required
+def cultivo_vpd(request, slug):
+    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
+    datos = mapa_vpd(cultivo, request.GET.get("rango", RANGO_DEFAULT))
+    ultima = cultivo.mediciones.order_by("-timestamp").first()
+    return render(request, "growlog/vpd.html", {
+        "cultivo": cultivo, "datos": datos,
+        # La última lectura aunque quede fuera del rango elegido: es "cómo está ahora".
+        "ultima": ultima,
+        "ultima_estado": estado_de(cultivo, ultima) if ultima else None,
+        "ultima_vieja": bool(ultima and timezone.now() - ultima.timestamp > timedelta(hours=6)),
+        "etapa_nombre": dict(ParametroIdeal.ETAPA_CHOICES).get(datos["etapa_actual"]),
+    })
 
 
 @login_required
