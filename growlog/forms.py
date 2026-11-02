@@ -340,6 +340,14 @@ class NutrienteAplicadoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Solo los nutrientes que se ofrecen en ese cultivo (ver nutrientes_para).
         self.fields["nutriente"].queryset = nutrientes
+        self.fields["dosis_g_por_litro"].label = "Dosis (g/L)"
+
+    def clean_dosis_g_por_litro(self):
+        # Misma regla que Registrar: una dosis aplicada es mayor que cero.
+        dosis = self.cleaned_data["dosis_g_por_litro"]
+        if dosis is not None and dosis <= 0:
+            raise ValidationError("La dosis debe ser mayor que cero.")
+        return dosis
 
 
 class MedicionECForm(forms.ModelForm):
@@ -348,6 +356,7 @@ class MedicionECForm(forms.ModelForm):
     class Meta:
         model = MedicionEC
         fields = ["timestamp", "tipo", "ph", "ec", "temp_agua", "notas"]
+        labels = {"timestamp": "Cuándo se midió", "tipo": "Qué mediste", "ph": "pH", "temp_agua": "Temp. agua (°C)"}
         widgets = {
             "timestamp": forms.DateTimeInput(format=DT_FMT, attrs={"class": "form-control", "type": "datetime-local"}),
             "tipo": forms.Select(attrs={"class": "form-select"}),
@@ -355,6 +364,15 @@ class MedicionECForm(forms.ModelForm):
             "temp_agua": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.1"}),
             "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
         }
+
+    def clean(self):
+        # Mismas reglas que Registrar (registration_forms.ECForm).
+        data = super().clean()
+        ph, ec = data.get("ph"), data.get("ec")
+        if ph is None and ec is None and not self.has_error("ph") and not self.has_error("ec"):
+            raise ValidationError("Ingresá pH o EC, al menos uno de los dos.")
+        validar_solucion(ph=ph, ec=ec)
+        return data
 
 
 class MedicionAmbienteForm(forms.ModelForm):

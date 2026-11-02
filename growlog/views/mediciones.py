@@ -9,6 +9,7 @@ from django.utils import timezone
 from ..forms import CambioFotoperiodoForm, MedicionAmbienteForm, MedicionECForm
 from ..models import CambioFotoperiodo, Cultivo, MedicionAmbiente, MedicionEC
 from ..permissions import objeto_del_cultivo
+from ..utils import get_cambio_fotoperiodo_activo
 
 
 # ---------------------------------------------------------------------------
@@ -113,6 +114,9 @@ def fotoperiodo_list(request, slug):
     return render(request, "growlog/fotoperiodo.html", {
         "cultivo": cultivo,
         "historial": historial,
+        # El vigente hoy, no el último cargado (que puede tener fecha futura).
+        "activo": get_cambio_fotoperiodo_activo(cultivo, timezone.now()),
+        "hoy": timezone.localdate(),
         "form": form,
     })
 

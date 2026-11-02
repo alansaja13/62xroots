@@ -41,6 +41,8 @@ def cultivo_detail(request, slug):
     ultimos_registros = build_timeline(cultivo, limit=8)
     plantas_count = cultivo.plantas.activas().count()
     plantas = list(cultivo.plantas.filter(archivado=False).prefetch_related("cambios_etapa"))
+    # Las archivadas se listan aparte para poder abrirlas y restaurarlas.
+    plantas_archivadas = list(cultivo.plantas.filter(archivado=True).order_by("apodo"))
     etapa_display_map = dict(CambioEtapaPlanta.ETAPA_CHOICES)
     for p in plantas:
         p.etapa_actual = etapa_efectiva_planta(p)
@@ -103,6 +105,7 @@ def cultivo_detail(request, slug):
         "tareas_pendientes": tareas_pendientes, "tareas_completadas": tareas_completadas,
         "ultimos_registros": ultimos_registros,
         "semaforo": semaforo, "plantas_count": plantas_count, "plantas": plantas,
+        "plantas_archivadas": plantas_archivadas,
         "fotoperiodo_activo": fotoperiodo_activo,
         "luz_estado_actual": luz_estado_actual,
         "progreso": progreso,

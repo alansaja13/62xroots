@@ -3,6 +3,18 @@ import zoneinfo
 ARGENTINA_TZ = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
 
 
+def area_carpa_m2(dimensiones):
+    """Área de la base de la carpa en m² a partir del texto "80x80x180" (cm).
+    None si no se puede leer."""
+    import re
+    medidas = re.findall(r"\d+(?:[.,]\d+)?", dimensiones or "")
+    if len(medidas) < 2:
+        return None
+    ancho, largo = (float(m.replace(",", ".")) for m in medidas[:2])
+    area = ancho * largo / 10000
+    return round(area, 4) if area > 0 else None
+
+
 def get_cambio_fotoperiodo_activo(cultivo, timestamp):
     """Returns the most recent CambioFotoperiodo active at timestamp, or None."""
     from .models import CambioFotoperiodo

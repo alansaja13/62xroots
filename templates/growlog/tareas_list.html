@@ -196,6 +196,7 @@
                   hx-post="{% url 'growlog:tarea_completar' tarea.pk %}"
                   hx-target="#row-{{ tarea.pk }}"
                   hx-swap="delete"
+                  hx-vals='{"origen": "lista"}'
                   title="Marcar como hecha">
           </button>
           {% else %}

@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 
 from ..models import CanopySnapshot, ColaPosicion, Cultivo, POSICION_TENT_COORDS
 from ..permissions import objeto_del_cultivo
+from ..utils import area_carpa_m2
 
 
 _PLANT_COLORS = ["#b1d160", "#d4923a", "#d96a3d", "#b384d8", "#79a4d4", "#f3e9d1"]
@@ -69,7 +70,9 @@ def canopy_view(request, slug):
     init_data = {
         "editable": request.puede_editar_cultivo,
         "slug": cultivo.slug,
-        "watts": cultivo.lampara_watts_reales or 314,
+        # Sin lámpara o carpa cargadas, W/cola y colas/m² quedan sin calcular.
+        "watts": cultivo.lampara_watts_reales,
+        "area_m2": area_carpa_m2(cultivo.carpa_dimensiones),
         "plantas": plantas_data,
         "scrog_fill_pct": latest.scrog_fill_pct if latest else 0,
         "scrog_cells": list(latest.scrog_cells) if latest and latest.scrog_cells else [],

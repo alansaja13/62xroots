@@ -17,6 +17,11 @@ from ..permissions import cultivos_visibles
 from ..services.registro import TIPOS, RegistroError, guardar_registro
 
 ETIQUETAS = {"ambiente": "Ambiente", "riego": "Riego", "evento": "Observación", "ec": "pH / EC", "tarea": "Tarea"}
+# Mensaje de éxito con la concordancia de cada tipo ("Tarea guardada", no "guardado").
+GUARDADO = {
+    "ambiente": "Ambiente guardado", "riego": "Riego guardado", "evento": "Observación guardada",
+    "ec": "Medición de pH / EC guardada", "tarea": "Tarea guardada",
+}
 
 NOMBRES_CAMPOS = {
     "temperatura_c": "Temperatura", "humedad_relativa": "Humedad", "ph": "pH", "ec": "EC",
@@ -166,7 +171,7 @@ def registrar(request):
                     avisos = _avisos(datos, elegido.plantas_activas, nutrientes_de(elegido))
                     transaction.set_rollback(bool(avisos))
             if not avisos:
-                messages.success(request, f"{ETIQUETAS[tipo]} guardado en {elegido.nombre}.")
+                messages.success(request, f"{GUARDADO[tipo]} en {elegido.nombre}.")
                 return redirect(f"{reverse('growlog:registrar')}?cultivo={elegido.pk}&kind={tipo}")
         except RegistroError as exc:
             error, errores, avisos = exc.mensaje, _errores(exc), []

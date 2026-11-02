@@ -2,6 +2,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -15,9 +16,16 @@ from ..permissions import objeto_del_cultivo
 @login_required
 def tarea_editar(request, pk):
     tarea = objeto_del_cultivo(request, Tarea, editar=True, pk=pk)
+    estaba_completada = tarea.completada
     form = TareaForm(request.POST or None, instance=tarea)
     if request.method == "POST" and form.is_valid():
-        form.save()
+        tarea = form.save(commit=False)
+        # Igual que completar/descompletar: la fecha acompaña al estado.
+        if tarea.completada and not estaba_completada:
+            tarea.completada_en = timezone.now()
+        elif not tarea.completada:
+            tarea.completada_en = None
+        tarea.save()
         messages.success(request, "Tarea actualizada.")
         return redirect("growlog:cultivo_detail", tarea.cultivo.slug)
     return render(request, "growlog/crud_form.html", {
@@ -50,6 +58,9 @@ def tarea_completar(request, pk):
     tarea.completada_en = timezone.now()
     tarea.save()
     if request.htmx:
+        # La lista de tareas no tiene panel de completadas: solo se borra la fila.
+        if request.POST.get("origen") == "lista":
+            return HttpResponse("")
         return render(request, "growlog/partials/tarea_completar_oob.html", {"tarea": tarea})
     return redirect("growlog:cultivo_detail", tarea.cultivo.slug)
 

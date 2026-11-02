@@ -99,15 +99,6 @@
   </div>
 </div>
 
-{% if messages %}
-{% for msg in messages %}
-<div class="en-alerta" style="{% if 'success' in msg.tags %}background:rgba(138,171,104,.1);border-color:var(--green);color:var(--green);{% endif %} margin-bottom:16px;">
-  <i class="bi bi-{% if 'success' in msg.tags %}check-circle{% else %}exclamation-triangle{% endif %}"></i>
-  {{ msg }}
-</div>
-{% endfor %}
-{% endif %}
-
 {% if alerta %}
 <div class="en-alerta">
   <i class="bi bi-exclamation-triangle-fill"></i>

@@ -207,8 +207,10 @@
           <span class="fp-valor {% if cambio.fotoperiodo == '12/12' %}fp-valor--flip{% elif cambio.fotoperiodo == '18/6' or cambio.fotoperiodo == '20/4' %}fp-valor--veg{% endif %}">
             {{ cambio.fotoperiodo }}
           </span>
-          {% if forloop.first %}
+          {% if activo and cambio.pk == activo.pk %}
           <span class="fp-active-badge" style="margin-left:8px;">activo</span>
+          {% elif cambio.fecha_inicio > hoy %}
+          <span class="fp-active-badge" style="margin-left:8px; opacity:.7;">programado</span>
           {% endif %}
         </td>
         <td><span class="fp-hora">{{ cambio.hora_lights_on|time:"H:i" }}</span></td>

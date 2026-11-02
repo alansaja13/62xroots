@@ -125,7 +125,7 @@
             </td>
             <td class="c-soft">{{ p.strain|default:"-" }}</td>
             <td style="text-align:right;" class="c-soft">{% if p.yield_estimado_g %}{{ p.yield_estimado_g }} g{% else %}-{% endif %}</td>
-            <td style="text-align:right;" class="{% if p.yield_real_g %}c-green{% else %}c-fine{% endif %}" style="font-weight:700;">
+            <td style="text-align:right; font-weight:700;" class="{% if p.yield_real_g %}c-green{% else %}c-fine{% endif %}">
               {% if p.yield_real_g %}{{ p.yield_real_g }} g{% else %}-{% endif %}
             </td>
           </tr>
@@ -161,7 +161,7 @@
             <td class="c-cream" style="font-weight:600;">{% if n.nutriente__marca %}{{ n.nutriente__marca }} {% endif %}{{ n.nutriente__nombre }}</td>
             <td style="text-align:right;" class="c-soft">{{ n.aplicaciones }}</td>
             <td style="text-align:right;" class="c-soft">{{ n.dosis_avg|floatformat:2 }} g/L</td>
-            <td style="text-align:right;" class="c-green" style="font-weight:700;">{{ n.gramos_totales|floatformat:1 }} g</td>
+            <td style="text-align:right; font-weight:700;" class="c-green">{{ n.gramos_totales|floatformat:1 }} g</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -190,19 +190,19 @@
           <tr>
             <td class="c-soft">Temperatura</td>
             <td style="text-align:right;" class="c-soft">{{ ambiente.temp_min|floatformat:1 }}°</td>
-            <td style="text-align:right;" class="c-cream" style="font-weight:700;">{{ ambiente.temp_avg|floatformat:1 }}°C</td>
+            <td style="text-align:right; font-weight:700;" class="c-cream">{{ ambiente.temp_avg|floatformat:1 }}°C</td>
             <td style="text-align:right;" class="c-soft">{{ ambiente.temp_max|floatformat:1 }}°</td>
           </tr>
           <tr>
             <td class="c-soft">Humedad</td>
             <td style="text-align:right;" class="c-soft">{{ ambiente.hr_min|floatformat:0 }}%</td>
-            <td style="text-align:right;" class="c-cream" style="font-weight:700;">{{ ambiente.hr_avg|floatformat:0 }}%</td>
+            <td style="text-align:right; font-weight:700;" class="c-cream">{{ ambiente.hr_avg|floatformat:0 }}%</td>
             <td style="text-align:right;" class="c-soft">{{ ambiente.hr_max|floatformat:0 }}%</td>
           </tr>
           <tr>
             <td class="c-soft">VPD</td>
             <td style="text-align:right;" class="c-soft">{{ ambiente.vpd_min|floatformat:2 }}</td>
-            <td style="text-align:right;" class="c-cream" style="font-weight:700;">{{ ambiente.vpd_avg|floatformat:2 }} kPa</td>
+            <td style="text-align:right; font-weight:700;" class="c-cream">{{ ambiente.vpd_avg|floatformat:2 }} kPa</td>
             <td style="text-align:right;" class="c-soft">{{ ambiente.vpd_max|floatformat:2 }}</td>
           </tr>
         </tbody>

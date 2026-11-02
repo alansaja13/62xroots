@@ -313,12 +313,12 @@
         <span class="stat-label">W / cola</span>
         <span class="stat-value"
               :class="wClass"
-              x-text="totalColas ? wPerCola.toFixed(1) + ' W' : '-'"></span>
+              x-text="totalColas && watts ? wPerCola.toFixed(1) + ' W' : '-'"></span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Col / m²</span>
         <span class="stat-value"
-              x-text="totalColas ? densidad.toFixed(1) : '-'"></span>
+              x-text="totalColas && area ? densidad.toFixed(1) : '-'"></span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Red llena</span>
@@ -358,6 +358,7 @@ function canopyApp(cfg) {
     editable:          cfg.editable,
     slug:              cfg.slug,
     watts:             cfg.watts,
+    area:              cfg.area_m2,
     plantas:           cfg.plantas,
     cellStates:        Array(36).fill(false),   // inicializado en initApp()
     notas:             cfg.notas,
@@ -382,10 +383,11 @@ function canopyApp(cfg) {
       return this.plantas.reduce((s, p) => s + p.colas.length, 0);
     },
     get wPerCola() {
-      return this.totalColas ? this.watts / this.totalColas : 0;
+      return this.totalColas && this.watts ? this.watts / this.totalColas : 0;
     },
     get densidad() {
-      return this.totalColas / 0.64;
+      // Área real de la carpa (Datos del cultivo); sin ella no se calcula.
+      return this.area ? this.totalColas / this.area : 0;
     },
     get flipEstado() {
       if (this.scrog_fill_pct < 60) return 'falta';
@@ -399,7 +401,7 @@ function canopyApp(cfg) {
     },
     get wClass() {
       const w = this.wPerCola;
-      if (!this.totalColas) return '';
+      if (!this.totalColas || !this.watts) return '';
       if (w < 20) return 'stat-value--danger';
       if (w <= 25) return 'stat-value--warn';
       if (w <= 45) return 'stat-value--ok';
@@ -408,6 +410,7 @@ function canopyApp(cfg) {
     get diagStatus() {
       const w = this.wPerCola;
       if (!this.totalColas) return 'ok';
+      if (!this.watts) return 'warn';
       if (w < 20) return 'danger';
       if (w <= 25 || w > 45) return 'warn';
       return 'ok';
@@ -415,6 +418,7 @@ function canopyApp(cfg) {
     get diagTitulo() {
       const w = this.wPerCola;
       if (!this.totalColas) return 'Sin colas';
+      if (!this.watts) return 'Sin lámpara cargada';
       if (w < 20)  return 'Demasiadas colas';
       if (w <= 25) return 'En el límite';
       if (w <= 45) return 'Rango óptimo';
@@ -423,6 +427,7 @@ function canopyApp(cfg) {
     get diagMsg() {
       const w = this.wPerCola;
       if (!this.totalColas) return 'Agregá colas con los botones + a la derecha.';
+      if (!this.watts) return 'cargá los watts reales de la lámpara en Datos del cultivo para calcular W/cola.';
       if (w < 20)  return `${this.wPerCola.toFixed(1)} W/cola: sacá algunas colas o reducí plantas.`;
       if (w <= 25) return `${this.wPerCola.toFixed(1)} W/cola: podés estar al límite de rendimiento.`;
       if (w <= 45) return `${this.wPerCola.toFixed(1)} W/cola: la luz está bien distribuida.`;

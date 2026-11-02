@@ -135,7 +135,7 @@
           {% elif reg.tipo == 'medicion_ec' %}
             <span class="tc tc--med" style="border-left-color:var(--plum);color:var(--plum);background:rgba(179,132,216,.08);">ec/ph</span>
           {% else %}
-            <span class="tc tc--evento">{{ reg.obj.tipo }}</span>
+            <span class="tc tc--evento">{{ reg.obj.get_tipo_display|lower }}</span>
           {% endif %}
         </td>
         <td class="c-cream" style="font-weight:600;" data-col="dato">
@@ -152,7 +152,7 @@
         </td>
         <td class="c-soft" style="font-size:11.5px;" data-col="detalle">
           {% if reg.tipo == 'medicion' %}
-            <span class="vpd vpd--{{ reg.obj.vpd_estado }}">VPD {{ reg.obj.vpd }} kPa · {{ reg.obj.vpd_estado }}</span>
+            {% with estado=reg.obj.vpd_estado %}<span class="vpd{% if estado %} vpd--{{ estado }}{% endif %}">VPD {{ reg.obj.vpd }} kPa{% if estado %} · {{ estado }}{% endif %}</span>{% endwith %}
           {% elif reg.tipo == 'riego' %}
             {% if reg.obj.ph_agua %}<span>pH <span class="c-cream">{{ reg.obj.ph_agua }}</span></span>{% endif %}
             {% if reg.obj.ec_solucion %}<span class="c-fine"> · </span><span>EC <span class="c-cream">{{ reg.obj.ec_solucion|ec_us }}</span> µS/cm</span>{% endif %}

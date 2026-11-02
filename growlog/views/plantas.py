@@ -60,7 +60,7 @@ def planta_eliminar(request, pk):
             messages.success(request, f"Planta «{nombre}» eliminada.")
         else:
             messages.success(request, f"Planta «{nombre}» archivada. Sus riegos, mediciones y etapas se conservan; "
-                                      "podés restaurarla editándola.")
+                                      "la encontrás en «archivadas», debajo de las plantas, y la restaurás editándola.")
         return redirect("growlog:cultivo_detail", cultivo.slug)
     if planta.tiene_historial():
         return render(request, "growlog/crud_delete.html", {
