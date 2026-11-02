@@ -286,8 +286,9 @@ class MedicionPlantaForm(forms.ModelForm):
 
     def clean_foto(self):
         foto = self.cleaned_data.get("foto")
-        if isinstance(foto, UploadedFile) and foto.size > 5 * 1024 * 1024:
-            raise forms.ValidationError("La foto no puede superar los 5 MB.")
+        # Se achica al guardar (services/fotos.py): alcanza con frenar archivos absurdos.
+        if isinstance(foto, UploadedFile) and foto.size > 12 * 1024 * 1024:
+            raise forms.ValidationError("La foto no puede superar los 12 MB.")
         return foto
 
 

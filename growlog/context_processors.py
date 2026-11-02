@@ -8,7 +8,7 @@ from .permissions import cultivos_visibles
 
 # Pestaña del menú del cultivo que queda marcada en cada pantalla.
 SECCIONES_CULTIVO = {
-    "cultivo_detail": "resumen", "planta_detail": "resumen", "planta_etapa_list": "resumen",
+    "cultivo_detail": "resumen", "planta_detail": "resumen", "planta_etapa_list": "resumen", "plantas_list": "resumen",
     "timeline": "bitacora",
     "tareas_list": "tareas",
     "cultivo_tendencias": "tendencias", "cultivo_vpd": "tendencias",
@@ -87,7 +87,7 @@ def seccion_nav(url_name, seccion):
         return "hoy"
     if url_name in PANTALLAS_MAS:
         return "mas"
-    if url_name in ("planta_detail", "planta_etapa_list"):
+    if url_name in ("planta_detail", "planta_etapa_list", "plantas_list"):
         return "plantas"
     if seccion == "tareas":
         return "tareas"

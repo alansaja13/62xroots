@@ -4,7 +4,7 @@
   <a href="{% url 'growlog:dashboard' %}" class="lateral__marca">62×ROOTS</a>
   <a href="{% url 'growlog:dashboard' %}" class="lateral__item{% if nav_activa == 'hoy' %} on{% endif %}"{% if nav_activa == 'hoy' %} aria-current="page"{% endif %}>Hoy</a>
   <a href="{% if c %}{% url 'growlog:cultivo_detail' c.slug %}{% else %}{% url 'growlog:nuevo_cultivo' %}{% endif %}" class="lateral__item{% if nav_activa == 'cultivo' %} on{% endif %}">Cultivo</a>
-  <a href="{% if c %}{% url 'growlog:cultivo_detail' c.slug %}#plantas{% else %}{% url 'growlog:nuevo_cultivo' %}{% endif %}" class="lateral__item{% if nav_activa == 'plantas' %} on{% endif %}">Plantas</a>
+  <a href="{% if c %}{% url 'growlog:plantas_list' c.slug %}{% else %}{% url 'growlog:nuevo_cultivo' %}{% endif %}" class="lateral__item{% if nav_activa == 'plantas' %} on{% endif %}">Plantas</a>
   {% if c %}<a href="{% url 'growlog:tareas_list' c.slug %}" class="lateral__item{% if nav_activa == 'tareas' %} on{% endif %}">Tareas</a>{% endif %}
   <a href="{% url 'growlog:mas' %}" class="lateral__item{% if nav_activa == 'mas' %} on{% endif %}">Más</a>
   <div class="lateral__pie">

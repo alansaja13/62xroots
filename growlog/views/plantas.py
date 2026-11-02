@@ -2,6 +2,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from django.db.models import Prefetch
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -9,7 +10,34 @@ from django.utils import timezone
 from ..forms import CambioEtapaPlantaForm, MedicionPlantaForm, PlantaForm
 from ..models import CambioEtapaPlanta, Cultivo, MedicionPlanta, Planta
 from ..permissions import objeto_del_cultivo, puede_subir_fotos
+from ..services.plantas import curva, resumen_planta
 from ..utils import etapa_efectiva_planta, get_etapa_activa_cultivo, get_etapa_activa_planta
+
+# Pestañas de la lista de plantas: clave → (etiqueta, filtro).
+VISTAS_PLANTAS = {
+    "activas": ("Activas", {"estado": "activa", "archivado": False}),
+    "cosechadas": ("Cosechadas", {"estado": "cosechada", "archivado": False}),
+    "descartadas": ("Descartadas", {"estado": "descartada", "archivado": False}),
+    "archivadas": ("Archivadas", {"archivado": True}),
+}
+
+
+@login_required
+def plantas_list(request, slug):
+    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
+    vista = request.GET.get("ver") if request.GET.get("ver") in VISTAS_PLANTAS else "activas"
+    todas = list(cultivo.plantas.prefetch_related(
+        Prefetch("mediciones", queryset=MedicionPlanta.objects.order_by("fecha", "pk"), to_attr="mediciones_orden")))
+    hoy = timezone.localdate()
+    cuentas = {clave: sum(all(getattr(p, k) == v for k, v in filtro.items()) for p in todas)
+               for clave, (_, filtro) in VISTAS_PLANTAS.items()}
+    filtro = VISTAS_PLANTAS[vista][1]
+    plantas = [resumen_planta(p, p.mediciones_orden, hoy) for p in todas
+               if all(getattr(p, k) == v for k, v in filtro.items())]
+    return render(request, "growlog/plantas_list.html", {
+        "cultivo": cultivo, "plantas": plantas, "vista": vista,
+        "vistas": [{"clave": k, "etiqueta": v[0], "cuenta": cuentas[k]} for k, v in VISTAS_PLANTAS.items()],
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -78,21 +106,30 @@ def planta_eliminar(request, pk):
 @login_required
 def planta_detail(request, pk):
     planta = objeto_del_cultivo(request, Planta, pk=pk)
-    mediciones = list(planta.mediciones.all())
-    fotos = [m for m in mediciones if m.foto]
-    riegos_planta = list(
-        planta.riegos_detalle.select_related("riego").order_by("-riego__timestamp")[:20]
-    )
-    eventos = list(planta.eventos.order_by("-timestamp")[:20])
+    mediciones = list(planta.mediciones.order_by("fecha", "pk"))
+    r = resumen_planta(planta, mediciones)
+    riegos_planta = list(planta.riegos_detalle.select_related("riego").order_by("-riego__timestamp")[:10])
+    eventos = list(planta.eventos.order_by("-timestamp")[:10])
     etapa_actual = etapa_efectiva_planta(planta)
+
+    # Curva de altura con los eventos de la planta marcados (topping, LST…) en su fecha.
+    con_altura = r["con_altura"]
+    curva_altura, marcas = "", []
+    if len(con_altura) >= 2:
+        inicio, fin = con_altura[0].fecha, con_altura[-1].fecha
+        puntos = curva([((m.fecha - inicio).days, float(m.altura_cm)) for m in con_altura], 340, 120, margen=8)
+        curva_altura = " ".join(f"{x},{y}" for x, y in puntos)
+        span = (fin - inicio).days or 1
+        for e in eventos:
+            fecha = timezone.localdate(e.timestamp)
+            if inicio <= fecha <= fin and e.tipo != "nota":
+                marcas.append({"x": round(8 + (fecha - inicio).days / span * 324, 1), "texto": e.get_tipo_display().lower()})
     return render(request, "growlog/planta_detail.html", {
-        "planta": planta, "mediciones": mediciones,
-        "fotos": fotos,
-        "cultivo": planta.cultivo,
-        "riegos_planta": riegos_planta,
-        "eventos": eventos,
+        **r, "planta": planta, "mediciones": list(reversed(mediciones)), "cultivo": planta.cultivo,
+        "riegos_planta": riegos_planta, "eventos": eventos,
         "etapa_actual": etapa_actual,
         "etapa_actual_display": dict(CambioEtapaPlanta.ETAPA_CHOICES).get(etapa_actual),
+        "curva_altura": curva_altura, "marcas": marcas,
     })
 
 

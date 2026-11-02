@@ -32,13 +32,13 @@
     {% if dias_sin_riego is not None %}
     <span class="pill{% if dias_sin_riego >= 5 %} cd-pill--bad{% elif dias_sin_riego >= 3 %} cd-pill--warn{% else %} cd-pill--mu{% endif %}">{% if dias_sin_riego == 0 %}regado hoy{% else %}sin riego {{ dias_sin_riego }} d{% endif %}</span>
     {% endif %}
-    <a href="#plantas" class="pill cd-pill--mu">{{ plantas_count }} planta{{ plantas_count|pluralize }}</a>
+    <a href="{% url 'growlog:plantas_list' cultivo.slug %}" class="pill cd-pill--mu">{{ plantas_count }} planta{{ plantas_count|pluralize }}</a>
   </div>
 
   <nav class="seg cd-seg" aria-label="Vistas del cultivo">
     <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="on" aria-current="page">Núcleo</a>
     <a href="{% url 'growlog:cultivo_vpd' cultivo.slug %}">Aire</a>
-    <a href="#plantas">Plantas</a>
+    <a href="{% url 'growlog:plantas_list' cultivo.slug %}">Plantas</a>
     <a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}">Ciclo</a>
   </nav>
 

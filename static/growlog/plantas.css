@@ -1,0 +1,57 @@
+/* Plantas: lista en tarjetas y ficha de cada planta. */
+.pl { max-width: 1000px; }
+.pl-head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--sp-3); }
+.pl-seg { margin: var(--sp-4) 0; }
+.pl-seg > a { color: var(--mu); font-size: var(--t-sm); }
+.pl-seg > a.on { color: var(--ink); }
+.pl-cuenta { font: 400 var(--t-xs) var(--font-mono); color: var(--mu); margin-left: 2px; }
+@media (max-width: 420px) { .pl-seg > a { font-size: var(--t-xs); } }
+
+.pl-grilla { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (min-width: 700px) { .pl-grilla { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1100px) { .pl-grilla { grid-template-columns: repeat(4, 1fr); } }
+.pl-tarjeta { display: flex; flex-direction: column; padding: 10px; color: var(--ink); min-width: 0; }
+.pl-tarjeta:hover { color: var(--ink); opacity: 1; background: var(--s2); }
+.pl-foto { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 10px; background: var(--s2); display: block; }
+.pl-foto--vacia { display: flex; align-items: flex-end; padding: 6px;
+  background: repeating-linear-gradient(135deg, transparent 0 8px, var(--ln) 8px 9px), var(--s2); }
+.pl-fila { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; margin: 10px 4px 2px; }
+.pl-nombre { font-size: 19px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-altura { color: var(--ac); flex: none; }
+.pl-meta { margin: 0 4px; text-transform: none; letter-spacing: .02em; }
+.pl-vieja { color: var(--warn); }
+.pl-spark { display: block; width: 100%; height: 34px; margin: 6px 0 4px; color: var(--ac); }
+
+/* Ficha */
+.pf { max-width: 760px; }
+.pf-head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--sp-3); margin-top: 6px; }
+.pf-head .h1 { font-size: 44px; overflow-wrap: anywhere; }
+.pf-altura { display: flex; align-items: flex-end; gap: 10px; margin: var(--sp-4) 0 0; }
+.pf-altura__num { font: 600 84px/.9 var(--font-display); letter-spacing: -.05em; color: var(--ac); }
+.pf-altura__ritmo { margin-left: auto; text-align: right; padding-bottom: 6px; }
+.pf-curva { margin-top: var(--sp-3); padding: 14px 6px 8px; position: relative; }
+.pf-curva svg { display: block; width: 100%; height: 130px; overflow: visible; }
+.pf-curva__fechas { display: flex; justify-content: space-between; padding: 4px 8px 0; text-transform: none; }
+.pf-datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); margin-top: var(--sp-2); }
+.pf-datos .card { padding: 10px 12px; }
+.pf-datos b { display: block; font: 600 20px var(--font-display); margin-top: 2px; }
+.pf-seccion { margin-top: var(--sp-5); }
+.pf-seccion__head { display: flex; justify-content: space-between; align-items: center; min-height: var(--toque); }
+.pf-tira { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
+.pf-tira::-webkit-scrollbar { display: none; }
+.pf-tira button { flex: none; width: 96px; padding: 0; border: 0; background: none; cursor: pointer; scroll-snap-align: start; text-align: left; color: var(--mu); }
+.pf-tira img { width: 96px; height: 96px; object-fit: cover; border-radius: 10px; display: block; }
+.pf-tira span { font: 400 var(--t-xs) var(--font-mono); }
+.pf-acciones { position: sticky; bottom: calc(var(--barra) + 8px + env(safe-area-inset-bottom)); display: flex; gap: 10px; margin-top: var(--sp-5); }
+@media (min-width: 992px) { .pf-acciones { bottom: 16px; } }
+.pf-acciones .btn { flex: 1; }
+.pf-genetica { color: var(--mu); margin: var(--sp-3) 0 0; }
+
+/* Visor de fotos */
+.visor { position: fixed; inset: 0; z-index: 1300; background: rgba(0,0,0,.92); display: flex; flex-direction: column; }
+.visor[hidden] { display: none; }
+.visor__barra { display: flex; justify-content: space-between; align-items: center; padding: max(10px, env(safe-area-inset-top)) 14px 10px; color: #f2e7d3; }
+.visor__cerrar, .visor__nav { width: var(--toque); height: var(--toque); border-radius: 50%; border: 0; background: rgba(255,255,255,.12); color: #fff; font-size: 20px; cursor: pointer; }
+.visor__img { flex: 1; min-height: 0; display: grid; place-items: center; touch-action: pan-y; }
+.visor__img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.visor__pie { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px max(14px, env(safe-area-inset-bottom)); color: #f2e7d3; }

@@ -477,6 +477,8 @@ class MedicionPlanta(models.Model):
     aspecto_general = models.CharField(max_length=10, choices=ASPECTO_CHOICES, default="bueno")
     sintomas = models.TextField(blank=True)
     foto = models.ImageField(upload_to="plantas/%Y/%m/", null=True, blank=True)
+    # Miniatura para listas y galerías; se arma sola al subir la foto (services/fotos.py).
+    foto_mini = models.ImageField(upload_to="plantas/mini/%Y/%m/", null=True, blank=True, editable=False)
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='mediciones_planta_creadas')
 
     class Meta:
@@ -487,6 +489,20 @@ class MedicionPlanta(models.Model):
 
     def __str__(self):
         return f"{self.planta.apodo} · {self.fecha}"
+
+    def save(self, *args, **kwargs):
+        # Una foto recién subida todavía no está en el storage: es el momento de prepararla.
+        if self.foto and not getattr(self.foto, "_committed", True):
+            from .services.fotos import preparar_foto
+            preparar_foto(self)
+        elif not self.foto:
+            self.foto_mini = None
+        super().save(*args, **kwargs)
+
+    @property
+    def foto_chica(self):
+        """La miniatura si existe; si no (fotos viejas), la foto completa."""
+        return self.foto_mini or self.foto
 
 
 class Tarea(models.Model):

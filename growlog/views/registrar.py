@@ -291,6 +291,8 @@ def registrar(request):
         for clave, valor in request.POST.items():
             grupo, _, campo = clave.partition("-")
             v.setdefault(grupo, {})[campo] = valor
+    if request.method == "GET" and request.GET.get("planta"):
+        v.setdefault("planta", {})["planta_id"] = request.GET["planta"]
     riego, evento = v.get("riego", {}), v.get("evento", {})
     plantas_por_cultivo = [
         {"cultivo": c, "plantas": [{

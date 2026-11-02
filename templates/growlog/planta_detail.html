@@ -1,416 +1,192 @@
 {% extends "base.html" %}
-{% load ec %}
-{% load static %}
-{% block title %}{{ planta.apodo }}{% endblock %}
-
-{% block extra_head %}
-<style>
-  .pd-back {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    color: var(--cream-soft); text-decoration: none;
-    margin-bottom: 14px; letter-spacing: .1em;
-  }
-  .pd-back:hover { color: var(--green); }
-
-  .pd-header {
-    display: grid; grid-template-columns: 1fr auto;
-    gap: 32px; align-items: flex-start;
-    margin-bottom: 24px; padding-bottom: 22px;
-    border-bottom: 1px solid var(--rule);
-  }
-  .pd-title-row {
-    display: flex; align-items: flex-end; gap: 20px; margin-top: 10px;
-  }
-  .pd-title {
-    font-family: var(--font-display), sans-serif;
-    font-variation-settings: "wdth" 85, "opsz" 96;
-    font-size: 84px; font-weight: 700; letter-spacing: -.022em; line-height: .95;
-    margin: 0; color: var(--cream);
-  }
-  .pd-strain {
-    font-family: var(--font-display), sans-serif;
-    font-variation-settings: "wdth" 85, "opsz" 96;
-    font-size: 28px; font-weight: 700; font-style: italic;
-    color: var(--green); padding-bottom: 8px;
-  }
-  .pd-meta {
-    display: flex; align-items: center; gap: 14px; margin-top: 14px; flex-wrap: wrap;
-    font-family: var(--font-mono), monospace; font-size: 12px; color: var(--cream-soft);
-  }
-
-  .pd-actions { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
-
-  .pd-meta-grid {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
-    margin-bottom: 18px;
-  }
-  @media (max-width: 900px) { .pd-meta-grid { grid-template-columns: repeat(2, 1fr); } }
-  .pd-meta-card {
-    background: var(--card); border: 1px solid var(--rule);
-    padding: 14px 18px;
-  }
-  .pd-meta-card__val {
-    font-family: var(--font-display), sans-serif;
-    font-variation-settings: "wdth" 85, "opsz" 96;
-    font-size: 38px; font-weight: 700; line-height: .9; color: var(--cream);
-    margin-top: 8px; display: flex; align-items: baseline; gap: 4px;
-    letter-spacing: -.022em;
-  }
-  .pd-meta-card__val--none { color: var(--fine); font-size: 22px; }
-  .pd-meta-card__unit { font-family: var(--font-mono), monospace; font-size: 14px; color: var(--cream-soft); }
-
-  .pd-genetics-notes {
-    background: var(--card); border: 1px solid var(--rule);
-    border-left: 3px solid var(--green-deep);
-    padding: 12px 18px 14px; margin-bottom: 18px;
-  }
-  .pd-genetics-notes__body {
-    font-family: var(--font-body), sans-serif; font-size: 13.5px;
-    color: var(--cream); line-height: 1.55; margin-top: 6px;
-  }
-
-  .aspecto-bueno   { color: var(--green); }
-  .aspecto-regular { color: var(--honey); }
-  .aspecto-malo    { color: var(--rust); }
-  .asp-chip {
-    display: inline-block; padding: 2px 9px;
-    border-left: 2px solid currentColor;
-    background: rgba(255,255,255,.04);
-    font-family: var(--font-mono), monospace;
-    font-size: 12px; font-weight: 700;
-    letter-spacing: .05em; text-transform: uppercase;
-  }
-
-  @media (max-width: 900px) {
-    .pd-header { grid-template-columns: 1fr; }
-    .pd-title { font-size: 52px; }
-    .pd-strain { font-size: 22px; }
-    .pd-title-row { flex-direction: column; align-items: flex-start; gap: 8px; }
-  }
-
-  /* ── GALERÍA ── */
-  .pd-galeria {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; padding: 3px;
-  }
-  @media (max-width: 640px) { .pd-galeria { grid-template-columns: repeat(2, 1fr); } }
-  .pd-foto-tile {
-    position: relative; aspect-ratio: 1; overflow: hidden;
-    display: block; cursor: zoom-in; background: var(--bg-alt);
-  }
-  .pd-foto-tile img {
-    width: 100%; height: 100%; object-fit: cover;
-    transition: transform .35s ease, opacity .2s;
-    display: block;
-  }
-  .pd-foto-tile:hover img { transform: scale(1.05); opacity: .82; }
-  .pd-foto-tile__date {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    padding: 18px 10px 7px;
-    background: linear-gradient(transparent, rgba(0,0,0,.72));
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    letter-spacing: .05em; text-transform: uppercase;
-    color: rgba(255,255,255,.75);
-  }
-
-  /* ── MODAL FOTO ── */
-  #modal-foto .modal-content {
-    background: var(--bg); border: 1px solid var(--rule); border-radius: 0;
-  }
-  #modal-foto .modal-body { padding: 0; position: relative; }
-  #modal-foto-img { width: 100%; display: block; max-height: 85vh; object-fit: contain; }
-  #modal-foto-fecha {
-    padding: 10px 16px;
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    letter-spacing: .05em; text-transform: uppercase; color: var(--fine);
-  }
-  #modal-close-btn {
-    position: absolute; top: 10px; right: 10px; z-index: 10;
-    background: rgba(0,0,0,.55); border: 1px solid var(--rule);
-    color: var(--cream-soft); width: 30px; height: 30px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 16px;
-  }
-  #modal-close-btn:hover { background: rgba(0,0,0,.8); color: var(--cream); }
-</style>
-{% endblock %}
+{% load static ec %}
+{% block title %}{{ planta.apodo }} · {{ cultivo.nombre }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'growlog/cultivo.css' %}"><link rel="stylesheet" href="{% static 'growlog/plantas.css' %}">{% endblock %}
 
 {% block content %}
-
-<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="pd-back">
-  <i class="bi bi-chevron-left"></i> {{ cultivo.nombre }}
-</a>
-
-<!-- HEADER -->
-<div class="pd-header">
-  <div>
-    <div class="label-eyebrow">Planta</div>
-    <div class="pd-title-row">
-      <h1 class="pd-title">{{ planta.apodo|upper }}</h1>
-      {% if planta.strain %}<div class="pd-strain">{{ planta.strain }}</div>{% endif %}
-    </div>
-    <div class="pd-meta">
-      <span class="pill pill--{% if planta.estado == 'activa' %}green{% elif planta.estado == 'cosechada' %}honey{% else %}rust{% endif %}">
-        ● {{ planta.get_estado_display }}
-      </span>
-      {% if etapa_actual_display %}
-      <a href="{% url 'growlog:planta_etapa_list' planta.pk %}" class="pill pill--green" style="text-decoration:none;">
-        {{ etapa_actual_display }}
-      </a>
-      {% endif %}
-      <span>{{ planta.get_tipo_display|lower }}</span>
-      <span>posición · {{ planta.get_posicion_tent_display|lower }}</span>
-      <span class="c-fine">·</span>
-      <span>{{ mediciones|length }} mediciones</span>
-    </div>
+<div class="pf">
+  <div class="mo" style="display: flex; justify-content: space-between; align-items: center;">
+    <a href="{% url 'growlog:plantas_list' cultivo.slug %}" class="cd-link" style="color: var(--mu);">‹ Plantas</a>
+    {% if can_edit_cultivo %}<a href="{% url 'growlog:planta_editar' planta.pk %}" class="cd-link" style="color: var(--mu);">editar</a>{% endif %}
   </div>
 
-  <div class="pd-actions">
-    {% if can_edit_cultivo %}
-    <a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="btn-brand">
-      <i class="bi bi-plus-lg"></i> medir
-    </a>
-    <a href="{% url 'growlog:planta_etapa_list' planta.pk %}" class="btn-ghost">
-      <i class="bi bi-flower1"></i> etapa
-    </a>
-    <a href="{% url 'growlog:planta_editar' planta.pk %}" class="btn-ghost">
-      <i class="bi bi-pencil"></i> editar
-    </a>
-    {% endif %}
+  <div class="pf-head">
+    <div>
+      <h1 class="h1">{{ planta.apodo }}</h1>
+      <div class="mo" style="margin-top: 6px; text-transform: none;">{{ planta.strain|default:"sin strain" }} · {{ planta.get_posicion_tent_display|lower }} · {{ planta.get_tipo_display|lower }}{% if planta.estado != 'activa' %} · {{ planta.get_estado_display|lower }}{% endif %}{% if planta.archivado %} · archivada{% endif %}</div>
+    </div>
+    <a href="{% url 'growlog:planta_etapa_list' planta.pk %}" class="pill" style="color: var(--ink); flex: none;"><i class="punto" style="color: var({% if 'flora' in etapa_actual|default:'' %}--flo{% else %}--veg{% endif %})"></i>{{ etapa_actual_display|default:"sin etapa" }}</a>
   </div>
-</div>
 
-<!-- META GRID -->
-<div class="pd-meta-grid">
-  <div class="pd-meta-card">
-    <div class="label-eyebrow">días flora est.</div>
-    <div class="pd-meta-card__val{% if not planta.dias_flora_estimados %} pd-meta-card__val--none{% endif %}">
-      {% if planta.dias_flora_estimados %}{{ planta.dias_flora_estimados }}<span class="pd-meta-card__unit">d</span>{% else %}-{% endif %}
+  {% if altura is not None %}
+  <div class="pf-altura">
+    <span class="pf-altura__num">{{ altura|floatformat:"-1" }}</span>
+    <span class="num" style="color: var(--mu); padding-bottom: 6px;">cm</span>
+    <div class="pf-altura__ritmo">
+      {% if ritmo is not None %}<div class="num" style="color: var(--ac);">{% if ritmo > 0 %}+{% endif %}{{ ritmo|floatformat:"-1" }} cm/día</div>{% endif %}
+      <div class="mo{% if medicion_vieja %} pl-vieja{% endif %}" style="text-transform: none;">medida {% if dias_sin_medir == 0 %}hoy{% elif dias_sin_medir == 1 %}ayer{% else %}hace {{ dias_sin_medir }} d{% endif %}</div>
     </div>
   </div>
-  <div class="pd-meta-card">
-    <div class="label-eyebrow">THC est.</div>
-    <div class="pd-meta-card__val{% if not planta.thc_estimado %} pd-meta-card__val--none{% endif %}">
-      {% if planta.thc_estimado %}{{ planta.thc_estimado }}<span class="pd-meta-card__unit">%</span>{% else %}-{% endif %}
-    </div>
-  </div>
-  <div class="pd-meta-card">
-    <div class="label-eyebrow">yield est.</div>
-    <div class="pd-meta-card__val{% if not planta.yield_estimado_g %} pd-meta-card__val--none{% endif %}">
-      {% if planta.yield_estimado_g %}{{ planta.yield_estimado_g }}<span class="pd-meta-card__unit">g</span>{% else %}-{% endif %}
-    </div>
-  </div>
-  <div class="pd-meta-card">
-    <div class="label-eyebrow">indica/sativa</div>
-    <div class="pd-meta-card__val{% if not planta.indica_sativa_ratio %} pd-meta-card__val--none{% endif %}">
-      {% if planta.indica_sativa_ratio %}{{ planta.indica_sativa_ratio }}{% else %}-{% endif %}
-    </div>
-  </div>
-  <div class="pd-meta-card">
-    <div class="label-eyebrow">última med</div>
-    <div class="pd-meta-card__val{% if not mediciones %} pd-meta-card__val--none{% endif %}" style="font-size: 22px;">
-      {% if mediciones %}{{ mediciones.0.fecha|date:"d/m" }}{% else %}-{% endif %}
-    </div>
-  </div>
-</div>
+  {% endif %}
 
-<!-- NOTAS GENÉTICA -->
-{% if planta.notas_genetica %}
-<div class="pd-genetics-notes">
-  <div class="label-eyebrow">notas genética</div>
-  <div class="pd-genetics-notes__body">{{ planta.notas_genetica }}</div>
-</div>
-{% endif %}
-
-<!-- GALERÍA DE FOTOS -->
-{% if fotos %}
-<div class="panel">
-  <div class="panel__head">
-    <div class="panel__head-left">
-      <span class="label-eyebrow panel__title">galería · fotos</span>
-      <span class="mono c-fine" style="font-size: 12px;">· {{ fotos|length }}</span>
-    </div>
-  </div>
-  <div class="pd-galeria">
-    {% for med in fotos %}
-    <a class="pd-foto-tile"
-       data-bs-toggle="modal" data-bs-target="#modal-foto"
-       data-src="{% url 'protected_media' med.foto.name %}"
-       data-fecha="{{ med.fecha|date:'d/m/Y' }}{% if med.altura_cm %} · {{ med.altura_cm }}cm{% endif %}">
-      <img src="{% url 'protected_media' med.foto.name %}" alt="Foto {{ med.fecha }}" loading="lazy">
-      <div class="pd-foto-tile__date">{{ med.fecha|date:"d/m/y" }}</div>
-    </a>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
-
-<!-- RIEGOS -->
-<div class="panel">
-  <div class="panel__head">
-    <div class="panel__head-left">
-      <span class="label-eyebrow panel__title">riegos · histórico</span>
-      <span class="mono c-fine" style="font-size: 12px;">· {{ riegos_planta|length }}</span>
-    </div>
-    {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=riego" class="panel__action panel__action--green">+ nuevo riego</a>{% endif %}
-  </div>
-  <table class="table">
-    <thead>
-      <tr>
-        <th style="width:110px;">Fecha</th>
-        <th style="width:100px; text-align:right;">Volumen</th>
-        <th style="width:140px;">Runoff</th>
-        <th>Notas</th>
-        <th style="width:40px; text-align:right;"></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for rp in riegos_planta %}
-      <tr>
-        <td class="c-soft">{{ rp.riego.timestamp|date:"d/m/Y H:i" }}</td>
-        <td style="text-align:right;" class="c-cream">
-          <span style="font-size:14px; font-weight:600;">{{ rp.volumen_ml }} <span class="c-fine" style="font-size: 12px; font-weight:400;">ml</span></span>
-        </td>
-        <td class="c-soft">
-          {% if rp.runoff_observado %}
-            <span class="c-green">✓ observado</span>
-            {% if rp.ph_runoff %}<span class="c-fine"> · pH {{ rp.ph_runoff }}</span>{% endif %}
-            {% if rp.ec_runoff %}<span class="c-fine"> · EC {{ rp.ec_runoff|ec_us }} µS/cm</span>{% endif %}
-          {% else %}<span class="c-fine">-</span>{% endif %}
-        </td>
-        <td class="c-soft" style="{% if rp.notas %}font-style:italic;{% endif %}">{{ rp.notas|default:"-" }}</td>
-        <td style="text-align:right;">
-          {% if can_edit_cultivo %}<a href="{% url 'growlog:riego_editar' rp.riego_id %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>{% endif %}
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="5" style="text-align:center; padding:36px 16px; color:var(--fine);">
-          <i class="bi bi-droplet" style="font-size:22px; display:block; margin-bottom:8px; opacity:.5;"></i>
-          Sin riegos registrados para esta planta aún.
-        </td>
-      </tr>
+  {% if curva_altura %}
+  <div class="card pf-curva">
+    <svg viewBox="0 0 340 120" preserveAspectRatio="none" role="img" aria-label="Altura de {{ planta.apodo }} en el tiempo">
+      <polygon points="8,120 {{ curva_altura }} 332,120" fill="color-mix(in oklch, var(--ac) 13%, transparent)"/>
+      <polyline points="{{ curva_altura }}" fill="none" stroke="var(--ac)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+      {% for m in marcas %}
+      <line x1="{{ m.x }}" x2="{{ m.x }}" y1="0" y2="120" stroke="var(--e)" stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>
       {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<!-- EVENTOS -->
-{% if eventos %}
-<div class="panel">
-  <div class="panel__head">
-    <div class="panel__head-left">
-      <span class="label-eyebrow panel__title">eventos</span>
-      <span class="mono c-fine" style="font-size: 12px;">· {{ eventos|length }}</span>
-    </div>
+    </svg>
+    {% for m in marcas %}<span class="mo" style="position: absolute; top: 6px; left: calc({{ m.x }} / 340 * (100% - 12px) + 10px); color: var(--e); background: var(--s1); padding: 0 3px;">{{ m.texto }}</span>{% endfor %}
+    <div class="mo pf-curva__fechas"><span>{{ con_altura.0.fecha|date:"d/m" }}</span><span>{{ ultima.fecha|date:"d/m" }}</span></div>
   </div>
-  <div class="panel__body" style="padding-top: 6px; padding-bottom: 8px;">
+  {% endif %}
+
+  {% if ultima %}
+  <div class="pf-datos">
+    <div class="card"><div class="mo">Canopy</div><b>{% if ultima.ancho_canopy_cm %}{{ ultima.ancho_canopy_cm|floatformat:"-1" }} cm{% else %}-{% endif %}</b></div>
+    <div class="card"><div class="mo">Nudos</div><b>{{ ultima.nudos_count|default:"-" }}</b></div>
+    <div class="card"><div class="mo">Aspecto</div><b class="{% if ultima.aspecto_general == 'malo' %}cd-bad{% elif ultima.aspecto_general == 'regular' %}cd-warn{% endif %}">{{ ultima.get_aspecto_general_display|lower }}</b></div>
+  </div>
+  {% if ultima.sintomas %}<p class="pf-genetica">Síntomas: {{ ultima.sintomas }}</p>{% endif %}
+  {% else %}
+  <div class="vacio card" style="margin-top: var(--sp-4);">
+    <h2 class="h2">Todavía sin medir</h2>
+    <p>Con la altura de cada semana armamos la curva de crecimiento.</p>
+  </div>
+  {% endif %}
+
+  {% if fotos %}
+  <section class="pf-seccion" aria-labelledby="fotos-title">
+    <div class="pf-seccion__head"><h2 class="mo" id="fotos-title">Fotos · {{ fotos|length }}</h2></div>
+    <div class="pf-tira">
+      {% for med in fotos %}
+      <button type="button" data-visor="{{ forloop.counter0 }}" data-src="{% url 'protected_media' med.foto.name %}" data-fecha="{{ med.fecha|date:'d/m/Y' }}" data-altura="{% if med.altura_cm %}{{ med.altura_cm|floatformat:'-1' }} cm{% endif %}">
+        <img src="{% url 'protected_media' med.foto_chica.name %}" alt="Foto del {{ med.fecha|date:'d/m' }}" loading="lazy">
+        <span>{{ med.fecha|date:"d/m" }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="pf-seccion" aria-labelledby="riegos-title">
+    <div class="pf-seccion__head"><h2 class="mo" id="riegos-title">Riegos</h2></div>
+    {% for rp in riegos_planta %}
+    <div class="cd-reg cd-reg--riego">
+      <span class="cd-reg__capa" aria-hidden="true"></span>
+      <div class="cd-reg__texto">
+        <div class="cd-reg__titulo">{{ rp.volumen_ml }} ml{% if rp.runoff_observado %} · runoff{% if rp.ph_runoff %} pH {{ rp.ph_runoff|floatformat:1 }}{% endif %}{% if rp.ec_runoff %} EC {{ rp.ec_runoff|ec_us }} µS{% endif %}{% endif %}</div>
+        <div class="mo cd-reg__meta">{{ rp.riego.timestamp|date:"d/m H:i" }}{% if rp.notas %} · {{ rp.notas|truncatechars:60 }}{% endif %}</div>
+      </div>
+      {% if can_edit_cultivo %}<a href="{% url 'growlog:riego_editar' rp.riego_id %}" class="cd-reg__mas" aria-label="Editar riego">⋯</a>{% endif %}
+    </div>
+    {% empty %}
+    <p style="color: var(--mu); margin: 0;">Sin riegos registrados para esta planta.</p>
+    {% endfor %}
+  </section>
+
+  {% if eventos %}
+  <section class="pf-seccion" aria-labelledby="eventos-title">
+    <div class="pf-seccion__head"><h2 class="mo" id="eventos-title">Eventos</h2></div>
     {% for e in eventos %}
-    <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:10px 0; border-bottom:1px solid var(--rule-soft);">
-      <div>
-        <span class="tc tc--evento">{{ e.get_tipo_display }}</span>
-        <span class="c-soft" style="margin-left:8px; font-size:12.5px;">{{ e.descripcion|truncatechars:90 }}</span>
+    <div class="cd-reg cd-reg--evento">
+      <span class="cd-reg__capa" aria-hidden="true"></span>
+      <div class="cd-reg__texto">
+        <div class="cd-reg__titulo">{{ e.get_tipo_display }}: {{ e.descripcion|truncatechars:100 }}</div>
+        <div class="mo cd-reg__meta">{{ e.timestamp|date:"d/m/Y" }}</div>
       </div>
-      <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
-        <span class="mono c-fine" style="font-size: 12px;">{{ e.timestamp|date:"d/m/y" }}</span>
-        {% if can_edit_cultivo %}<a href="{% url 'growlog:evento_editar' e.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>{% endif %}
-      </div>
+      {% if can_edit_cultivo %}<a href="{% url 'growlog:evento_editar' e.pk %}" class="cd-reg__mas" aria-label="Editar evento">⋯</a>{% endif %}
     </div>
     {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if mediciones %}
+  <section class="pf-seccion" aria-labelledby="mediciones-title">
+    <div class="pf-seccion__head"><h2 class="mo" id="mediciones-title">Mediciones · {{ mediciones|length }}</h2></div>
+    {% for med in mediciones %}
+    <div class="cd-reg cd-reg--medicion">
+      <span class="cd-reg__capa" aria-hidden="true" style="background: var(--ac);"></span>
+      <div class="cd-reg__texto">
+        <div class="cd-reg__titulo">{% if med.altura_cm %}{{ med.altura_cm|floatformat:"-1" }} cm{% else %}Sin altura{% endif %}{% if med.nudos_count %} · {{ med.nudos_count }} nudos{% endif %}{% if med.ancho_canopy_cm %} · canopy {{ med.ancho_canopy_cm|floatformat:"-1" }} cm{% endif %} · {{ med.get_aspecto_general_display|lower }}</div>
+        <div class="mo cd-reg__meta">{{ med.fecha|date:"d/m/Y" }}{% if med.foto %} · con foto{% endif %}{% if med.sintomas %} · {{ med.sintomas|truncatechars:60 }}{% endif %}</div>
+      </div>
+      {% if can_edit_cultivo %}<a href="{% url 'growlog:medicion_planta_editar' med.pk %}" class="cd-reg__mas" aria-label="Editar medición">⋯</a>{% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <section class="pf-seccion card">
+    <div class="mo">Genética</div>
+    <dl class="cd-setup__lista" style="margin-top: 6px;">
+      {% if planta.dias_flora_estimados %}<div><dt class="mo">Flora estimada</dt><dd>{{ planta.dias_flora_estimados }} días</dd></div>{% endif %}
+      {% if planta.indica_sativa_ratio %}<div><dt class="mo">Índica / sativa</dt><dd>{{ planta.indica_sativa_ratio }}</dd></div>{% endif %}
+      {% if planta.thc_estimado %}<div><dt class="mo">THC estimado</dt><dd>{{ planta.thc_estimado }} %</dd></div>{% endif %}
+      <div><dt class="mo">Rinde</dt><dd>{% if planta.yield_real_g %}{{ planta.yield_real_g }} g real{% if planta.yield_estimado_g %} · {{ planta.yield_estimado_g }} g estimado{% endif %}{% elif planta.yield_estimado_g %}{{ planta.yield_estimado_g }} g estimado{% else %}-{% endif %}</dd></div>
+    </dl>
+    {% if planta.notas_genetica %}<p class="pf-genetica">{{ planta.notas_genetica }}</p>{% endif %}
+  </section>
+
+  {% if can_edit_cultivo %}
+  <div class="pf-acciones">
+    <a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="btn"
+       hx-get="{% url 'growlog:registrar' %}?hoja=1&cultivo={{ cultivo.pk }}&kind=planta&planta={{ planta.pk }}" hx-target="#hoja">Medir a {{ planta.apodo }}</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if fotos %}
+<div class="visor" id="visor" hidden role="dialog" aria-modal="true" aria-label="Fotos de {{ planta.apodo }}">
+  <div class="visor__barra"><span class="mo" style="color: inherit;" data-visor-cuenta></span><button type="button" class="visor__cerrar" data-visor-cerrar aria-label="Cerrar">✕</button></div>
+  <div class="visor__img"><img alt="" data-visor-img></div>
+  <div class="visor__pie">
+    <button type="button" class="visor__nav" data-visor-paso="-1" aria-label="Foto anterior">‹</button>
+    <span data-visor-texto></span>
+    <button type="button" class="visor__nav" data-visor-paso="1" aria-label="Foto siguiente">›</button>
   </div>
 </div>
 {% endif %}
-
-<!-- MEDICIONES TABLE -->
-<div class="panel">
-  <div class="panel__head">
-    <div class="panel__head-left">
-      <span class="label-eyebrow panel__title">mediciones · histórico</span>
-      <span class="mono c-fine" style="font-size: 12px;">· {{ mediciones|length }}</span>
-    </div>
-    {% if can_edit_cultivo %}<a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="panel__action panel__action--green">+ nueva medición</a>{% endif %}
-  </div>
-  <table class="table">
-    <thead>
-      <tr>
-        <th style="width:110px;">Fecha</th>
-        <th style="width:120px; text-align:right;">Altura</th>
-        <th style="width:120px; text-align:right;">Canopy</th>
-        <th style="width:80px;  text-align:right;">Nudos</th>
-        <th style="width:120px;">Aspecto</th>
-        <th>Síntomas</th>
-        <th style="width:40px; text-align:right;"></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for med in mediciones %}
-      <tr>
-        <td class="c-soft">{{ med.fecha|date:"d/m/Y" }}</td>
-        <td style="text-align:right;" class="c-cream">
-          {% if med.altura_cm %}
-            <span style="font-size:14px; font-weight:600;">{{ med.altura_cm }} <span class="c-fine" style="font-size: 12px; font-weight:400;">cm</span></span>
-          {% else %}<span class="c-fine">-</span>{% endif %}
-        </td>
-        <td style="text-align:right;" class="c-soft">
-          {% if med.ancho_canopy_cm %}{{ med.ancho_canopy_cm }} <span class="c-fine" style="font-size: 12px;">cm</span>{% else %}<span class="c-fine">-</span>{% endif %}
-        </td>
-        <td style="text-align:right;" class="c-cream">
-          {% if med.nudos_count %}{{ med.nudos_count }}{% else %}<span class="c-fine">-</span>{% endif %}
-        </td>
-        <td>
-          <span class="asp-chip aspecto-{{ med.aspecto_general }}">{{ med.get_aspecto_general_display }}</span>
-        </td>
-        <td class="c-soft" style="{% if med.sintomas %}font-style:italic;{% endif %}">
-          {{ med.sintomas|default:"-" }}
-        </td>
-        <td style="text-align:right; white-space:nowrap;">
-          {% if med.foto %}
-          <a class="c-fine" style="margin-right:8px;" title="Ver foto"
-             data-bs-toggle="modal" data-bs-target="#modal-foto"
-             data-src="{% url 'protected_media' med.foto.name %}"
-             data-fecha="{{ med.fecha|date:'d/m/Y' }}{% if med.altura_cm %} · {{ med.altura_cm }}cm{% endif %}">
-            <i class="bi bi-camera"></i>
-          </a>
-          {% endif %}
-          {% if can_edit_cultivo %}<a href="{% url 'growlog:medicion_planta_editar' med.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>{% endif %}
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="7" style="text-align:center; padding:36px 16px; color:var(--fine);">
-          <i class="bi bi-rulers" style="font-size:22px; display:block; margin-bottom:8px; opacity:.5;"></i>
-          Sin mediciones aún.
-          {% if can_edit_cultivo %}<a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="c-green">Registrar la primera →</a>{% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<!-- MODAL LIGHTBOX -->
-<div class="modal fade" id="modal-foto" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-body">
-        <button id="modal-close-btn" data-bs-dismiss="modal" aria-label="Cerrar">
-          <i class="bi bi-x"></i>
-        </button>
-        <img id="modal-foto-img" src="" alt="">
-        <div id="modal-foto-fecha"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
 {% endblock %}
 
 {% block extra_js %}
+{% if fotos %}
 <script>
-document.getElementById('modal-foto').addEventListener('show.bs.modal', function(e) {
-  var trigger = e.relatedTarget;
-  document.getElementById('modal-foto-img').src = trigger.dataset.src;
-  document.getElementById('modal-foto-fecha').textContent = trigger.dataset.fecha;
-});
+// Visor: anterior y siguiente con botones, flechas del teclado o deslizando.
+(function () {
+  var fotos = Array.prototype.slice.call(document.querySelectorAll('[data-visor]'));
+  var visor = document.getElementById('visor'), img = visor.querySelector('[data-visor-img]');
+  var actual = 0, xInicio = null;
+  function mostrar(i) {
+    actual = (i + fotos.length) % fotos.length;
+    var f = fotos[actual];
+    img.src = f.dataset.src;
+    img.alt = 'Foto del ' + f.dataset.fecha;
+    visor.querySelector('[data-visor-texto]').textContent = f.dataset.fecha + (f.dataset.altura ? ' · ' + f.dataset.altura : '');
+    visor.querySelector('[data-visor-cuenta]').textContent = (actual + 1) + ' de ' + fotos.length;
+  }
+  fotos.forEach(function (f, i) { f.addEventListener('click', function () { mostrar(i); visor.hidden = false; }); });
+  visor.addEventListener('click', function (e) {
+    var paso = e.target.closest('[data-visor-paso]');
+    if (paso) mostrar(actual + Number(paso.dataset.visorPaso));
+    if (e.target.closest('[data-visor-cerrar]')) visor.hidden = true;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (visor.hidden) return;
+    if (e.key === 'Escape') visor.hidden = true;
+    if (e.key === 'ArrowRight') mostrar(actual + 1);
+    if (e.key === 'ArrowLeft') mostrar(actual - 1);
+  });
+  visor.addEventListener('touchstart', function (e) { xInicio = e.touches[0].clientX; }, { passive: true });
+  visor.addEventListener('touchend', function (e) {
+    if (xInicio === null) return;
+    var dx = e.changedTouches[0].clientX - xInicio;
+    if (Math.abs(dx) > 40) mostrar(actual + (dx < 0 ? 1 : -1));
+    xInicio = null;
+  });
+})();
 </script>
+{% endif %}
 {% endblock %}

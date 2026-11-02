@@ -100,3 +100,54 @@ class RegistrarHojaTests(TestCase):
         ultimo = page.context["por_cultivo"][str(self.cultivo.pk)]["ultimo_riego"]
         self.assertEqual((ultimo["ph"], ultimo["ec"], ultimo["plantas"][str(self.luna.pk)]), ("6,2", "140", 400))
         self.assertContains(page, "Repetir riego del")
+
+
+class PlantasTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user("plantas")
+        hoy = timezone.localdate()
+        cls.cultivo = Cultivo.objects.create(nombre="Carpa", fecha_inicio=hoy - timedelta(days=30), propietario=cls.user)
+        cls.luna = Planta.objects.create(cultivo=cls.cultivo, apodo="Luna")
+        Planta.objects.create(cultivo=cls.cultivo, apodo="Vieja", estado="cosechada")
+        MedicionPlanta.objects.create(planta=cls.luna, fecha=hoy - timedelta(days=4), altura_cm=30)
+        MedicionPlanta.objects.create(planta=cls.luna, fecha=hoy, altura_cm=38)
+        Evento.objects.create(cultivo=cls.cultivo, tipo="topping", descripcion="corte",
+                              timestamp=timezone.now() - timedelta(days=2)).plantas_afectadas.add(cls.luna)
+
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    def test_lista_por_estado_con_altura_y_ritmo(self):
+        url = reverse("growlog:plantas_list", args=[self.cultivo.slug])
+        page = self.client.get(url)
+        self.assertEqual([r["planta"].apodo for r in page.context["plantas"]], ["Luna"])
+        luna = page.context["plantas"][0]
+        self.assertEqual((luna["altura"], luna["ritmo"], luna["dias_sin_medir"]), (38.0, 2.0, 0))
+        self.assertTrue(luna["sparkline"])
+        self.assertEqual([r["planta"].apodo for r in self.client.get(url + "?ver=cosechadas").context["plantas"]], ["Vieja"])
+        self.assertEqual(page.context["nav_activa"], "plantas")
+
+    def test_ficha_con_curva_eventos_y_medir(self):
+        page = self.client.get(reverse("growlog:planta_detail", args=[self.luna.pk]))
+        self.assertTrue(page.context["curva_altura"])
+        self.assertEqual([m["texto"] for m in page.context["marcas"]], ["topping"])
+        self.assertContains(page, f"kind=planta&planta={self.luna.pk}")
+        hoja = self.client.get(reverse("growlog:registrar") + f"?cultivo={self.cultivo.pk}&kind=planta&planta={self.luna.pk}")
+        self.assertEqual(hoja.context["v"]["planta"]["planta_id"], str(self.luna.pk))
+
+    def test_miniatura_al_subir_foto(self):
+        from io import BytesIO
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        buf = BytesIO()
+        Image.new("RGB", (3000, 2000), "green").save(buf, "JPEG")
+        foto = SimpleUploadedFile("grande.jpg", buf.getvalue(), content_type="image/jpeg")
+        medicion = MedicionPlanta.objects.create(planta=self.luna, foto=foto)
+        self.assertTrue(medicion.foto_mini)
+        with Image.open(medicion.foto_mini) as mini, Image.open(medicion.foto) as original:
+            self.assertEqual(max(mini.size), 480)
+            self.assertEqual(max(original.size), 2048)
+        respuesta = self.client.get(reverse("protected_media", args=[medicion.foto_mini.name]))
+        self.assertIn("max-age=86400", respuesta["Cache-Control"])
+        self.assertNotIn("no-store", respuesta["Cache-Control"])

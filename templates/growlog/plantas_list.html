@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Plantas · {{ cultivo.nombre }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'growlog/plantas.css' %}">{% endblock %}
+
+{% block content %}
+<div class="pl">
+  <div class="pl-head">
+    <div>
+      <div class="mo">{{ vistas.0.cuenta }} activa{{ vistas.0.cuenta|pluralize }}</div>
+      <h1 class="h1" style="margin-top: 10px;">Plantas</h1>
+    </div>
+    {% if can_edit_cultivo %}<a href="{% url 'growlog:planta_crear' cultivo.slug %}" class="btn g sm">+ Agregar</a>{% endif %}
+  </div>
+
+  <nav class="seg pl-seg" aria-label="Estado de las plantas">
+    {% for v in vistas %}<a href="?ver={{ v.clave }}" class="{% if v.clave == vista %}on{% endif %}"{% if v.clave == vista %} aria-current="true"{% endif %}>{{ v.etiqueta }}{% if v.cuenta %} <span class="pl-cuenta">{{ v.cuenta }}</span>{% endif %}</a>{% endfor %}
+  </nav>
+
+  {% if plantas %}
+  <div class="pl-grilla">
+    {% for r in plantas %}{% with p=r.planta %}
+    <a href="{% url 'growlog:planta_detail' p.pk %}" class="card pl-tarjeta">
+      {% if r.portada %}
+      <img class="pl-foto" src="{% url 'protected_media' r.portada.foto_chica.name %}" alt="Última foto de {{ p.apodo }}" loading="lazy">
+      {% else %}
+      <div class="pl-foto pl-foto--vacia"><span class="mo">sin foto</span></div>
+      {% endif %}
+      <div class="pl-fila">
+        <b class="pl-nombre">{{ p.apodo }}</b>
+        {% if r.altura is not None %}<span class="num pl-altura">{{ r.altura|floatformat:"-1" }} cm</span>{% endif %}
+      </div>
+      <div class="mo pl-meta">{{ p.strain|default:"sin strain" }}</div>
+      {% if r.sparkline %}
+      <svg class="pl-spark" viewBox="0 0 140 34" preserveAspectRatio="none" aria-hidden="true"><polyline points="{{ r.sparkline }}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>
+      {% endif %}
+      <div class="mo pl-meta{% if r.medicion_vieja %} pl-vieja{% endif %}">
+        {% if r.ultima %}{% if r.medicion_vieja %}◌{% else %}●{% endif %} medida {% if r.dias_sin_medir == 0 %}hoy{% elif r.dias_sin_medir == 1 %}ayer{% else %}hace {{ r.dias_sin_medir }} d{% endif %}{% if r.ritmo is not None %} · {% if r.ritmo > 0 %}+{% endif %}{{ r.ritmo|floatformat:"-1" }} cm/día{% endif %}{% else %}◌ sin medir todavía{% endif %}
+      </div>
+    </a>
+    {% endwith %}{% endfor %}
+  </div>
+  {% else %}
+  <div class="vacio">
+    <h2 class="h2">{% if vista == 'activas' %}Sin plantas activas{% else %}No hay plantas acá{% endif %}</h2>
+    <p>{% if vista == 'activas' %}Cargalas para registrar el riego y el crecimiento de cada una.{% else %}Probá con otra pestaña.{% endif %}</p>
+    {% if can_edit_cultivo and vista == 'activas' %}<a href="{% url 'growlog:planta_crear' cultivo.slug %}" class="btn sm">Agregar planta</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

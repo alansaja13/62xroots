@@ -203,7 +203,7 @@
     </div>
     <label class="reg-campo">Síntomas <span class="mo">opcional</span><textarea name="planta-sintomas" maxlength="5000" rows="2" placeholder="Puntas amarillas, manchas…">{{ v.planta.sintomas }}</textarea></label>
     {% if fotos %}
-    <label class="reg-campo{% if 'planta-foto' in campos_error %} has-error{% endif %}">Foto <span class="mo">opcional, hasta 5 MB</span><input type="file" name="planta-foto" accept="image/*" capture="environment"></label>
+    <label class="reg-campo{% if 'planta-foto' in campos_error %} has-error{% endif %}">Foto <span class="mo">opcional, hasta 12 MB</span><input type="file" name="planta-foto" accept="image/*" capture="environment"></label>
     {% endif %}
   </fieldset>
 

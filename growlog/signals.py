@@ -28,17 +28,20 @@ def _borrar_archivo_al_confirmar(storage, name):
 
 @receiver(post_delete, sender=MedicionPlanta)
 def borrar_foto_de_medicion(sender, instance, **kwargs):
-    if instance.foto:
-        _borrar_archivo_al_confirmar(instance.foto.storage, instance.foto.name)
+    for campo in (instance.foto, instance.foto_mini):
+        if campo:
+            _borrar_archivo_al_confirmar(campo.storage, campo.name)
 
 
 @receiver(pre_save, sender=MedicionPlanta)
 def borrar_foto_reemplazada(sender, instance, **kwargs):
     if not instance.pk:
         return
-    anterior = sender.objects.filter(pk=instance.pk).values_list("foto", flat=True).first()
-    if anterior and anterior != instance.foto.name:
-        _borrar_archivo_al_confirmar(instance.foto.storage, anterior)
+    anterior = sender.objects.filter(pk=instance.pk).values("foto", "foto_mini").first() or {}
+    for campo, nombre in (("foto", anterior.get("foto")), ("foto_mini", anterior.get("foto_mini"))):
+        actual = getattr(instance, campo)
+        if nombre and nombre != actual.name:
+            _borrar_archivo_al_confirmar(actual.storage, nombre)
 
 
 # ── Ingresos ────────────────────────────────────────────────────────────────

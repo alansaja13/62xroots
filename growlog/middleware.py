@@ -13,7 +13,11 @@ class PrivateBitacoraMiddleware:
             request.user.is_authenticated
             or request.path.startswith(("/api/", "/media/", "/login/", "/logout/"))
         ) and request.path not in {"/sw.js", "/manifest.json"}:
-            patch_cache_control(response, private=True, no_store=True)
+            # Una respuesta que ya pidió caché privada (miniaturas de fotos) la conserva.
+            if "max-age" in response.get("Cache-Control", ""):
+                patch_cache_control(response, private=True)
+            else:
+                patch_cache_control(response, private=True, no_store=True)
             patch_vary_headers(response, ["Cookie"])
         return response
 
