@@ -41,6 +41,16 @@
       {% endif %}
     </div>
     {% endwith %}
+    {% elif 'borrado' in msg.tags %}
+    <div class="toast" role="status" data-toast>
+      <span style="flex: 1;">{{ msg }}</span>
+      {% if request.session.ultimo_borrado %}
+      <form method="post" action="{% url 'growlog:registro_restaurar' %}" style="margin: 0;">
+        {% csrf_token %}<input type="hidden" name="volver" value="{{ request.get_full_path }}">
+        <button type="submit" class="toast__accion">Deshacer</button>
+      </form>
+      {% endif %}
+    </div>
     {% else %}
     <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
       {{ msg }}

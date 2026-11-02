@@ -37,3 +37,5 @@
 .nc-mas { flex: none; align-self: center; display: grid; place-items: center; width: var(--toque); height: var(--toque); border-radius: var(--r-md); color: var(--mu); font-size: 20px; }
 .nc-mas:hover { background: var(--s1); color: var(--ink); opacity: 1; }
 .nc-mas-pagina { width: 100%; margin-top: var(--sp-4); }
+.nc-texto--link { display: block; color: var(--ink); }
+.nc-texto--link:hover { color: var(--ink); opacity: 1; background: linear-gradient(90deg, var(--s1), transparent); }

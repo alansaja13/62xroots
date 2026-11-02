@@ -98,3 +98,17 @@
 .cd-setup__lista > div { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 10px 0; border-top: 1px solid var(--ln); }
 .cd-setup__lista dt { font-weight: 500; }
 .cd-setup__lista dd { margin: 0; text-align: right; min-width: 0; overflow-wrap: anywhere; }
+
+/* Ficha de un registro */
+.rf { max-width: 640px; }
+.rf-titulo { margin: 8px 0 var(--sp-4); overflow-wrap: anywhere; }
+.rf-datos { margin-top: var(--sp-2); }
+.rf-texto { margin: var(--sp-4) 0 0; line-height: 1.5; }
+.rf-foto { display: block; width: 100%; border-radius: var(--r-lg); margin-top: var(--sp-4); }
+.rf-acciones { display: flex; gap: var(--sp-2); margin-top: var(--sp-6); align-items: flex-start; flex-wrap: wrap; }
+.rf-borrar summary { list-style: none; cursor: pointer; }
+.rf-borrar summary::-webkit-details-marker { display: none; }
+.rf-borrar[open] summary { display: none; }
+.rf-borrar .aviso p { color: var(--mu); margin: 4px 0 var(--sp-3); }
+.cd-reg__texto--link, .nc-texto--link { display: block; color: var(--ink); }
+.cd-reg__texto--link:hover, .nc-texto--link:hover { color: var(--ink); opacity: 1; background: linear-gradient(90deg, var(--s1), transparent); }

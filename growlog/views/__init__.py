@@ -82,6 +82,7 @@ from .nutrientes import (  # noqa: F401
     nutrientes,
 )
 from .registrar import registrar, registrar_deshacer  # noqa: F401
+from .registros import registro_borrar, registro_ficha, registro_restaurar  # noqa: F401
 from .pwa import (  # noqa: F401
     push_subscribe,
     push_unsubscribe,

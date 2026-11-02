@@ -106,3 +106,13 @@ Se pueden discutir, pero arrancamos con estas:
 
 ## Para pedirle a Claude Design en paralelo
 Ficha y edición de un registro en el celular; los tipos Ambiente, Evento, Nota, pH/EC, Tarea y Planta dentro de la hoja; la experiencia del lector en Hoy y Cultivo; las pantallas de Plantas y Registrar en la compu.
+
+
+## Estado al cierre (2026-11-02)
+- **1a–1e hechos**, cada uno en su commit y con push a `main`.
+- **1f, hecho en parte:**
+  - Ficha de registro en `/registro/<tipo>/<pk>/`, que se abre al tocar cualquier fila de la bitácora, del Resumen o de la ficha de planta.
+  - Borrado con confirmación propia y Deshacer de un minuto.
+- **Diferencia con la decisión 3:** el Deshacer del borrado no usa borrado lógico (`eliminado_en`). Guarda en la sesión una copia del registro (con sus plantas y nutrientes) y la vuelve a crear con los mismos ids. Así no cambia lo que ven la API, el reporte ni energía. Las mediciones de planta con foto no se pueden deshacer, porque al borrarlas se va el archivo.
+- **Pendiente de 1f:** unificar la edición con los campos de la hoja (`riego_form.html` y `crud_form` para registros siguen vivos) y la dosis editable. Rompe las URLs `*_editar` y sus tests: conviene hacerlo como un paso propio.
+- **Pendiente de 1c:** la barra "Núcleo" horizontal en Hoy (se suma con el mapa de VPD de Hoy en la fase 2).

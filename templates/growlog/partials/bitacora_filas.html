@@ -1,11 +1,12 @@
-{% load ec %}{# Filas de la bitácora más el "Ver más" de la página siguiente. Lo usa la primera carga y cada "Ver más". #}
+{% load ec registros %}{# Filas de la bitácora más el "Ver más" de la página siguiente. Lo usa la primera carga y cada "Ver más". #}
 {% now "Y-m-d" as hoy_iso %}
 {% for reg in registros %}
 {% if reg.nuevo_dia %}<div class="nc-dia mo">{% if reg.dia|date:"Y-m-d" == hoy_iso %}Hoy{% else %}{{ reg.dia|date:"l j/m" }}{% endif %}</div>{% endif %}
 {% with o=reg.obj %}
 <div class="nc-reg nc-reg--{{ reg.tipo }}">
   <span class="nc-capa" aria-hidden="true"></span>
-  <div class="nc-texto">
+  {% ficha_url reg.tipo o.pk as ficha %}
+  {% if ficha %}<a class="nc-texto nc-texto--link" href="{{ ficha }}">{% else %}<div class="nc-texto">{% endif %}
     <div class="nc-titulo">
       {% if reg.tipo == 'medicion' %}
         Ambiente {{ o.temperatura_c|floatformat:1 }}° · {{ o.humedad_relativa|floatformat:0 }}%
@@ -21,7 +22,7 @@
       {% elif reg.tipo == 'fotoperiodo' %}
         Fotoperíodo {{ o.fotoperiodo }} · enciende {{ o.hora_lights_on|time:"H:i" }}
       {% elif reg.tipo == 'planta' %}
-        <a href="{% url 'growlog:planta_detail' o.planta.pk %}">{{ o.planta.apodo }}</a>{% if o.altura_cm %} · {{ o.altura_cm|floatformat:"-1" }} cm{% endif %}{% if o.nudos_count %} · {{ o.nudos_count }} nudos{% endif %} · {{ o.get_aspecto_general_display|lower }}{% if o.foto %} · con foto{% endif %}
+        {{ o.planta.apodo }}{% if o.altura_cm %} · {{ o.altura_cm|floatformat:"-1" }} cm{% endif %}{% if o.nudos_count %} · {{ o.nudos_count }} nudos{% endif %} · {{ o.get_aspecto_general_display|lower }}{% if o.foto %} · con foto{% endif %}
       {% endif %}
     </div>
     <div class="mo nc-meta">
@@ -33,7 +34,7 @@
       {% if o.notas %} · {{ o.notas|truncatechars:60 }}{% endif %}
       {% if o.creado_por %} · {{ o.creado_por.username }}{% endif %}
     </div>
-  </div>
+  {% if ficha %}</a>{% else %}</div>{% endif %}
   {% if can_edit_cultivo %}
   {% if reg.tipo == 'riego' %}<a href="{% url 'growlog:riego_editar' o.pk %}" class="nc-mas" aria-label="Editar riego">⋯</a>
   {% elif reg.tipo == 'evento' %}<a href="{% url 'growlog:evento_editar' o.pk %}" class="nc-mas" aria-label="Editar evento">⋯</a>

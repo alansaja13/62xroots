@@ -151,3 +151,56 @@ class PlantasTests(TestCase):
         respuesta = self.client.get(reverse("protected_media", args=[medicion.foto_mini.name]))
         self.assertIn("max-age=86400", respuesta["Cache-Control"])
         self.assertNotIn("no-store", respuesta["Cache-Control"])
+
+
+class FichaRegistroTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from .models import CultivoMiembro, Nutriente, NutrienteAplicado
+        cls.user = User.objects.create_user("ficha")
+        cls.lector = User.objects.create_user("ficha-lector")
+        cls.cultivo = Cultivo.objects.create(nombre="Carpa", fecha_inicio=timezone.localdate(), propietario=cls.user)
+        CultivoMiembro.objects.create(cultivo=cls.cultivo, usuario=cls.lector, rol="lector")
+        cls.luna = Planta.objects.create(cultivo=cls.cultivo, apodo="Luna")
+        cls.nutriente = Nutriente.objects.create(nombre="Grow")
+
+    def setUp(self):
+        from .models import NutrienteAplicado
+        self.client.force_login(self.user)
+        self.riego = Riego.objects.create(cultivo=self.cultivo, volumen_total_ml=500, creado_por=self.user)
+        RiegoPlanta.objects.create(riego=self.riego, planta=self.luna, volumen_ml=500)
+        NutrienteAplicado.objects.create(riego=self.riego, nutriente=self.nutriente, dosis_g_por_litro=2)
+
+    def test_ficha_y_lector_sin_acciones(self):
+        url = reverse("growlog:registro_ficha", args=["riego", self.riego.pk])
+        page = self.client.get(url)
+        self.assertContains(page, "500 ml")
+        self.assertContains(page, reverse("growlog:riego_editar", args=[self.riego.pk]))
+        self.client.force_login(self.lector)
+        page = self.client.get(url)
+        self.assertEqual(page.status_code, 200)
+        self.assertNotContains(page, "Sí, borrar")
+        self.assertEqual(self.client.post(reverse("growlog:registro_borrar", args=["riego", self.riego.pk])).status_code, 403)
+        self.assertEqual(self.client.get(reverse("growlog:registro_ficha", args=["otro", 1])).status_code, 404)
+
+    def test_borrar_y_deshacer_con_hijos(self):
+        self.client.post(reverse("growlog:registro_borrar", args=["riego", self.riego.pk]), {"volver": "/"})
+        self.assertFalse(Riego.objects.exists())
+        self.assertContains(self.client.get("/"), "Deshacer")
+        self.client.post(reverse("growlog:registro_restaurar"))
+        riego = Riego.objects.get(pk=self.riego.pk)
+        self.assertEqual(riego.detalle_plantas.get().volumen_ml, 500)
+        self.assertEqual(riego.nutrientes_aplicados.count(), 1)
+
+    def test_deshacer_borrado_vence(self):
+        self.client.post(reverse("growlog:registro_borrar", args=["riego", self.riego.pk]))
+        with mock.patch("growlog.views.registros.time.time", return_value=__import__("time").time() + 120):
+            self.client.post(reverse("growlog:registro_restaurar"))
+        self.assertFalse(Riego.objects.exists())
+
+    def test_filas_abren_la_ficha(self):
+        ficha = reverse("growlog:registro_ficha", args=["riego", self.riego.pk])
+        for pagina in (reverse("growlog:timeline", args=[self.cultivo.slug]),
+                       reverse("growlog:cultivo_detail", args=[self.cultivo.slug]),
+                       reverse("growlog:planta_detail", args=[self.luna.pk])):
+            self.assertContains(self.client.get(pagina), ficha)

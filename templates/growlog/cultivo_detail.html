@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static ec %}
+{% load static ec registros %}
 
 {% block title %}{{ cultivo.nombre }}{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'growlog/cultivo.css' %}">{% endblock %}
@@ -94,7 +94,8 @@
         {% for reg in ultimos_registros %}
         <div class="cd-reg cd-reg--{{ reg.tipo }}">
           <span class="cd-reg__capa" aria-hidden="true"></span>
-          <div class="cd-reg__texto">
+          {% ficha_url reg.tipo reg.obj.pk as ficha %}
+          <a class="cd-reg__texto cd-reg__texto--link" href="{{ ficha }}">
             <div class="cd-reg__titulo">
               {% if reg.tipo == 'medicion' %}
                 Ambiente {{ reg.obj.temperatura_c|floatformat:1 }}° · {{ reg.obj.humedad_relativa|floatformat:0 }}%
@@ -114,7 +115,7 @@
               {% if reg.tipo == 'evento' %}{% for p in reg.obj.plantas_afectadas.all %}{% if forloop.first %} · {% else %}, {% endif %}{{ p.apodo }}{% endfor %}{% endif %}
               {% if reg.obj.creado_por %} · {{ reg.obj.creado_por.username }}{% endif %}
             </div>
-          </div>
+          </a>
           {% if can_edit_cultivo %}
           {% if reg.tipo == 'riego' %}<a href="{% url 'growlog:riego_editar' reg.obj.pk %}" class="cd-reg__mas" aria-label="Editar riego">⋯</a>
           {% elif reg.tipo == 'evento' %}<a href="{% url 'growlog:evento_editar' reg.obj.pk %}" class="cd-reg__mas" aria-label="Editar evento">⋯</a>

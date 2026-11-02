@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static ec %}
+{% load static ec registros %}
 {% block title %}{{ planta.apodo }} · {{ cultivo.nombre }}{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'growlog/cultivo.css' %}"><link rel="stylesheet" href="{% static 'growlog/plantas.css' %}">{% endblock %}
 
@@ -76,10 +76,10 @@
     {% for rp in riegos_planta %}
     <div class="cd-reg cd-reg--riego">
       <span class="cd-reg__capa" aria-hidden="true"></span>
-      <div class="cd-reg__texto">
+      {% ficha_url 'riego' rp.riego_id as ficha %}<a class="cd-reg__texto cd-reg__texto--link" href="{{ ficha }}">
         <div class="cd-reg__titulo">{{ rp.volumen_ml }} ml{% if rp.runoff_observado %} · runoff{% if rp.ph_runoff %} pH {{ rp.ph_runoff|floatformat:1 }}{% endif %}{% if rp.ec_runoff %} EC {{ rp.ec_runoff|ec_us }} µS{% endif %}{% endif %}</div>
         <div class="mo cd-reg__meta">{{ rp.riego.timestamp|date:"d/m H:i" }}{% if rp.notas %} · {{ rp.notas|truncatechars:60 }}{% endif %}</div>
-      </div>
+      </a>
       {% if can_edit_cultivo %}<a href="{% url 'growlog:riego_editar' rp.riego_id %}" class="cd-reg__mas" aria-label="Editar riego">⋯</a>{% endif %}
     </div>
     {% empty %}
@@ -93,10 +93,10 @@
     {% for e in eventos %}
     <div class="cd-reg cd-reg--evento">
       <span class="cd-reg__capa" aria-hidden="true"></span>
-      <div class="cd-reg__texto">
+      {% ficha_url 'evento' e.pk as ficha %}<a class="cd-reg__texto cd-reg__texto--link" href="{{ ficha }}">
         <div class="cd-reg__titulo">{{ e.get_tipo_display }}: {{ e.descripcion|truncatechars:100 }}</div>
         <div class="mo cd-reg__meta">{{ e.timestamp|date:"d/m/Y" }}</div>
-      </div>
+      </a>
       {% if can_edit_cultivo %}<a href="{% url 'growlog:evento_editar' e.pk %}" class="cd-reg__mas" aria-label="Editar evento">⋯</a>{% endif %}
     </div>
     {% endfor %}
@@ -109,10 +109,10 @@
     {% for med in mediciones %}
     <div class="cd-reg cd-reg--medicion">
       <span class="cd-reg__capa" aria-hidden="true" style="background: var(--ac);"></span>
-      <div class="cd-reg__texto">
+      {% ficha_url 'planta' med.pk as ficha %}<a class="cd-reg__texto cd-reg__texto--link" href="{{ ficha }}">
         <div class="cd-reg__titulo">{% if med.altura_cm %}{{ med.altura_cm|floatformat:"-1" }} cm{% else %}Sin altura{% endif %}{% if med.nudos_count %} · {{ med.nudos_count }} nudos{% endif %}{% if med.ancho_canopy_cm %} · canopy {{ med.ancho_canopy_cm|floatformat:"-1" }} cm{% endif %} · {{ med.get_aspecto_general_display|lower }}</div>
         <div class="mo cd-reg__meta">{{ med.fecha|date:"d/m/Y" }}{% if med.foto %} · con foto{% endif %}{% if med.sintomas %} · {{ med.sintomas|truncatechars:60 }}{% endif %}</div>
-      </div>
+      </a>
       {% if can_edit_cultivo %}<a href="{% url 'growlog:medicion_planta_editar' med.pk %}" class="cd-reg__mas" aria-label="Editar medición">⋯</a>{% endif %}
     </div>
     {% endfor %}
