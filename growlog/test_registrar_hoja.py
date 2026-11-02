@@ -270,3 +270,29 @@ class CorreccionUnificadaTests(TestCase):
         self.client.post(url, {**datos, "aviso_ok": page.context["avisos_clave"]})
         self.riego.refresh_from_db()
         self.assertEqual(str(self.riego.ph_agua), "9.50")
+
+
+class FotosPlantaTests(TestCase):
+    def test_fotos_de_la_planta_en_orden_y_lector(self):
+        from io import BytesIO
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from .models import CultivoMiembro
+        user = User.objects.create_user("fotos")
+        lector = User.objects.create_user("fotos-lector")
+        cultivo = Cultivo.objects.create(nombre="Carpa", fecha_inicio=timezone.localdate() - timedelta(days=20), propietario=user)
+        CultivoMiembro.objects.create(cultivo=cultivo, usuario=lector, rol="lector")
+        luna = Planta.objects.create(cultivo=cultivo, apodo="Luna")
+
+        def foto():
+            b = BytesIO(); Image.new("RGB", (40, 40), "green").save(b, "JPEG")
+            return SimpleUploadedFile("f.jpg", b.getvalue(), content_type="image/jpeg")
+        MedicionPlanta.objects.create(planta=luna, fecha=timezone.localdate() - timedelta(days=10), altura_cm=20, foto=foto())
+        MedicionPlanta.objects.create(planta=luna, fecha=timezone.localdate(), altura_cm=35, foto=foto())
+        MedicionPlanta.objects.create(planta=luna, fecha=timezone.localdate(), altura_cm=36)
+        url = reverse("growlog:planta_fotos", args=[luna.pk])
+        self.client.force_login(lector)
+        page = self.client.get(url)
+        self.assertEqual([f.dia for f in page.context["fotos"]], [20, 10])
+        self.assertContains(page, "Comparar")
+        self.assertContains(self.client.get(reverse("growlog:planta_detail", args=[luna.pk])), url)

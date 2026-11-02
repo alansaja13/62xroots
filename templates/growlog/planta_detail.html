@@ -59,7 +59,7 @@
 
   {% if fotos %}
   <section class="pf-seccion" aria-labelledby="fotos-title">
-    <div class="pf-seccion__head"><h2 class="mo" id="fotos-title">Fotos · {{ fotos|length }}</h2></div>
+    <div class="pf-seccion__head"><h2 class="mo" id="fotos-title">Fotos · {{ fotos|length }}</h2><a href="{% url 'growlog:planta_fotos' planta.pk %}" class="mo cd-link">{% if fotos|length > 1 %}comparar ›{% else %}ver ›{% endif %}</a></div>
     <div class="pf-tira">
       {% for med in fotos %}
       <button type="button" data-visor="{{ forloop.counter0 }}" data-src="{% url 'protected_media' med.foto.name %}" data-fecha="{{ med.fecha|date:'d/m/Y' }}" data-altura="{% if med.altura_cm %}{{ med.altura_cm|floatformat:'-1' }} cm{% endif %}">
@@ -152,41 +152,5 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if fotos %}
-<script>
-// Visor: anterior y siguiente con botones, flechas del teclado o deslizando.
-(function () {
-  var fotos = Array.prototype.slice.call(document.querySelectorAll('[data-visor]'));
-  var visor = document.getElementById('visor'), img = visor.querySelector('[data-visor-img]');
-  var actual = 0, xInicio = null;
-  function mostrar(i) {
-    actual = (i + fotos.length) % fotos.length;
-    var f = fotos[actual];
-    img.src = f.dataset.src;
-    img.alt = 'Foto del ' + f.dataset.fecha;
-    visor.querySelector('[data-visor-texto]').textContent = f.dataset.fecha + (f.dataset.altura ? ' · ' + f.dataset.altura : '');
-    visor.querySelector('[data-visor-cuenta]').textContent = (actual + 1) + ' de ' + fotos.length;
-  }
-  fotos.forEach(function (f, i) { f.addEventListener('click', function () { mostrar(i); visor.hidden = false; }); });
-  visor.addEventListener('click', function (e) {
-    var paso = e.target.closest('[data-visor-paso]');
-    if (paso) mostrar(actual + Number(paso.dataset.visorPaso));
-    if (e.target.closest('[data-visor-cerrar]')) visor.hidden = true;
-  });
-  document.addEventListener('keydown', function (e) {
-    if (visor.hidden) return;
-    if (e.key === 'Escape') visor.hidden = true;
-    if (e.key === 'ArrowRight') mostrar(actual + 1);
-    if (e.key === 'ArrowLeft') mostrar(actual - 1);
-  });
-  visor.addEventListener('touchstart', function (e) { xInicio = e.touches[0].clientX; }, { passive: true });
-  visor.addEventListener('touchend', function (e) {
-    if (xInicio === null) return;
-    var dx = e.changedTouches[0].clientX - xInicio;
-    if (Math.abs(dx) > 40) mostrar(actual + (dx < 0 ? 1 : -1));
-    xInicio = null;
-  });
-})();
-</script>
-{% endif %}
+{% if fotos %}<script src="{% static 'growlog/fotos.js' %}"></script>{% endif %}
 {% endblock %}

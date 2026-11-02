@@ -133,6 +133,16 @@ def planta_detail(request, pk):
     })
 
 
+@login_required
+def planta_fotos(request, pk):
+    """Las fotos de una planta en el tiempo, y para comparar dos fechas."""
+    planta = objeto_del_cultivo(request, Planta, pk=pk)
+    fotos = list(planta.mediciones.exclude(foto="").exclude(foto__isnull=True).order_by("-fecha", "-pk"))
+    for f in fotos:
+        f.dia = (f.fecha - planta.cultivo.fecha_inicio).days
+    return render(request, "growlog/planta_fotos.html", {"planta": planta, "cultivo": planta.cultivo, "fotos": fotos})
+
+
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # MedicionPlanta CRUD

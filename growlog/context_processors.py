@@ -91,7 +91,7 @@ def seccion_nav(url_name, seccion):
         return "tareas"
     if url_name in PANTALLAS_MAS:
         return "mas"
-    if url_name in ("planta_detail", "planta_etapa_list", "plantas_list"):
+    if url_name in ("planta_detail", "planta_etapa_list", "plantas_list", "planta_fotos"):
         return "plantas"
     if seccion == "tareas":
         return "tareas"

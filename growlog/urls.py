@@ -123,6 +123,7 @@ urlpatterns = [
     # Planta
     path("cultivo/<slug:slug>/planta/nueva/", views.planta_crear, name="planta_crear"),
     path("cultivo/<slug:slug>/plantas/", views.plantas_list, name="plantas_list"),
+    path("planta/<int:pk>/fotos/", views.planta_fotos, name="planta_fotos"),
     path("planta/<int:pk>/", views.planta_detail, name="planta_detail"),
     path("planta/<int:pk>/editar/", views.planta_editar, name="planta_editar"),
     path("planta/<int:pk>/eliminar/", views.planta_eliminar, name="planta_eliminar"),

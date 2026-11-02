@@ -40,6 +40,7 @@ from .plantas import (  # noqa: F401
     planta_editar,
     planta_eliminar,
     planta_etapa_list,
+    planta_fotos,
     plantas_list,
 )
 from .tareas import (  # noqa: F401

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Fotos · {{ planta.apodo }}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'growlog/plantas.css' %}">
+<style>
+  .fo { max-width: 760px; }
+  .fo-seg { margin-top: var(--sp-4); }
+  .fo-seg > button { color: var(--mu); }
+  .fo-grilla { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: var(--sp-4); }
+  @media (min-width: 700px) { .fo-grilla { grid-template-columns: repeat(4, 1fr); } }
+  .fo-grilla button { padding: 0; border: 0; background: none; text-align: left; color: var(--mu); cursor: pointer; }
+  .fo-grilla img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 10px; display: block; }
+  .fo-grilla span { font: 400 var(--t-xs) var(--font-mono); display: block; margin-top: 3px; }
+  .fo-comparar { position: relative; margin-top: var(--sp-4); border-radius: var(--r-lg); overflow: hidden; background: var(--s2); aspect-ratio: 3 / 4; max-height: 70vh; width: 100%; }
+  .fo-comparar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .fo-comparar .fo-a { clip-path: inset(0 calc(100% - var(--corte, 50%)) 0 0); }
+  .fo-linea { position: absolute; top: 0; bottom: 0; left: var(--corte, 50%); width: 2px; background: var(--ac); pointer-events: none; }
+  .fo-linea::after { content: "↔"; position: absolute; top: 50%; left: -16px; width: 34px; height: 34px; margin-top: -17px; border-radius: 50%; background: var(--ac); color: var(--on); display: grid; place-items: center; font: 700 14px var(--font-mono); }
+  .fo-rotulo { position: absolute; top: 10px; z-index: 1; }
+  .fo-rotulo--a { left: 10px; } .fo-rotulo--b { right: 10px; }
+  .fo-rango { width: 100%; margin: var(--sp-3) 0 0; accent-color: var(--ac); }
+  .fo-diff { display: flex; justify-content: space-between; margin-top: var(--sp-2); }
+  .fo-tira { display: flex; gap: 6px; overflow-x: auto; margin-top: var(--sp-3); scrollbar-width: none; }
+  .fo-tira::-webkit-scrollbar { display: none; }
+  .fo-tira button { flex: none; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 10px; outline-offset: -2px; }
+  .fo-tira button[aria-pressed="true"] { outline: 2px solid var(--ac); }
+  .fo-tira img { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; display: block; }
+  .fo-tira span { display: block; font: 400 var(--t-xs) var(--font-mono); color: var(--mu); text-align: center; }
+  .fo-ayuda { color: var(--mu); font-size: var(--t-sm); margin: var(--sp-2) 0 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fo">
+  <a href="{% url 'growlog:planta_detail' planta.pk %}" class="mo" style="color: var(--mu); display: inline-flex; min-height: var(--toque); align-items: center;">‹ {{ planta.apodo }}</a>
+  <div class="mo">{{ fotos|length }} foto{{ fotos|length|pluralize }}</div>
+  <h1 class="h1" style="margin-top: 8px;">Fotos</h1>
+
+  {% if fotos %}
+  <div class="seg fo-seg" role="tablist" aria-label="Cómo ver las fotos">
+    <button type="button" role="tab" aria-selected="true" class="on" data-vista="linea">Línea de tiempo</button>
+    {% if fotos|length > 1 %}<button type="button" role="tab" aria-selected="false" data-vista="comparar">Comparar</button>{% endif %}
+  </div>
+
+  <section data-panel="linea">
+    <div class="fo-grilla">
+      {% for f in fotos %}
+      <button type="button" data-visor="{{ forloop.counter0 }}" data-src="{% url 'protected_media' f.foto.name %}" data-fecha="{{ f.fecha|date:'d/m/Y' }}" data-altura="{% if f.altura_cm %}{{ f.altura_cm|floatformat:'-1' }} cm{% endif %}">
+        <img src="{% url 'protected_media' f.foto_chica.name %}" alt="Foto del {{ f.fecha|date:'d/m' }}" loading="lazy">
+        <span>{{ f.fecha|date:"d/m" }} · día {{ f.dia }}{% if f.altura_cm %} · {{ f.altura_cm|floatformat:"-1" }} cm{% endif %}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if fotos|length > 1 %}
+  <section data-panel="comparar" hidden>
+    <div class="fo-comparar" data-comparar>
+      <img class="fo-b" alt="" data-img-b>
+      <img class="fo-a" alt="" data-img-a>
+      <span class="pill fo-rotulo fo-rotulo--a" data-rotulo-a></span>
+      <span class="pill fo-rotulo fo-rotulo--b" data-rotulo-b></span>
+      <div class="fo-linea" aria-hidden="true"></div>
+    </div>
+    <label class="visually-hidden" for="fo-rango">Mover el corte entre las dos fotos</label>
+    <input type="range" id="fo-rango" class="fo-rango" min="0" max="100" value="50" data-rango>
+    <div class="fo-diff"><span class="num" data-diff></span><span class="mo" data-dias></span></div>
+    <div class="fo-tira" aria-label="Elegí las dos fotos">
+      {% for f in fotos %}
+      <button type="button" data-elegir="{{ forloop.counter0 }}" aria-pressed="false"
+              data-src="{% url 'protected_media' f.foto.name %}" data-fecha="{{ f.fecha|date:'d/m' }}" data-iso="{{ f.fecha|date:'Y-m-d' }}"
+              data-dia="{{ f.dia }}" data-altura="{{ f.altura_cm|default_if_none:'' }}" data-nudos="{{ f.nudos_count|default_if_none:'' }}">
+        <img src="{% url 'protected_media' f.foto_chica.name %}" alt="Foto del {{ f.fecha|date:'d/m' }}" loading="lazy">
+        <span>{{ f.fecha|date:"d/m" }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    <p class="fo-ayuda">Tocá dos fotos para compararlas. Arrastrá el corte para ver una u otra.</p>
+  </section>
+  {% endif %}
+  {% else %}
+  <div class="vacio">
+    <h2 class="h2">Todavía no hay fotos</h2>
+    <p>Las fotos se suben al medir la planta.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% if fotos %}
+<div class="visor" id="visor" hidden role="dialog" aria-modal="true" aria-label="Fotos de {{ planta.apodo }}">
+  <div class="visor__barra"><span class="mo" style="color: inherit;" data-visor-cuenta></span><button type="button" class="visor__cerrar" data-visor-cerrar aria-label="Cerrar">✕</button></div>
+  <div class="visor__img"><img alt="" data-visor-img></div>
+  <div class="visor__pie">
+    <button type="button" class="visor__nav" data-visor-paso="-1" aria-label="Foto anterior">‹</button>
+    <span data-visor-texto></span>
+    <button type="button" class="visor__nav" data-visor-paso="1" aria-label="Foto siguiente">›</button>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if fotos %}
+<script src="{% static 'growlog/fotos.js' %}"></script>
+{% endif %}
+{% endblock %}
