@@ -6,7 +6,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from ..forms import CambioFotoperiodoForm, MedicionAmbienteForm, MedicionECForm
+from ..forms import CambioFotoperiodoForm
 from ..models import CambioFotoperiodo, Cultivo, MedicionAmbiente, MedicionEC
 from ..permissions import objeto_del_cultivo
 from ..utils import get_cambio_fotoperiodo_activo
@@ -15,26 +15,6 @@ from ..utils import get_cambio_fotoperiodo_activo
 # ---------------------------------------------------------------------------
 # MedicionAmbiente: el alta pasa por Registrar; acá solo corrección y borrado
 # ---------------------------------------------------------------------------
-
-@login_required
-def medicion_ambiente_editar(request, pk):
-    medicion = objeto_del_cultivo(request, MedicionAmbiente, editar=True, pk=pk)
-    cultivo = medicion.cultivo
-    form = MedicionAmbienteForm(request.POST or None, instance=medicion)
-    if request.method == "POST" and form.is_valid():
-        medicion = form.save(commit=False)
-        if "timestamp" in form.changed_data:
-            # save() recalcula la luz con el fotoperiodo vigente en la nueva hora.
-            medicion.luz_estado = None
-        medicion.save()
-        messages.success(request, "Medición de ambiente corregida.")
-        return redirect("growlog:cultivo_detail", cultivo.slug)
-    return render(request, "growlog/crud_form.html", {
-        "form": form, "title": "Corregir medición de ambiente",
-        "subtitle": cultivo.nombre,
-        "back_url": reverse("growlog:cultivo_detail", args=[cultivo.slug]),
-        "delete_url": reverse("growlog:medicion_ambiente_eliminar", args=[pk]),
-    })
 
 
 @login_required
@@ -54,21 +34,6 @@ def medicion_ambiente_eliminar(request, pk):
 # ---------------------------------------------------------------------------
 # MedicionEC CRUD
 # ---------------------------------------------------------------------------
-
-@login_required
-def medicion_ec_editar(request, pk):
-    medicion = objeto_del_cultivo(request, MedicionEC, editar=True, pk=pk)
-    form = MedicionECForm(request.POST or None, instance=medicion)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Medición EC/pH actualizada.")
-        return redirect("growlog:medicion_ec_editar", pk=pk)
-    return render(request, "growlog/crud_form.html", {
-        "form": form, "title": "Editar medición EC/pH",
-        "subtitle": medicion.cultivo.nombre,
-        "back_url": reverse("growlog:cultivo_detail", args=[medicion.cultivo.slug]),
-        "delete_url": reverse("growlog:medicion_ec_eliminar", args=[pk]),
-    })
 
 
 @login_required

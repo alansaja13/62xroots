@@ -204,3 +204,69 @@ class FichaRegistroTests(TestCase):
                        reverse("growlog:cultivo_detail", args=[self.cultivo.slug]),
                        reverse("growlog:planta_detail", args=[self.luna.pk])):
             self.assertContains(self.client.get(pagina), ficha)
+
+
+class CorreccionUnificadaTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from .models import Nutriente
+        cls.user = User.objects.create_user("corrige")
+        cls.cultivo = Cultivo.objects.create(nombre="Carpa", fecha_inicio=timezone.localdate() - timedelta(days=5), propietario=cls.user)
+        cls.luna = Planta.objects.create(cultivo=cls.cultivo, apodo="Luna")
+        cls.sol = Planta.objects.create(cultivo=cls.cultivo, apodo="Sol")
+        cls.grow = Nutriente.objects.create(nombre="Grow")
+
+    def setUp(self):
+        from .models import NutrienteAplicado
+        self.client.force_login(self.user)
+        self.riego = Riego.objects.create(cultivo=self.cultivo, volumen_total_ml=400, ph_agua="6.2", ec_solucion="1.40",
+                                          timestamp=timezone.now() - timedelta(hours=2))
+        RiegoPlanta.objects.create(riego=self.riego, planta=self.luna, volumen_ml=400, runoff_observado=True, ph_runoff="6.5")
+        NutrienteAplicado.objects.create(riego=self.riego, nutriente=self.grow, dosis_g_por_litro=2)
+
+    def test_precarga_lo_guardado(self):
+        page = self.client.get(reverse("growlog:riego_editar", args=[self.riego.pk]))
+        v = page.context["v"]["riego"]
+        self.assertEqual((v[f"planta-{self.luna.pk}"], v["ph"], v["ec"], v[f"nutriente-{self.grow.pk}"], v["hubo_runoff"]),
+                         ("400", "6,2", "140", "2", "on"))
+        self.assertContains(page, "Guardar cambios")
+        self.assertNotContains(page, 'name="kind" value="ambiente"')
+
+    def test_corrige_plantas_dosis_y_hora(self):
+        cuando = (timezone.localtime() - timedelta(hours=5)).strftime("%Y-%m-%dT%H:%M")
+        respuesta = self.client.post(reverse("growlog:riego_editar", args=[self.riego.pk]), {
+            "observado_modo": "elegida", "observado_en": cuando,
+            f"riego-planta-{self.luna.pk}": "300", f"riego-planta-{self.sol.pk}": "350",
+            f"riego-nutriente-{self.grow.pk}": "1,2", "riego-ph": "6,0", "riego-ec": "130"})
+        self.assertRedirects(respuesta, reverse("growlog:registro_ficha", args=["riego", self.riego.pk]),
+                             fetch_redirect_response=False)
+        self.riego.refresh_from_db()
+        self.assertEqual((self.riego.volumen_total_ml, str(self.riego.ph_agua), str(self.riego.ec_solucion)), (650, "6.00", "1.30"))
+        self.assertEqual(str(self.riego.nutrientes_aplicados.get().dosis_g_por_litro), "1.200")
+        self.assertEqual(timezone.localtime(self.riego.timestamp).strftime("%Y-%m-%dT%H:%M"), cuando)
+        # Sin "Hubo runoff" el drenaje de Luna deja de figurar.
+        self.assertFalse(self.riego.detalle_plantas.get(planta=self.luna).runoff_observado)
+
+    def test_nota_y_seguimiento_resuelto(self):
+        nota = Evento.objects.create(cultivo=self.cultivo, tipo="nota", descripcion="vieja")
+        self.client.post(reverse("growlog:evento_editar", args=[nota.pk]), {"observado_modo": "ahora", "nota-descripcion": "nueva"})
+        nota.refresh_from_db()
+        self.assertEqual((nota.tipo, nota.descripcion), ("nota", "nueva"))
+        evento = Evento.objects.create(cultivo=self.cultivo, tipo="problema", descripcion="manchas",
+                                       follow_up_fecha=timezone.localdate())
+        self.client.post(reverse("growlog:evento_editar", args=[evento.pk]), {
+            "observado_modo": "ahora", "evento-tipo": "problema", "evento-descripcion": "manchas",
+            "evento-follow_up_fecha": timezone.localdate().isoformat(), "evento-follow_up_resuelto": "on"})
+        evento.refresh_from_db()
+        self.assertTrue(evento.follow_up_resuelto)
+
+    def test_valor_raro_al_corregir_pide_confirmar(self):
+        url = reverse("growlog:riego_editar", args=[self.riego.pk])
+        datos = {"observado_modo": "ahora", f"riego-planta-{self.luna.pk}": "400", "riego-ph": "9,5"}
+        page = self.client.post(url, datos)
+        self.assertContains(page, "poco comunes")
+        self.riego.refresh_from_db()
+        self.assertEqual(str(self.riego.ph_agua), "6.20")
+        self.client.post(url, {**datos, "aviso_ok": page.context["avisos_clave"]})
+        self.riego.refresh_from_db()
+        self.assertEqual(str(self.riego.ph_agua), "9.50")

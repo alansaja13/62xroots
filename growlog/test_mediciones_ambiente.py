@@ -39,17 +39,19 @@ class MedicionAmbienteWebTests(TestCase):
         self.url = reverse("growlog:medicion_ambiente_editar", args=[self.medicion.pk])
 
     def datos(self, **cambios):
+        """Lo que manda el formulario de corrección (el mismo de Registrar)."""
         datos = {
             "timestamp": timezone.localtime(self.medicion.timestamp).strftime("%Y-%m-%dT%H:%M"),
             "temperatura_c": "26.5", "humedad_relativa": "60", "notas": "",
         }
         datos.update(cambios)
-        return datos
+        return {"observado_modo": "elegida", "observado_en": datos.pop("timestamp"),
+                **{f"ambiente-{k}": v for k, v in datos.items()}}
 
     def test_editor_corrige_valores(self):
         self.client.force_login(self.duenio)
         response = self.client.post(self.url, self.datos(temperatura_c="24.8", humedad_relativa="55", notas="sensor movido"))
-        self.assertRedirects(response, reverse("growlog:cultivo_detail", args=[self.cultivo.slug]))
+        self.assertRedirects(response, reverse("growlog:registro_ficha", args=["ambiente", self.medicion.pk]))
         self.medicion.refresh_from_db()
         self.assertEqual(self.medicion.temperatura_c, Decimal("24.8"))
         self.assertEqual(self.medicion.humedad_relativa, Decimal("55"))
@@ -58,7 +60,8 @@ class MedicionAmbienteWebTests(TestCase):
     def test_cambiar_hora_recalcula_luz(self):
         self.assertEqual(self.medicion.luz_estado, "on")
         self.client.force_login(self.duenio)
-        hora = local(22).strftime("%Y-%m-%dT%H:%M")
+        # Antes de que prenda la luz (08:00); una hora futura no se acepta al corregir, igual que al registrar.
+        hora = local(5).strftime("%Y-%m-%dT%H:%M")
         self.client.post(self.url, self.datos(timestamp=hora))
         self.medicion.refresh_from_db()
         self.assertEqual(self.medicion.luz_estado, "off")
@@ -67,7 +70,7 @@ class MedicionAmbienteWebTests(TestCase):
         self.client.force_login(self.duenio)
         response = self.client.post(self.url, self.datos(temperatura_c="254"))
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.context["form"].errors["temperatura_c"])
+        self.assertIn("ambiente-temperatura_c", response.context["campos_error"])
         self.medicion.refresh_from_db()
         self.assertEqual(self.medicion.temperatura_c, Decimal("26.5"))
 

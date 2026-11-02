@@ -164,25 +164,6 @@ def medicion_planta_crear(request, planta_pk):
 
 
 @login_required
-def medicion_planta_editar(request, pk):
-    medicion = objeto_del_cultivo(request, MedicionPlanta, editar=True, pk=pk)
-    fotos = puede_subir_fotos(request.user)
-    form = MedicionPlantaForm(request.POST or None, request.FILES or None, instance=medicion,
-                              permitir_foto=fotos)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Medición actualizada.")
-        return redirect("growlog:planta_detail", pk=medicion.planta_id)
-    return render(request, "growlog/crud_form.html", {
-        "form": form, "title": "Editar medición",
-        "subtitle": _subtitulo_medicion(medicion.planta, fotos),
-        "back_url": reverse("growlog:planta_detail", args=[medicion.planta_id]),
-        "delete_url": reverse("growlog:medicion_planta_eliminar", args=[pk]),
-        "multipart": fotos,
-    })
-
-
-@login_required
 def medicion_planta_eliminar(request, pk):
     medicion = objeto_del_cultivo(request, MedicionPlanta, editar=True, pk=pk)
     planta_pk = medicion.planta_id

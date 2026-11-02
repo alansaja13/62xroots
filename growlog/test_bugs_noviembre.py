@@ -41,8 +41,8 @@ class BugsNoviembreTests(TestCase):
     # Completar desde el formulario de edición guarda la fecha; reabrir la limpia.
     def test_editar_tarea_completada_guarda_y_limpia_fecha(self):
         tarea = Tarea.objects.create(cultivo=self.cultivo, titulo="Podar")
-        datos = {"titulo": "Podar", "prioridad": "normal", "categoria": "training"}
-        self.client.post(reverse("growlog:tarea_editar", args=[tarea.pk]), {**datos, "completada": "on"})
+        datos = {"tarea-titulo": "Podar", "tarea-prioridad": "normal", "tarea-categoria": "training"}
+        self.client.post(reverse("growlog:tarea_editar", args=[tarea.pk]), {**datos, "tarea-completada": "on"})
         tarea.refresh_from_db()
         self.assertTrue(tarea.completada)
         self.assertIsNotNone(tarea.completada_en)
@@ -82,19 +82,25 @@ class BugsNoviembreTests(TestCase):
     def test_editar_ec_exige_valor_y_ph_en_rango(self):
         medicion = MedicionEC.objects.create(cultivo=self.cultivo, ph=6)
         url = reverse("growlog:medicion_ec_editar", args=[medicion.pk])
-        base = {"timestamp": timezone.localtime().strftime("%Y-%m-%dT%H:%M"), "tipo": "solucion"}
+        base = {"observado_modo": "elegida", "observado_en": timezone.localtime().strftime("%Y-%m-%dT%H:%M"),
+                "ec-tipo": "solucion"}
         self.assertContains(self.client.post(url, base), "al menos uno de los dos")
-        self.assertContains(self.client.post(url, {**base, "ph": "20"}), "entre 0 y 14")
+        self.assertIn("ec-ph", self.client.post(url, {**base, "ec-ph": "20"}).context["campos_error"])
         medicion.refresh_from_db()
         self.assertEqual(medicion.ph, 6)
 
     def test_dosis_editada_debe_ser_positiva(self):
         riego = Riego.objects.create(cultivo=self.cultivo, volumen_total_ml=1000)
         nutriente = Nutriente.objects.create(nombre="Grow")
-        url = reverse("growlog:nutriente_aplicado_crear", args=[riego.pk])
-        response = self.client.post(url, {"nutriente": nutriente.pk, "dosis_g_por_litro": "0"})
-        self.assertContains(response, "mayor que cero")
+        url = reverse("growlog:riego_editar", args=[riego.pk])
+        response = self.client.post(url, {
+            "observado_modo": "ahora", f"riego-planta-{self.planta.pk}": "500", f"riego-nutriente-{nutriente.pk}": "0"})
+        self.assertIn("riego-dosis_g_por_litro", response.context["campos_error"])
         self.assertFalse(NutrienteAplicado.objects.exists())
+        # Con una dosis válida se guarda: la dosis se corrige en el mismo formulario.
+        self.client.post(url, {"observado_modo": "ahora", f"riego-planta-{self.planta.pk}": "500",
+                               f"riego-nutriente-{nutriente.pk}": "1,5"})
+        self.assertEqual(str(NutrienteAplicado.objects.get().dosis_g_por_litro), "1.500")
 
     # Un fotoperíodo programado a futuro no se marca como activo.
     def test_fotoperiodo_futuro_no_es_activo(self):

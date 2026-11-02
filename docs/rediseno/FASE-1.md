@@ -114,5 +114,8 @@ Ficha y edición de un registro en el celular; los tipos Ambiente, Evento, Nota,
   - Ficha de registro en `/registro/<tipo>/<pk>/`, que se abre al tocar cualquier fila de la bitácora, del Resumen o de la ficha de planta.
   - Borrado con confirmación propia y Deshacer de un minuto.
 - **Diferencia con la decisión 3:** el Deshacer del borrado no usa borrado lógico (`eliminado_en`). Guarda en la sesión una copia del registro (con sus plantas y nutrientes) y la vuelve a crear con los mismos ids. Así no cambia lo que ven la API, el reporte ni energía. Las mediciones de planta con foto no se pueden deshacer, porque al borrarlas se va el archivo.
-- **Pendiente de 1f:** unificar la edición con los campos de la hoja (`riego_form.html` y `crud_form` para registros siguen vivos) y la dosis editable. Rompe las URLs `*_editar` y sus tests: conviene hacerlo como un paso propio.
+- **Edición unificada, hecha:**
+  - Corregir cualquier registro usa el mismo formulario que la hoja, con los valores precargados, las mismas validaciones y avisos, y la dosis de nutrientes editable.
+  - Las URLs de siempre (`/riego/<pk>/editar/`, `/tarea/<pk>/editar/`…) siguen andando y abren la corrección nueva, que también responde en `/registro/<tipo>/<pk>/editar/`.
+  - Se fueron `riego_form.html`, las rutas de agregar o quitar nutrientes sueltos y los formularios viejos de edición.
 - **Pendiente de 1c:** la barra "Núcleo" horizontal en Hoy (se suma con el mapa de VPD de Hoy en la fase 2).

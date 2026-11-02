@@ -1,5 +1,5 @@
 {# Formulario de Registrar: el mismo en la página y en la hoja. Sin JavaScript funciona igual, solo muestra todo junto. #}
-<form method="post" action="{% url 'growlog:registrar' %}" enctype="multipart/form-data" class="reg-form" data-reg>
+<form method="post" action="{% if edicion %}{{ request.path }}{% else %}{% url 'growlog:registrar' %}{% endif %}" enctype="multipart/form-data" class="reg-form" data-reg>
   {% csrf_token %}
   {% if volver %}<input type="hidden" name="volver" value="{{ volver }}">{% endif %}
 
@@ -17,6 +17,10 @@
   </div>
   {% endif %}
 
+  {% if edicion %}
+  <input type="hidden" name="cultivo" value="{{ elegido.pk }}" data-cultivo-select>
+  <input type="hidden" name="kind" value="{{ tipo }}">
+  {% else %}
   <div class="reg-arriba">
     <label class="reg-cultivo">
       <span class="visually-hidden">Cultivo</span>
@@ -32,6 +36,7 @@
     <label class="chip reg-tipo reg-tipo--{{ valor }}"><input type="radio" name="kind" value="{{ valor }}"{% if valor == tipo %} checked{% endif %}><i aria-hidden="true"></i>{{ etiqueta }}</label>
     {% endfor %}
   </fieldset>
+  {% endif %}
 
   <div class="reg-hora" data-hora{% if tipo == 'tarea' %} hidden{% endif %}>
     <input type="hidden" name="observado_modo" value="{% if hora_elegida %}elegida{% else %}ahora{% endif %}" data-hora-modo>
@@ -43,9 +48,10 @@
   </div>
 
   {# ── Riego ── #}
+  {% if not edicion or tipo == 'riego' %}
   <fieldset data-kind="riego" class="reg-bloque">
     <legend class="visually-hidden">Riego</legend>
-    {% for c in cultivos %}{% with d=c.reg %}{% if d.ultimo_riego %}
+    {% for c in cultivos %}{% with d=c.reg %}{% if d.ultimo_riego and not edicion %}
     <div class="card reg-atajo" data-cultivo="{{ c.pk }}">
       <div class="reg-atajo__texto"><div class="mo">Atajo</div><b>Repetir riego del {{ d.ultimo_riego.fecha }}</b><div class="mo reg-meta">{{ d.resumen }}</div></div>
       <button type="button" class="pill reg-atajo__btn" data-repetir="{{ c.pk }}">Repetir</button>
@@ -65,7 +71,7 @@
     {% for grupo in plantas_por_cultivo %}
     <div class="reg-plantas" data-cultivo="{{ grupo.cultivo.pk }}" data-plantas="{{ grupo.plantas|length }}">
       {% for fila in grupo.plantas %}
-      <label class="reg-planta{% if fila.error %} has-error{% endif %}"><span>{{ fila.planta.apodo }}</span><input name="riego-planta-{{ fila.planta.pk }}" data-planta="{{ fila.planta.pk }}" value="{{ fila.volumen }}" inputmode="numeric" pattern="[0-9]+" autocomplete="off" placeholder="sin riego"><span class="mo">ml</span></label>
+      <label class="reg-planta{% if fila.error %} has-error{% endif %}"><span>{{ fila.planta.apodo }}{% if fila.planta.archivado %} <span class="mo">· archivada</span>{% endif %}</span><input name="riego-planta-{{ fila.planta.pk }}" data-planta="{{ fila.planta.pk }}" value="{{ fila.volumen }}" inputmode="numeric" pattern="[0-9]+" autocomplete="off" placeholder="sin riego"><span class="mo">ml</span></label>
       {% empty %}
       <p class="reg-nota">Este cultivo no tiene plantas activas. Cargalas desde el cultivo para registrar riegos.</p>
       {% endfor %}
@@ -112,8 +118,10 @@
     {% endfor %}
     <label class="reg-campo">Notas <span class="mo">opcional</span><textarea name="riego-notas" maxlength="5000" rows="2">{{ v.riego.notas }}</textarea></label>
   </fieldset>
+  {% endif %}
 
   {# ── Ambiente ── #}
+  {% if not edicion or tipo == 'ambiente' %}
   <fieldset data-kind="ambiente" class="reg-bloque">
     <legend class="visually-hidden">Ambiente</legend>
     <div class="reg-dos">
@@ -123,8 +131,10 @@
     <p class="reg-vivo" data-vpd aria-live="polite"></p>
     <label class="reg-campo">Notas <span class="mo">opcional</span><textarea name="ambiente-notas" maxlength="5000" rows="2" placeholder="¿Algo para recordar?">{{ v.ambiente.notas }}</textarea></label>
   </fieldset>
+  {% endif %}
 
   {# ── Evento ── #}
+  {% if not edicion or tipo == 'evento' %}
   <fieldset data-kind="evento" class="reg-bloque">
     <legend class="visually-hidden">Evento</legend>
     <label class="reg-campo">Qué fue
@@ -142,16 +152,21 @@
       <p class="reg-nota">Aparece en "Para revisar" de Hoy hasta que lo resuelvas.</p>
       <label class="reg-campo">Para cuándo<input name="evento-follow_up_fecha" type="date" value="{{ v.evento.follow_up_fecha }}"></label>
       <label class="reg-campo">Qué revisar<textarea name="evento-follow_up_descripcion" maxlength="5000" rows="2">{{ v.evento.follow_up_descripcion }}</textarea></label>
+      {% if edicion %}<label class="chip" style="margin-top: var(--sp-2);"><input type="checkbox" name="evento-follow_up_resuelto"{% if v.evento.follow_up_resuelto %} checked{% endif %}> Ya está resuelto</label>{% endif %}
     </details>
   </fieldset>
+  {% endif %}
 
   {# ── Nota ── #}
+  {% if not edicion or tipo == 'nota' %}
   <fieldset data-kind="nota" class="reg-bloque">
     <legend class="visually-hidden">Nota</legend>
     <label class="reg-campo{% if 'nota-descripcion' in campos_error %} has-error{% endif %}"><span class="visually-hidden">Nota</span><textarea name="nota-descripcion" maxlength="5000" required rows="4" placeholder="Hojas más firmes después del riego…">{{ v.nota.descripcion }}</textarea></label>
   </fieldset>
+  {% endif %}
 
   {# ── pH / EC ── #}
+  {% if not edicion or tipo == 'ec' %}
   <fieldset data-kind="ec" class="reg-bloque">
     <legend class="visually-hidden">pH y EC</legend>
     <label class="reg-campo">Qué mediste
@@ -165,8 +180,10 @@
     <label class="reg-campo">Temperatura del agua · °C <span class="mo">opcional</span><input name="ec-temp_agua" value="{{ v.ec.temp_agua }}" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]+" autocomplete="off"></label>
     <label class="reg-campo">Notas <span class="mo">opcional</span><textarea name="ec-notas" maxlength="5000" rows="2">{{ v.ec.notas }}</textarea></label>
   </fieldset>
+  {% endif %}
 
   {# ── Tarea ── #}
+  {% if not edicion or tipo == 'tarea' %}
   <fieldset data-kind="tarea" class="reg-bloque">
     <legend class="visually-hidden">Tarea</legend>
     <label class="reg-campo{% if 'tarea-titulo' in campos_error %} has-error{% endif %}">Qué hay que hacer<input name="tarea-titulo" value="{{ v.tarea.titulo }}" maxlength="200" required placeholder="Revisar el sensor"></label>
@@ -180,9 +197,12 @@
     </div>
     <label class="reg-campo">Para cuándo <span class="mo">opcional</span><input name="tarea-fecha_objetivo" type="date" value="{{ v.tarea.fecha_objetivo }}"></label>
     <label class="reg-campo">Detalle <span class="mo">opcional</span><textarea name="tarea-descripcion" maxlength="5000" rows="2">{{ v.tarea.descripcion }}</textarea></label>
+    {% if edicion %}<label class="chip"><input type="checkbox" name="tarea-completada"{% if v.tarea.completada %} checked{% endif %}> Ya está hecha</label>{% endif %}
   </fieldset>
+  {% endif %}
 
   {# ── Medición de planta ── #}
+  {% if not edicion or tipo == 'planta' %}
   <fieldset data-kind="planta" class="reg-bloque">
     <legend class="visually-hidden">Medición de planta</legend>
     {% for grupo in plantas_por_cultivo %}
@@ -206,9 +226,11 @@
     <label class="reg-campo{% if 'planta-foto' in campos_error %} has-error{% endif %}">Foto <span class="mo">opcional, hasta 12 MB</span><input type="file" name="planta-foto" accept="image/*" capture="environment"></label>
     {% endif %}
   </fieldset>
+  {% endif %}
 
   <div class="reg-acciones">
-    <button type="submit" class="btn reg-guardar" data-guardar>Guardar</button>
+    <button type="submit" class="btn reg-guardar"{% if not edicion %} data-guardar{% endif %}>{% if edicion %}Guardar cambios{% else %}Guardar{% endif %}</button>
+    {% if edicion %}<a href="{{ edicion.ficha }}" class="reg-borrar-link">Cancelar o borrar</a>{% endif %}
   </div>
 </form>
 {{ por_cultivo|json_script:"reg-datos" }}

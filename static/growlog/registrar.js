@@ -15,7 +15,8 @@
     const $ = sel => form.querySelector(sel);
     const $$ = sel => form.querySelectorAll(sel);
     const cultivoSel = $('[data-cultivo-select]');
-    const tipo = () => (form.querySelector('input[name="kind"]:checked') || {}).value || 'riego';
+    // En una corrección el tipo y el cultivo vienen fijos en campos ocultos.
+    const tipo = () => (form.querySelector('input[name="kind"]:checked') || form.querySelector('input[name="kind"][type="hidden"]') || {}).value || 'riego';
     const cultivo = () => cultivoSel.value;
     const delCultivo = () => datos[cultivo()] || {};
 
@@ -30,14 +31,15 @@
       const t = tipo();
       $$('[data-kind]').forEach(el => mostrar(el, el.dataset.kind === t));
       $$('[data-cultivo]').forEach(el => mostrar(el, el.dataset.cultivo === cultivo()));
-      mostrar($('[data-hora]'), t !== 'tarea');
+      if ($('[data-hora]')) mostrar($('[data-hora]'), t !== 'tarea');
       const mismo = $('[data-mismo]');
       if (mismo && t === 'riego') {
         mostrar($('[data-stepper]'), mismo.checked);
         $$('.reg-plantas[data-cultivo]').forEach(el => mostrar(el, !mismo.checked && el.dataset.cultivo === cultivo()));
         $$('[data-runoff-bloque]').forEach(el => mostrar(el, $('[data-runoff]').checked && el.dataset.cultivo === cultivo()));
       }
-      $('[data-guardar]').textContent = 'Guardar ' + (ETIQUETA[t] || '');
+      const guardar = $('[data-guardar]');
+      if (guardar) guardar.textContent = 'Guardar ' + (ETIQUETA[t] || '');
       total(); vivoVpd(); vivoEc(); vivoPh();
     }
 

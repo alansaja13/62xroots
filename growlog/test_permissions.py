@@ -92,7 +92,6 @@ class CultivoAccessTests(TestCase):
             routes.extend([(f"{prefix}_editar", obj.pk), (f"{prefix}_eliminar", obj.pk)])
         routes.extend([
             ("tarea_completar", self.task.pk), ("tarea_descompletar", self.task.pk), ("evento_resolver_followup", self.event.pk),
-            ("nutriente_aplicado_crear", self.water.pk), ("nutriente_aplicado_eliminar", self.na.pk),
             ("medicion_planta_crear", self.plant.pk), ("planta_etapa_list", self.plant.pk),
         ])
         return [reverse(f"growlog:{name}", args=[pk]) for name, pk in routes]

@@ -124,9 +124,8 @@ class DateInputIsoTests(TestCase):
     def test_pantallas_de_edicion_renderizan_fecha_iso(self):
         casos = [
             ("cultivo_editar", self.cultivo.slug, "fecha_inicio"),
-            ("tarea_editar", self.tarea.pk, "fecha_objetivo"),
-            ("evento_editar", self.evento.pk, "follow_up_fecha"),
-            ("medicion_planta_editar", self.medicion.pk, "fecha"),
+            ("tarea_editar", self.tarea.pk, "tarea-fecha_objetivo"),
+            ("evento_editar", self.evento.pk, "evento-follow_up_fecha"),
             ("cambio_fotoperiodo_editar", self.fotoperiodo.pk, "fecha_inicio"),
             ("cambio_etapa_cultivo_editar", self.etapa_cultivo.pk, "fecha_inicio"),
             ("cambio_etapa_planta_editar", self.etapa_planta.pk, "fecha_inicio"),
@@ -134,6 +133,12 @@ class DateInputIsoTests(TestCase):
         for nombre, arg, campo in casos:
             with self.subTest(vista=nombre):
                 self.assertFechaIso(reverse(f"growlog:{nombre}", args=[arg]), campo, FECHA)
+
+    def test_correccion_de_medicion_de_planta_muestra_su_fecha(self):
+        # La fecha va en "cuándo", como en Registrar.
+        url = reverse("growlog:medicion_planta_editar", args=[self.medicion.pk])
+        valor = _form_con(self.client.get(url), "observado_en")["fields"]["observado_en"][0]
+        self.assertTrue(valor.startswith(FECHA.isoformat()), valor)
 
     def test_pantallas_de_alta_precargan_hoy_en_iso(self):
         hoy = timezone.localdate()
@@ -154,13 +159,13 @@ class DateInputIsoTests(TestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_guardar_tarea_sin_tocar_conserva_fecha_objetivo(self):
-        self._reenviar_sin_tocar(reverse("growlog:tarea_editar", args=[self.tarea.pk]), "fecha_objetivo")
+        self._reenviar_sin_tocar(reverse("growlog:tarea_editar", args=[self.tarea.pk]), "tarea-fecha_objetivo")
         self.tarea.refresh_from_db()
         self.assertEqual(self.tarea.fecha_objetivo, FECHA)
         self.assertEqual(self.tarea.titulo, "Revisar pH")
 
     def test_guardar_evento_sin_tocar_conserva_follow_up(self):
-        self._reenviar_sin_tocar(reverse("growlog:evento_editar", args=[self.evento.pk]), "follow_up_fecha")
+        self._reenviar_sin_tocar(reverse("growlog:evento_editar", args=[self.evento.pk]), "evento-follow_up_fecha")
         self.evento.refresh_from_db()
         self.assertEqual(self.evento.follow_up_fecha, FECHA)
         self.assertEqual(self.evento.follow_up_descripcion, "Mirar hojas nuevas")

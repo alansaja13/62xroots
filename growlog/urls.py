@@ -8,6 +8,7 @@ urlpatterns = [
     path("registrar/", views.registrar, name="registrar"),
     path("registrar/deshacer/", views.registrar_deshacer, name="registrar_deshacer"),
     path("registro/<str:tipo>/<int:pk>/", views.registro_ficha, name="registro_ficha"),
+    path("registro/<str:tipo>/<int:pk>/editar/", views.registro_editar, name="registro_editar"),
     path("registro/<str:tipo>/<int:pk>/borrar/", views.registro_borrar, name="registro_borrar"),
     path("registro/restaurar/", views.registro_restaurar, name="registro_restaurar"),
     path("dudas/", views.faq, name="faq"),
@@ -140,8 +141,6 @@ urlpatterns = [
     path("riego/<int:pk>/eliminar/", views.riego_eliminar, name="riego_eliminar"),
 
     # NutrienteAplicado
-    path("riego/<int:riego_pk>/nutriente/agregar/", views.nutriente_aplicado_crear, name="nutriente_aplicado_crear"),
-    path("nutriente-aplicado/<int:pk>/eliminar/", views.nutriente_aplicado_eliminar, name="nutriente_aplicado_eliminar"),
 
     # MedicionPlanta
     path("planta/<int:planta_pk>/medicion/nueva/", views.medicion_planta_crear, name="medicion_planta_crear"),

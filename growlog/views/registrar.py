@@ -5,7 +5,7 @@ Se usa como página (/registrar/) y como hoja que se abre con el + de la barra
 deshacer durante un minuto.
 """
 import time
-from datetime import timedelta
+from datetime import datetime, time as dt_time, timedelta
 from decimal import Decimal
 
 from django.contrib import messages
@@ -21,10 +21,10 @@ from django.views.decorators.http import require_POST
 
 from ..forms import DT_FMT
 from ..models import (
-    Evento, MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente, ParametroIdeal, Planta, Riego, Tarea,
+    Cultivo, Evento, MedicionAmbiente, MedicionEC, MedicionPlanta, Nutriente, ParametroIdeal, Planta, Riego, Tarea,
 )
-from ..permissions import cultivos_visibles, puede_subir_fotos
-from ..services.registro import TIPOS, RegistroError, guardar_registro
+from ..permissions import cultivos_visibles, nutrientes_para, objeto_del_cultivo, puede_subir_fotos
+from ..services.registro import TIPOS, RegistroError, actualizar_registro, guardar_registro
 from ..utils import etapa_efectiva_cultivo
 
 # En el orden de los chips: lo más frecuente primero.
@@ -286,13 +286,31 @@ def registrar(request):
     reciente = request.session.get("cultivo_reciente")
     elegido = elegido or next((c for c in cultivos if c.pk == reciente), None) or (cultivos[0] if cultivos else None)
     # Al volver con errores o avisos, el formulario conserva lo escrito.
-    v = {}
-    if request.method == "POST":
-        for clave, valor in request.POST.items():
-            grupo, _, campo = clave.partition("-")
-            v.setdefault(grupo, {})[campo] = valor
+    v = _valores_post(request.POST) if request.method == "POST" else {}
     if request.method == "GET" and request.GET.get("planta"):
         v.setdefault("planta", {})["planta_id"] = request.GET["planta"]
+    hoja = bool(request.GET.get("hoja")) and request.htmx and request.method == "GET"
+    return _render_formulario(
+        request, "growlog/partials/registrar_hoja.html" if hoja else "growlog/registrar.html",
+        cultivos=cultivos, elegido=elegido, tipo=tipo, v=v, nutrientes_de=nutrientes_de,
+        error=error, errores=errores, campos_error=campos_error, avisos=avisos,
+        volver=request.POST.get("volver") or (request.headers.get("HX-Current-URL", "") if hoja else ""),
+    )
+
+
+def _valores_post(post):
+    """Lo enviado, agrupado por tipo ({"riego": {"ph": ...}}), para volver a mostrarlo."""
+    v = {}
+    for clave, valor in post.items():
+        grupo, _, campo = clave.partition("-")
+        v.setdefault(grupo, {})[campo] = valor
+    return v
+
+
+def _render_formulario(request, plantilla, *, cultivos, elegido, tipo, v, nutrientes_de, error, errores,
+                       campos_error, avisos, volver, edicion=None, observado=None):
+    """Arma el formulario de Registrar (alta o corrección). En corrección hay un solo cultivo
+    y un solo tipo, y las plantas pueden incluir las que ya tenía el registro."""
     riego, evento = v.get("riego", {}), v.get("evento", {})
     plantas_por_cultivo = [
         {"cultivo": c, "plantas": [{
@@ -302,7 +320,7 @@ def registrar(request):
             "ec_runoff": riego.get(f"ecrunoff-{p.pk}", ""),
             "afectada": evento.get(f"planta-{p.pk}"),
             "error": f"riego-planta-{p.pk}" in campos_error,
-        } for p in c.plantas_activas]}
+        } for p in getattr(c, "plantas_form", c.plantas_activas)]}
         for c in cultivos
     ]
     por_cultivo = _contexto_cultivos(cultivos)
@@ -311,21 +329,24 @@ def registrar(request):
     nutrientes_por_cultivo = []
     for c in cultivos:
         habituales = por_cultivo[c.pk]["habituales"]
-        filas = [{"nutriente": n, "dosis": riego.get(f"nutriente-{n.pk}", ""), "habitual": n.pk in habituales}
+        filas = [{"nutriente": n, "dosis": riego.get(f"nutriente-{n.pk}", ""),
+                  "habitual": n.pk in habituales or bool(edicion and riego.get(f"nutriente-{n.pk}"))}
                  for n in nutrientes_de(c)]
         nutrientes_por_cultivo.append({"cultivo": c, "habituales": [f for f in filas if f["habitual"]],
                                        "otros": [f for f in filas if not f["habitual"]]})
-    hoja = bool(request.GET.get("hoja")) and request.htmx and request.method == "GET"
-    return render(request, "growlog/partials/registrar_hoja.html" if hoja else "growlog/registrar.html", {
-        "cultivos": cultivos, "elegido": elegido, "tipo": tipo, "etiquetas": ETIQUETAS,
+    es_post = request.method == "POST"
+    return render(request, plantilla, {
+        "cultivos": cultivos, "elegido": elegido, "tipo": tipo,
+        "etiquetas": {tipo: ETIQUETAS[tipo]} if edicion else ETIQUETAS,
         "plantas_por_cultivo": plantas_por_cultivo, "nutrientes_por_cultivo": nutrientes_por_cultivo,
         "por_cultivo": {str(k): val for k, val in por_cultivo.items()},
-        "v": v, "observado": request.POST.get("observado_en") or timezone.localtime().strftime(DT_FMT),
-        "hora_elegida": request.POST.get("observado_modo") == "elegida",
-        "mismo_volumen": riego.get("mismo", "on" if request.method == "GET" else ""),
+        "v": v,
+        "observado": request.POST.get("observado_en") or observado or timezone.localtime().strftime(DT_FMT),
+        "hora_elegida": request.POST.get("observado_modo") == "elegida" if es_post else bool(edicion),
+        "mismo_volumen": riego.get("mismo", "" if (es_post or edicion) else "on"),
         "error": error, "errores": errores, "campos_error": campos_error, "avisos": avisos,
         "avisos_clave": "|".join([a["clave"] for a in avisos] + list(filter(None, request.POST.get("aviso_ok", "").split("|")))),
-        "volver": request.POST.get("volver") or (request.headers.get("HX-Current-URL", "") if hoja else ""),
+        "volver": volver, "edicion": edicion,
         "fotos": puede_subir_fotos(request.user),
         "opciones": {
             "eventos": [o for o in Evento.TIPO_CHOICES if o[0] != "nota"], "ec": MedicionEC.TIPO_CHOICES,
@@ -353,3 +374,139 @@ def registrar_deshacer(request):
     if destino and url_has_allowed_host_and_scheme(destino, allowed_hosts={request.get_host()}):
         return redirect(destino)
     return redirect("growlog:dashboard")
+
+
+# ── Corrección ───────────────────────────────────────────────────────────────
+
+def _texto(numero, decimales=None):
+    """Un número como se tipea acá: con coma y sin ceros de más."""
+    if numero is None:
+        return ""
+    if decimales is not None:
+        numero = round(Decimal(numero), decimales)
+    return f"{Decimal(numero).normalize():f}".replace(".", ",")
+
+
+def _x10(ec):
+    return "" if ec is None else str(int((Decimal(ec) * 100).to_integral_value()))
+
+
+def _valores_de(obj, tipo):
+    """Los valores guardados con los mismos nombres que usa el formulario de Registrar."""
+    if tipo == "ambiente":
+        d = {"temperatura_c": _texto(obj.temperatura_c), "humedad_relativa": _texto(obj.humedad_relativa), "notas": obj.notas}
+    elif tipo == "riego":
+        d = {"ph": _texto(obj.ph_agua), "ec": _x10(obj.ec_solucion), "notas": obj.notas}
+        for rp in obj.detalle_plantas.all():
+            d[f"planta-{rp.planta_id}"] = str(rp.volumen_ml)
+            if rp.runoff_observado:
+                d["hubo_runoff"] = "on"
+                d[f"phrunoff-{rp.planta_id}"] = _texto(rp.ph_runoff)
+                d[f"ecrunoff-{rp.planta_id}"] = _x10(rp.ec_runoff)
+        for na in obj.nutrientes_aplicados.all():
+            d[f"nutriente-{na.nutriente_id}"] = _texto(na.dosis_g_por_litro)
+    elif tipo in ("evento", "nota"):
+        d = {"tipo": obj.tipo, "descripcion": obj.descripcion,
+             "follow_up_fecha": obj.follow_up_fecha.isoformat() if obj.follow_up_fecha else "",
+             "follow_up_descripcion": obj.follow_up_descripcion,
+             "follow_up_resuelto": "on" if obj.follow_up_resuelto else ""}
+        d.update({f"planta-{p.pk}": "on" for p in obj.plantas_afectadas.all()})
+    elif tipo == "ec":
+        d = {"tipo": obj.tipo, "ph": _texto(obj.ph), "ec": _x10(obj.ec), "temp_agua": _texto(obj.temp_agua), "notas": obj.notas}
+    elif tipo == "tarea":
+        d = {"titulo": obj.titulo, "descripcion": obj.descripcion, "categoria": obj.categoria, "prioridad": obj.prioridad,
+             "fecha_objetivo": obj.fecha_objetivo.isoformat() if obj.fecha_objetivo else "",
+             "completada": "on" if obj.completada else ""}
+    else:  # planta
+        d = {"planta_id": str(obj.planta_id), "altura_cm": _texto(obj.altura_cm), "nudos_count": str(obj.nudos_count or ""),
+             "ancho_canopy_cm": _texto(obj.ancho_canopy_cm), "aspecto_general": obj.aspecto_general, "sintomas": obj.sintomas}
+    return {tipo: d}
+
+
+def _momento(obj, tipo):
+    if tipo == "tarea":
+        return None
+    if tipo == "planta":
+        return timezone.make_aware(datetime.combine(obj.fecha, dt_time(12))).strftime(DT_FMT)
+    return timezone.localtime(obj.timestamp).strftime(DT_FMT)
+
+
+@login_required
+def registro_editar(request, tipo, pk):
+    """Corregir un registro con el mismo formulario que la hoja de Registrar."""
+    obj = objeto_del_cultivo(request, MODELOS[tipo], editar=True, pk=pk)
+    if tipo == "evento" and obj.tipo == "nota":
+        tipo = "nota"
+    cultivo = Cultivo.objects.prefetch_related(
+        Prefetch("plantas", queryset=Planta.objects.activas(), to_attr="plantas_activas"), "cambios_etapa",
+    ).get(pk=request.cultivo_actual.pk)
+    # Las plantas que ya tenía el registro siguen apareciendo aunque estén archivadas.
+    plantas = list(cultivo.plantas_activas)
+    if tipo == "riego":
+        ya = [rp.planta for rp in obj.detalle_plantas.select_related("planta")]
+    elif tipo in ("evento", "nota"):
+        ya = list(obj.plantas_afectadas.all())
+    elif tipo == "planta":
+        ya = [obj.planta]
+    else:
+        ya = []
+    plantas += [p for p in ya if p.pk not in {q.pk for q in plantas}]
+    cultivo.plantas_form = plantas
+    catalogo = list(nutrientes_para(request.user, cultivo))
+    if tipo == "riego":
+        catalogo += [na.nutriente for na in obj.nutrientes_aplicados.select_related("nutriente")
+                     if na.nutriente_id not in {n.pk for n in catalogo}]
+
+    ficha = reverse("growlog:registro_ficha", args=[{"nota": "evento"}.get(tipo, tipo), obj.pk])
+    error, errores, campos_error, avisos = None, [], set(), []
+    if request.method == "POST":
+        try:
+            observado = _observado(request.POST, tipo)
+            datos = _datos(request.POST, tipo, plantas, catalogo)
+            archivos = {k[len("planta-"):]: v for k, v in request.FILES.items() if k.startswith("planta-")}
+            confirmados = set(filter(None, request.POST.get("aviso_ok", "").split("|")))
+            with transaction.atomic():
+                actualizar_registro(request.user, obj, tipo, observado, datos, archivos)
+                if not request.POST.get("confirmar"):
+                    avisos = [a for a in _avisos(tipo, datos, plantas, catalogo) if a["clave"] not in confirmados]
+                    transaction.set_rollback(bool(avisos))
+            if not avisos:
+                messages.success(request, "Listo, quedó corregido.")
+                return redirect(_volver(request) or ficha)
+        except RegistroError as exc:
+            error, avisos = exc.mensaje, []
+            errores, campos_error = _errores(exc, tipo)
+            obj.refresh_from_db()
+    v = _valores_post(request.POST) if request.method == "POST" else _valores_de(obj, tipo)
+    return _render_formulario(
+        request, "growlog/registro_editar.html", cultivos=[cultivo], elegido=cultivo, tipo=tipo, v=v,
+        nutrientes_de=lambda c: catalogo, error=error, errores=errores, campos_error=campos_error, avisos=avisos,
+        volver=request.POST.get("volver") or request.GET.get("volver") or ficha,
+        edicion={"obj": obj, "ficha": ficha, "nombre": GUARDADO[tipo].rsplit(" ", 1)[0]},
+        observado=_momento(obj, tipo),
+    )
+
+
+# Las direcciones de siempre (/riego/<pk>/editar/…) ahora abren la corrección unificada.
+def riego_editar(request, pk):
+    return registro_editar(request, "riego", pk)
+
+
+def evento_editar(request, pk):
+    return registro_editar(request, "evento", pk)
+
+
+def medicion_ambiente_editar(request, pk):
+    return registro_editar(request, "ambiente", pk)
+
+
+def medicion_ec_editar(request, pk):
+    return registro_editar(request, "ec", pk)
+
+
+def tarea_editar(request, pk):
+    return registro_editar(request, "tarea", pk)
+
+
+def medicion_planta_editar(request, pk):
+    return registro_editar(request, "planta", pk)

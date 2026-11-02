@@ -107,3 +107,92 @@ def guardar_registro(usuario, cultivo, tipo, observado, datos, archivos=None):
     if tipo == "evento":
         obj.plantas_afectadas.set(plantas_afectadas)
     return obj
+
+
+@transaction.atomic
+def actualizar_registro(usuario, obj, tipo, observado, datos, archivos=None):
+    """Corrige un registro existente con las mismas reglas que el alta.
+
+    Las plantas y nutrientes que ya tenía el registro siguen valiendo aunque hoy
+    estén archivadas u ocultas; lo nuevo tiene que estar disponible en el cultivo.
+    """
+    datos = dict(datos)
+    if tipo == "ambiente":
+        for campo, valor in validar(AmbienteForm, datos).items():
+            setattr(obj, campo, valor)
+        obj.timestamp = observado
+        obj.luz_estado = None  # se recalcula con la hora nueva
+    elif tipo in ("evento", "nota"):
+        cultivo = obj.cultivo
+        plantas_ids = set(datos.pop("plantas_afectadas", []))
+        permitidas = {p.pk: p for p in cultivo.plantas.activas()} | {p.pk: p for p in obj.plantas_afectadas.all()}
+        if plantas_ids - set(permitidas):
+            raise RegistroError("Una planta ya no está disponible en este cultivo. Revisá el evento.")
+        for campo, valor in validar(ObservacionForm if tipo == "evento" else NotaForm, datos).items():
+            setattr(obj, campo, valor)
+        obj.timestamp = observado
+        if tipo == "evento":
+            obj.follow_up_resuelto = bool(datos.get("follow_up_resuelto"))
+    elif tipo == "ec":
+        for campo, valor in validar(ECForm, datos).items():
+            setattr(obj, campo, valor)
+        obj.timestamp = observado
+    elif tipo == "tarea":
+        for campo, valor in validar(PendienteForm, datos).items():
+            setattr(obj, campo, valor)
+        completada = bool(datos.get("completada"))
+        if completada and not obj.completada:
+            obj.completada_en = timezone.now()
+        elif not completada:
+            obj.completada_en = None
+        obj.completada = completada
+    elif tipo == "planta":
+        form = MedicionPlantaForm({**datos, "fecha": timezone.localdate(observado)}, archivos or {},
+                                  instance=obj, permitir_foto=puede_subir_fotos(usuario))
+        if not form.is_valid():
+            raise RegistroError("Revisá los campos señalados.", campos=form.errors)
+        return form.save()
+    elif tipo == "riego":
+        cultivo = obj.cultivo
+        solucion = validar(RiegoSolucionForm, datos)
+        disponibles = {p.pk: p for p in cultivo.plantas.activas()}
+        disponibles |= {d.planta_id: d.planta for d in obj.detalle_plantas.select_related("planta")}
+        detalles = []
+        for row in datos.get("plantas", []):
+            try:
+                values = validar(VolumenForm, row)
+            except RegistroError as exc:
+                nombre = getattr(disponibles.get(int(row.get("planta_id") or 0)), "apodo", "una planta")
+                raise RegistroError(f"Revisá el riego de {nombre}.",
+                                    campos={f"planta-{row.get('planta_id')}": [m for ms in exc.campos.values() for m in ms]})
+            planta = disponibles.get(values.pop("planta_id"))
+            if planta is None:
+                raise RegistroError("Una planta ya no está disponible en este cultivo. Revisá el riego.")
+            detalles.append({"planta": planta, **values})
+        ya_aplicados = {na.nutriente_id: na.nutriente for na in obj.nutrientes_aplicados.select_related("nutriente")}
+        aplicaciones = []
+        for row in datos.get("nutrientes", []):
+            values = validar(NutrienteForm, row)
+            nutriente = (ya_aplicados.get(values["nutriente_id"])
+                         or nutrientes_para(usuario, cultivo).filter(pk=values["nutriente_id"]).first())
+            if nutriente is None:
+                raise RegistroError("Revisá los nutrientes: alguno ya no existe.")
+            aplicaciones.append((nutriente, values["dosis_g_por_litro"]))
+        obj.timestamp = observado
+        obj.ph_agua, obj.ec_solucion, obj.notas = solucion["ph"], solucion["ec"], solucion["notas"]
+        obj.buscar_runoff = solucion["buscar_runoff"]
+        try:
+            guardar_riego(riego=obj, detalles=detalles, nutrientes=aplicaciones)
+        except ValidationError as exc:
+            raise RegistroError(" ".join(exc.messages))
+        return obj
+    else:
+        raise RegistroError("Tipo de registro desconocido.")
+    try:
+        obj.full_clean()
+        obj.save()
+    except ValidationError as exc:
+        raise RegistroError(" ".join(exc.messages))
+    if tipo in ("evento", "nota"):
+        obj.plantas_afectadas.set([permitidas[i] for i in plantas_ids])
+    return obj

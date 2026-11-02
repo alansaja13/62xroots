@@ -32,7 +32,6 @@ from .plantas import (  # noqa: F401
     cambio_etapa_planta_editar,
     cambio_etapa_planta_eliminar,
     medicion_planta_crear,
-    medicion_planta_editar,
     medicion_planta_eliminar,
     planta_crear,
     planta_detail,
@@ -44,28 +43,21 @@ from .plantas import (  # noqa: F401
 from .tareas import (  # noqa: F401
     tarea_completar,
     tarea_descompletar,
-    tarea_editar,
     tarea_eliminar,
     tareas_list,
 )
 from .eventos import (  # noqa: F401
-    evento_editar,
     evento_eliminar,
     evento_resolver_followup,
 )
 from .riegos import (  # noqa: F401
-    nutriente_aplicado_crear,
-    nutriente_aplicado_eliminar,
-    riego_editar,
     riego_eliminar,
 )
 from .mediciones import (  # noqa: F401
     cambio_fotoperiodo_editar,
     cambio_fotoperiodo_eliminar,
     fotoperiodo_list,
-    medicion_ambiente_editar,
     medicion_ambiente_eliminar,
-    medicion_ec_editar,
     medicion_ec_eliminar,
 )
 from .invitados import (  # noqa: F401
@@ -81,7 +73,10 @@ from .nutrientes import (  # noqa: F401
     nutriente_ocultar,
     nutrientes,
 )
-from .registrar import registrar, registrar_deshacer  # noqa: F401
+from .registrar import (  # noqa: F401
+    evento_editar, medicion_ambiente_editar, medicion_ec_editar, medicion_planta_editar,
+    registrar, registrar_deshacer, registro_editar, riego_editar, tarea_editar,
+)
 from .registros import registro_borrar, registro_ficha, registro_restaurar  # noqa: F401
 from .pwa import (  # noqa: F401
     push_subscribe,

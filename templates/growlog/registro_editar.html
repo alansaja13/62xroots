@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Corregir · {{ elegido.nombre }}{% endblock %}
+{# Corrección de un registro con el mismo formulario que la hoja de Registrar. #}
+{% block content %}
+<div class="reg">
+  <a href="{{ edicion.ficha }}" class="mo" style="color: var(--mu); display: inline-flex; min-height: var(--toque); align-items: center;">‹ Volver</a>
+  <div class="mo">{{ elegido.nombre }}</div>
+  <h1 class="h1" style="margin-top: 8px;">Corregir {{ edicion.nombre|lower }}</h1>
+  {% include "growlog/partials/registrar_form.html" %}
+</div>
+{% endblock %}

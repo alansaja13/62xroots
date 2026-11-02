@@ -1,10 +1,6 @@
-"""Formularios de la bitácora web."""
-from decimal import Decimal
-
+"""Formularios de la bitácora web. Los registros diarios usan los de registration_forms.py."""
 from django import forms
-from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
-from django.db.models import Q
 
 from .models import (
     ETAPA_CHOICES,
@@ -13,49 +9,15 @@ from .models import (
     CambioFotoperiodo,
     Cultivo,
     CultivoMiembro,
-    Evento,
-    MedicionAmbiente,
-    MedicionEC,
     MedicionPlanta,
     Nutriente,
-    NutrienteAplicado,
     Planta,
-    Riego,
-    Tarea,
 )
-from .services.validacion import validar_solucion
 
 # Formato que entiende <input type="datetime-local">.
 DT_FMT = "%Y-%m-%dT%H:%M"
 # <input type="date"> solo acepta ISO; sin esto es-ar renderiza "16/08/2026" y el campo queda vacío.
 DATE_FMT = "%Y-%m-%d"
-
-
-class ECx10Field(forms.IntegerField):
-    """EC cargada en escala ×10 µS/cm, como la muestran los medidores: 120 = 1200 µS/cm.
-    En la base sigue en mS/cm (120 → 1,20)."""
-    MAX = 99999  # 999,99 mS/cm, el máximo de los campos del modelo
-
-    def __init__(self, label="EC (×10 µS/cm)", **kwargs):
-        kwargs.setdefault("required", False)
-        kwargs.setdefault("widget", forms.NumberInput(attrs={
-            "class": "form-control field-narrow", "step": "1", "min": "0", "inputmode": "numeric", "placeholder": "120",
-        }))
-        super().__init__(label=label, **kwargs)
-
-    def prepare_value(self, value):
-        # Lo guardado (Decimal en mS/cm) se muestra ×10; lo tipeado se devuelve tal cual.
-        if isinstance(value, Decimal):
-            return int((value * 100).to_integral_value())
-        return value
-
-    def to_python(self, value):
-        valor = super().to_python(value)
-        if valor is None:
-            return None
-        if not 0 <= valor <= self.MAX:
-            raise ValidationError(f"Ingresá un valor entre 0 y {self.MAX} (×10 µS/cm).")
-        return (Decimal(valor) / 100).quantize(Decimal("0.01"))
 
 
 class NuevoCultivoForm(forms.ModelForm):
@@ -109,158 +71,6 @@ class PlantaForm(forms.ModelForm):
             "notas_genetica": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "archivado": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
-
-
-class TareaForm(forms.ModelForm):
-    class Meta:
-        model = Tarea
-        fields = ["titulo", "descripcion", "fecha_objetivo", "prioridad", "categoria", "completada"]
-        widgets = {
-            "titulo": forms.TextInput(attrs={"class": "form-control", "autofocus": True}),
-            "descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
-            "fecha_objetivo": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),
-            "prioridad": forms.Select(attrs={"class": "form-select field-narrow"}),
-            "categoria": forms.Select(attrs={"class": "form-select field-narrow"}),
-            "completada": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-        }
-
-
-class EventoForm(forms.ModelForm):
-    class Meta:
-        model = Evento
-        fields = ["timestamp", "tipo", "descripcion", "plantas_afectadas",
-                  "follow_up_fecha", "follow_up_descripcion", "follow_up_resuelto"]
-        widgets = {
-            "timestamp": forms.DateTimeInput(format=DT_FMT, attrs={"class": "form-control", "type": "datetime-local"}),
-            "tipo": forms.Select(attrs={"class": "form-select"}),
-            "descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-            "plantas_afectadas": forms.CheckboxSelectMultiple(),
-            "follow_up_fecha": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),
-            "follow_up_descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
-            "follow_up_resuelto": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-        }
-
-
-class RiegoForm(forms.ModelForm):
-    """Datos compartidos de la sesión de riego (solución madre). El volumen y el
-    runoff se cargan por planta en RiegoPlantaEntryForm — ver riego_planta_formset."""
-    ec_solucion = ECx10Field(label="EC solución (×10 µS/cm)")
-
-    def clean(self):
-        data = super().clean()
-        validar_solucion(ph=data.get("ph_agua"), ec=data.get("ec_solucion"))
-        return data
-
-    class Meta:
-        model = Riego
-        fields = ["timestamp", "ph_agua", "ec_solucion", "buscar_runoff", "notas"]
-        widgets = {
-            "timestamp": forms.DateTimeInput(format=DT_FMT, attrs={"class": "form-control", "type": "datetime-local"}),
-            "ph_agua": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01", "placeholder": "6.2"}),
-            "buscar_runoff": forms.CheckboxInput(attrs={"class": "form-check-input", "x-model": "buscarRunoff"}),
-            "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Notas generales de la sesión (mezcla, incidencias)..."}),
-        }
-
-
-class RiegoPlantaEntryForm(forms.Form):
-    """Una fila del desglose de riego por planta. Se instancia una por cada
-    planta activa del cultivo — ver riego_planta_formset."""
-    planta_id = forms.IntegerField(widget=forms.HiddenInput())
-    incluida = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input", "x-model": "incluida"}),
-    )
-    volumen_ml = forms.IntegerField(
-        required=False, min_value=1, label="Volumen (ml)",
-        widget=forms.NumberInput(attrs={"class": "form-control field-narrow", "inputmode": "numeric", "placeholder": "500"}),
-    )
-    runoff_observado = forms.BooleanField(
-        required=False, label="Runoff observado",
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
-    )
-    ph_runoff = forms.DecimalField(
-        required=False, max_digits=4, decimal_places=2, label="pH runoff",
-        widget=forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01", "placeholder": "6.0"}),
-    )
-    ec_runoff = ECx10Field(label="EC runoff (×10 µS/cm)")
-    notas = forms.CharField(
-        required=False, label="Notas",
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Notas de esta planta..."}),
-    )
-
-    def clean(self):
-        cleaned = super().clean()
-        if cleaned.get("incluida") and not cleaned.get("volumen_ml"):
-            self.add_error("volumen_ml", "Requerido para las plantas incluidas en el riego.")
-        if cleaned.get("incluida"):
-            validar_solucion(ph=cleaned.get("ph_runoff"), ec=cleaned.get("ec_runoff"))
-        return cleaned
-
-
-class BaseRiegoPlantaFormSet(forms.BaseFormSet):
-    def clean(self):
-        super().clean()
-        if any(self.errors):
-            return
-        vistos = set()
-        for form in self.forms:
-            planta_id = form.cleaned_data.get("planta_id")
-            if planta_id in vistos:
-                raise forms.ValidationError("Una planta no puede aparecer dos veces en el mismo riego.")
-            vistos.add(planta_id)
-
-
-RiegoPlantaFormSet = forms.formset_factory(
-    RiegoPlantaEntryForm, formset=BaseRiegoPlantaFormSet, extra=0,
-)
-
-
-def riego_planta_formset(cultivo, data=None, riego=None):
-    """Arma el formset de desglose por planta, precargado con lo ya guardado si
-    `riego` existe (edición) o con todo desmarcado (alta nueva)."""
-    existentes = {}
-    if riego is not None:
-        existentes = {rp.planta_id: rp for rp in riego.detalle_plantas.all()}
-    # Se riegan las plantas activas; al editar, las que ya estaban en el riego
-    # (aunque hoy estén archivadas o cosechadas) siguen formando parte del registro.
-    plantas = list(cultivo.plantas.filter(
-        Q(archivado=False, estado="activa") | Q(pk__in=existentes),
-    ).order_by("apodo"))
-    initial = []
-    for p in plantas:
-        rp = existentes.get(p.id)
-        if rp:
-            initial.append({
-                "planta_id": p.id, "incluida": True, "volumen_ml": rp.volumen_ml,
-                "runoff_observado": rp.runoff_observado, "ph_runoff": rp.ph_runoff,
-                "ec_runoff": rp.ec_runoff, "notas": rp.notas,
-            })
-        else:
-            initial.append({"planta_id": p.id, "incluida": False})
-    formset = RiegoPlantaFormSet(data, initial=initial, prefix="rp")
-    return formset, plantas
-
-
-def riego_planta_entries(rp_formset, plantas):
-    """Extrae del formset validado las filas marcadas como incluidas."""
-    planta_by_id = {p.id: p for p in plantas}
-    entries = []
-    for f in rp_formset.forms:
-        d = f.cleaned_data
-        if not d or not d.get("incluida"):
-            continue
-        planta = planta_by_id.get(d["planta_id"])
-        if not planta:
-            raise ValidationError("La planta seleccionada no pertenece a este formulario de riego.")
-        entries.append({
-            "planta": planta,
-            "volumen_ml": d["volumen_ml"],
-            "runoff_observado": d.get("runoff_observado", False),
-            "ph_runoff": d.get("ph_runoff"),
-            "ec_runoff": d.get("ec_runoff"),
-            "notas": d.get("notas", ""),
-        })
-    return entries
 
 
 class MedicionPlantaForm(forms.ModelForm):
@@ -326,78 +136,6 @@ class NutrienteForm(forms.ModelForm):
         if minimo is not None and maximo is not None and minimo > maximo:
             self.add_error("dosis_recomendada_max", "La dosis máxima no puede ser menor que la mínima.")
         return data
-
-
-class NutrienteAplicadoForm(forms.ModelForm):
-    class Meta:
-        model = NutrienteAplicado
-        fields = ["nutriente", "dosis_g_por_litro"]
-        widgets = {
-            "nutriente": forms.Select(attrs={"class": "form-select"}),
-            "dosis_g_por_litro": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.001"}),
-        }
-
-    def __init__(self, *args, nutrientes, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Solo los nutrientes que se ofrecen en ese cultivo (ver nutrientes_para).
-        self.fields["nutriente"].queryset = nutrientes
-        self.fields["dosis_g_por_litro"].label = "Dosis (g/L)"
-
-    def clean_dosis_g_por_litro(self):
-        # Misma regla que Registrar: una dosis aplicada es mayor que cero.
-        dosis = self.cleaned_data["dosis_g_por_litro"]
-        if dosis is not None and dosis <= 0:
-            raise ValidationError("La dosis debe ser mayor que cero.")
-        return dosis
-
-
-class MedicionECForm(forms.ModelForm):
-    ec = ECx10Field()
-
-    class Meta:
-        model = MedicionEC
-        fields = ["timestamp", "tipo", "ph", "ec", "temp_agua", "notas"]
-        labels = {"timestamp": "Cuándo se midió", "tipo": "Qué mediste", "ph": "pH", "temp_agua": "Temp. agua (°C)"}
-        widgets = {
-            "timestamp": forms.DateTimeInput(format=DT_FMT, attrs={"class": "form-control", "type": "datetime-local"}),
-            "tipo": forms.Select(attrs={"class": "form-select"}),
-            "ph": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
-            "temp_agua": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.1"}),
-            "notas": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
-        }
-
-    def clean(self):
-        # Mismas reglas que Registrar (registration_forms.ECForm).
-        data = super().clean()
-        ph, ec = data.get("ph"), data.get("ec")
-        if ph is None and ec is None and not self.has_error("ph") and not self.has_error("ec"):
-            raise ValidationError("Ingresá pH o EC, al menos uno de los dos.")
-        validar_solucion(ph=ph, ec=ec)
-        return data
-
-
-class MedicionAmbienteForm(forms.ModelForm):
-    # Mismos rangos que el registro diario (registration_forms.AmbienteForm) y la API.
-    temperatura_c = forms.DecimalField(
-        max_digits=5, decimal_places=2, min_value=0, max_value=60, label="Temperatura (°C)",
-        widget=forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.1"}),
-    )
-    humedad_relativa = forms.DecimalField(
-        max_digits=5, decimal_places=2, min_value=0, max_value=100, label="Humedad relativa (%)",
-        widget=forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "1"}),
-    )
-    notas = forms.CharField(
-        required=False, max_length=5000, label="Notas",
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2}),
-    )
-
-    class Meta:
-        model = MedicionAmbiente
-        fields = ["timestamp", "temperatura_c", "humedad_relativa", "notas"]
-        labels = {"timestamp": "Cuándo se midió"}
-        widgets = {
-            "timestamp": forms.DateTimeInput(format=DT_FMT, attrs={"class": "form-control", "type": "datetime-local"}),
-        }
 
 
 class CambioFotoperiodoForm(forms.ModelForm):

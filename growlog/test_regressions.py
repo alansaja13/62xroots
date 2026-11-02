@@ -144,10 +144,9 @@ class BitacoraRegressionTests(TestCase):
         url = reverse("growlog:riego_editar", args=[riego.pk])
         self.assertContains(self.client.get(url), "archivada")
         response = self.client.post(url, {
-            "timestamp": timezone.localtime().strftime("%Y-%m-%dT%H:%M"),
-            "notas": "Observación corregida",
-            "rp-TOTAL_FORMS": "1", "rp-INITIAL_FORMS": "1",
-            "rp-0-planta_id": str(self.planta.pk), "rp-0-incluida": "on", "rp-0-volumen_ml": "500",
+            "observado_modo": "elegida", "observado_en": timezone.localtime().strftime("%Y-%m-%dT%H:%M"),
+            "riego-notas": "Observación corregida",
+            f"riego-planta-{self.planta.pk}": "500", f"riego-nutriente-{nutriente.pk}": "1",
         })
         self.assertEqual(response.status_code, 302)
         self.assertEqual(riego.detalle_plantas.get().volumen_ml, 500)

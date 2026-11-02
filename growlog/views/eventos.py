@@ -6,26 +6,8 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from ..forms import EventoForm
 from ..models import Evento
 from ..permissions import objeto_del_cultivo
-
-
-@login_required
-def evento_editar(request, pk):
-    evento = objeto_del_cultivo(request, Evento, editar=True, pk=pk)
-    form = EventoForm(request.POST or None, instance=evento)
-    form.fields["plantas_afectadas"].queryset = evento.cultivo.plantas.all()
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Evento actualizado.")
-        return redirect("growlog:cultivo_detail", evento.cultivo.slug)
-    return render(request, "growlog/crud_form.html", {
-        "form": form, "title": "Editar evento",
-        "subtitle": evento.cultivo.nombre,
-        "back_url": reverse("growlog:cultivo_detail", args=[evento.cultivo.slug]),
-        "delete_url": reverse("growlog:evento_eliminar", args=[pk]),
-    })
 
 
 @login_required
