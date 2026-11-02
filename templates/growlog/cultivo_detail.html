@@ -66,7 +66,7 @@
           {% if ultima_medicion_ec %}
           <div class="vital__valor">{% if ultima_medicion_ec.ph %}{{ ultima_medicion_ec.ph|floatformat:1 }}{% else %}-{% endif %}<small> pH</small></div>
           <div class="mo vital__edad">
-            {% if ultima_medicion_ec.ec %}EC {{ ultima_medicion_ec.ec|ec_us }} µS · {{ ultima_medicion_ec.ec|ec_x10 }} medidor{% else %}{{ ultima_medicion_ec.get_tipo_display }}{% endif %}
+            {% if ultima_medicion_ec.ec %}EC {% ec ultima_medicion_ec.ec %} · {{ ultima_medicion_ec.ec|ec_x10 }} medidor{% else %}{{ ultima_medicion_ec.get_tipo_display }}{% endif %}
             {% if ultima_medicion_ec.ec > 5 %}<span class="cd-warn"> · fuera de lo habitual</span>{% if can_edit_cultivo %} <a href="{% url 'growlog:medicion_ec_editar' ultima_medicion_ec.pk %}">revisar</a>{% endif %}{% endif %}
           </div>
           {% else %}
@@ -101,9 +101,9 @@
                 Ambiente {{ reg.obj.temperatura_c|floatformat:1 }}° · {{ reg.obj.humedad_relativa|floatformat:0 }}%
                 {% with estado=reg.obj.vpd_estado %}· <span class="cd-{{ estado|default:'x' }}">VPD {{ reg.obj.vpd|floatformat:2 }}</span>{% endwith %}
               {% elif reg.tipo == 'riego' %}
-                Riego {{ reg.obj.volumen_total_ml }} ml{% if reg.obj.ph_agua %} · pH {{ reg.obj.ph_agua|floatformat:1 }}{% endif %}{% if reg.obj.ec_solucion %} · EC {{ reg.obj.ec_solucion|ec_us }} µS{% endif %}
+                Riego {{ reg.obj.volumen_total_ml }} ml{% if reg.obj.ph_agua %} · pH {{ reg.obj.ph_agua|floatformat:1 }}{% endif %}{% if reg.obj.ec_solucion %} · EC {% ec reg.obj.ec_solucion %}{% endif %}
               {% elif reg.tipo == 'medicion_ec' %}
-                {% if reg.obj.ph %}pH {{ reg.obj.ph|floatformat:1 }}{% endif %}{% if reg.obj.ph and reg.obj.ec %} · {% endif %}{% if reg.obj.ec %}EC {{ reg.obj.ec|ec_us }} µS{% endif %}
+                {% if reg.obj.ph %}pH {{ reg.obj.ph|floatformat:1 }}{% endif %}{% if reg.obj.ph and reg.obj.ec %} · {% endif %}{% if reg.obj.ec %}EC {% ec reg.obj.ec %}{% endif %}
               {% else %}
                 {{ reg.obj.get_tipo_display }}: {{ reg.obj.descripcion|truncatechars:90 }}
               {% endif %}

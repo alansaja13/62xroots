@@ -768,3 +768,34 @@ class Ingreso(models.Model):
     def __str__(self):
         estado = "ok" if self.exito else "fallido"
         return f"{self.nombre_usado} · {estado} · {self.creado_en:%d/%m/%Y %H:%M}"
+
+
+class Perfil(models.Model):
+    """Preferencias de cada persona. Se crea sola la primera vez que se necesita (perfil_de)."""
+    UNIDADES_EC = [("us", "µS/cm"), ("ms", "mS/cm"), ("x10", "Como el medidor (×10 µS/cm)")]
+
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE, related_name="perfil")
+    unidad_ec = models.CharField(max_length=4, choices=UNIDADES_EC, default="us", verbose_name="EC se muestra en")
+    avisar_ambiente = models.BooleanField(default=True, verbose_name="Avisar si falta medir el ambiente del día")
+    avisar_tareas = models.BooleanField(default=True, verbose_name="Avisar tareas vencidas o de hoy")
+    avisar_seguimientos = models.BooleanField(default=True, verbose_name="Avisar seguimientos pendientes")
+    hora_avisos = models.PositiveSmallIntegerField(default=20, verbose_name="Hora de los avisos")
+
+    class Meta:
+        verbose_name = "Perfil"
+        verbose_name_plural = "Perfiles"
+
+    def __str__(self):
+        return f"Perfil de {self.usuario}"
+
+
+def perfil_de(usuario):
+    """El perfil de `usuario`, creado con los valores de siempre si todavía no existía."""
+    if not getattr(usuario, "is_authenticated", False):
+        return None
+    try:
+        return usuario.perfil
+    except Perfil.DoesNotExist:
+        perfil, _ = Perfil.objects.get_or_create(usuario=usuario)
+        usuario.perfil = perfil
+        return perfil

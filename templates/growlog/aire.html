@@ -129,7 +129,7 @@
     <h2 class="mo" id="phec-title">pH y EC · solución contra runoff</h2>
     {% if datos.ph_ec %}
     <div class="card aire-curva" data-phec="ph" data-unidad=""><div class="aire-curva__cab"><b>pH</b><span class="mo aire-ultimo" data-ultimo></span></div><svg viewBox="0 0 340 96" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-    <div class="card aire-curva" data-phec="ec" data-unidad=" µS"><div class="aire-curva__cab"><b>EC</b><span class="mo aire-ultimo" data-ultimo></span></div><svg viewBox="0 0 340 96" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+    <div class="card aire-curva" data-phec="ec" data-unidad=" µS" data-ec-unidad="{{ unidad_ec }}"><div class="aire-curva__cab"><b>EC</b><span class="mo aire-ultimo" data-ultimo></span></div><svg viewBox="0 0 340 96" preserveAspectRatio="none" aria-hidden="true"></svg></div>
     <div class="vpd-leyenda" style="margin-left: 0;" aria-hidden="true">
       <span><i style="background: var(--w)"></i>solución</span>
       <span><i style="background: var(--e)"></i>runoff</span>
@@ -335,7 +335,11 @@
       });
       var ultimo = conValor[conValor.length - 1];
       var u = caja.dataset.unidad || '';
-      caja.querySelector('[data-ultimo]').textContent = 'última ' + fmt(ultimo[clave], clave === 'ec' ? 0 : clave === 'vpd' ? 2 : 1) + u;
+      var texto = fmt(ultimo[clave], clave === 'ec' ? 0 : clave === 'vpd' ? 2 : 1) + u;
+      // La EC en la unidad que eligió quien mira (Tu cuenta).
+      if (clave === 'ec' && caja.dataset.ecUnidad === 'ms') texto = fmt(ultimo.ec / 1000, 2) + ' mS';
+      if (clave === 'ec' && caja.dataset.ecUnidad === 'x10') texto = fmt(ultimo.ec / 10, 0) + ' medidor';
+      caja.querySelector('[data-ultimo]').textContent = 'última ' + texto;
     }
 
     document.querySelectorAll('[data-curva]').forEach(function (c) { dibujar(c, L, c.dataset.curva, false); });

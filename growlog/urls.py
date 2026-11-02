@@ -13,6 +13,7 @@ urlpatterns = [
     path("registro/restaurar/", views.registro_restaurar, name="registro_restaurar"),
     path("dudas/", views.faq, name="faq"),
     path("mas/", views.mas, name="mas"),
+    path("cuenta/", views.cuenta, name="cuenta"),
     path("tareas/", views.tareas_todas, name="tareas_todas"),
     path("actividad/", views.actividad, name="actividad"),
     path("nutrientes/", views.nutrientes, name="nutrientes"),

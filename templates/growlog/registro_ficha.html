@@ -10,7 +10,7 @@
   <h1 class="h1 rf-titulo">
     {% if tipo == 'ambiente' %}{{ obj.temperatura_c|floatformat:1 }}° · {{ obj.humedad_relativa|floatformat:0 }}%
     {% elif tipo == 'riego' %}{{ obj.volumen_total_ml }} ml
-    {% elif tipo == 'ec' %}{% if obj.ph is not None %}pH {{ obj.ph|floatformat:1 }}{% endif %}{% if obj.ph is not None and obj.ec is not None %} · {% endif %}{% if obj.ec is not None %}EC {{ obj.ec|ec_us }} µS{% endif %}
+    {% elif tipo == 'ec' %}{% if obj.ph is not None %}pH {{ obj.ph|floatformat:1 }}{% endif %}{% if obj.ph is not None and obj.ec is not None %} · {% endif %}{% if obj.ec is not None %}EC {% ec obj.ec %}{% endif %}
     {% elif tipo == 'evento' %}{% if obj.tipo == 'nota' %}Nota{% else %}{{ obj.get_tipo_display }}{% endif %}
     {% elif tipo == 'tarea' %}{{ obj.titulo }}
     {% elif tipo == 'planta' %}{{ obj.planta.apodo }}{% if obj.altura_cm %} · {{ obj.altura_cm|floatformat:"-1" }} cm{% endif %}
@@ -23,7 +23,7 @@
       {% if obj.luz_estado %}<div><dt class="mo">Luz</dt><dd>{{ obj.get_luz_estado_display|lower }}</dd></div>{% endif %}
     {% elif tipo == 'riego' %}
       {% if obj.ph_agua is not None %}<div><dt class="mo">pH solución</dt><dd>{{ obj.ph_agua|floatformat:1 }}</dd></div>{% endif %}
-      {% if obj.ec_solucion is not None %}<div><dt class="mo">EC solución</dt><dd>{{ obj.ec_solucion|ec_us }} µS · {{ obj.ec_solucion|ec_x10 }} medidor</dd></div>{% endif %}
+      {% if obj.ec_solucion is not None %}<div><dt class="mo">EC solución</dt><dd>{% ec obj.ec_solucion %} · {{ obj.ec_solucion|ec_x10 }} medidor</dd></div>{% endif %}
       {% for na in obj.nutrientes_aplicados.all %}<div><dt class="mo">{{ na.nutriente }}</dt><dd>{{ na.dosis_g_por_litro.normalize }} g/L</dd></div>{% endfor %}
     {% elif tipo == 'ec' %}
       <div><dt class="mo">Qué se midió</dt><dd>{{ obj.get_tipo_display }}</dd></div>
@@ -49,7 +49,7 @@
   <section class="cd-seccion">
     <div class="cd-seccion__head"><h2 class="mo">Por planta</h2></div>
     {% for rp in obj.detalle_plantas.all %}
-    <div class="fila"><span class="fila__texto"><a href="{% url 'growlog:planta_detail' rp.planta_id %}">{{ rp.planta.apodo }}</a>{% if rp.runoff_observado %}<br><span class="mo cd-reg__meta">runoff{% if rp.ph_runoff is not None %} · pH {{ rp.ph_runoff|floatformat:1 }}{% endif %}{% if rp.ec_runoff is not None %} · EC {{ rp.ec_runoff|ec_us }} µS{% endif %}{% if rp.notas %} · {{ rp.notas }}{% endif %}</span>{% endif %}</span><span class="num">{{ rp.volumen_ml }} ml</span></div>
+    <div class="fila"><span class="fila__texto"><a href="{% url 'growlog:planta_detail' rp.planta_id %}">{{ rp.planta.apodo }}</a>{% if rp.runoff_observado %}<br><span class="mo cd-reg__meta">runoff{% if rp.ph_runoff is not None %} · pH {{ rp.ph_runoff|floatformat:1 }}{% endif %}{% if rp.ec_runoff is not None %} · EC {% ec rp.ec_runoff %}{% endif %}{% if rp.notas %} · {{ rp.notas }}{% endif %}</span>{% endif %}</span><span class="num">{{ rp.volumen_ml }} ml</span></div>
     {% endfor %}
   </section>
   {% endif %}

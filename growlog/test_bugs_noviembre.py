@@ -344,3 +344,43 @@ class TareasAgrupadasTests(TestCase):
         self.assertEqual(todas.context["nav_activa"], "tareas")
         compra = self.client.get(reverse("growlog:tareas_todas") + "?categoria=compra")
         self.assertEqual(compra.context["pendientes_total"], 1)
+
+
+
+class PerfilTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("perfil", password="vieja-clave-123")
+        self.cultivo = Cultivo.objects.create(nombre="Carpa", fecha_inicio=timezone.localdate(), propietario=self.user)
+        self.client.force_login(self.user)
+
+    def test_unidad_de_ec_en_toda_la_app(self):
+        from .models import MedicionEC
+        MedicionEC.objects.create(cultivo=self.cultivo, ph=6, ec="1.40")
+        detalle = reverse("growlog:cultivo_detail", args=[self.cultivo.slug])
+        self.assertContains(self.client.get(detalle), "1400 µS")
+        self.client.post(reverse("growlog:cuenta"), {"accion": "preferencias", "pref-unidad_ec": "ms", "pref-hora_avisos": "20",
+                                                    "pref-avisar_tareas": "on", "pref-nombre": "Alan"})
+        self.user.refresh_from_db()
+        self.assertEqual((self.user.perfil.unidad_ec, self.user.first_name), ("ms", "Alan"))
+        self.assertContains(self.client.get(detalle), "1,40 mS")
+
+    def test_cambiar_contrasena_sin_salir(self):
+        self.client.post(reverse("growlog:cuenta"), {"accion": "clave", "clave-old_password": "vieja-clave-123",
+                                                    "clave-new_password1": "Otra-clave-larga-9", "clave-new_password2": "Otra-clave-larga-9"})
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("Otra-clave-larga-9"))
+        self.assertEqual(self.client.get(reverse("growlog:cuenta")).status_code, 200)
+
+    def test_avisos_respetan_lo_elegido_y_la_hora(self):
+        import io
+        from unittest.mock import patch
+        from django.core.management import call_command
+        from .models import Perfil
+        Tarea.objects.create(cultivo=self.cultivo, titulo="Podar", fecha_objetivo=timezone.localdate())
+        Perfil.objects.create(usuario=self.user, avisar_ambiente=False, hora_avisos=(timezone.localtime().hour + 1) % 24)
+        with patch("growlog.management.commands.send_recordatorios.send_push_to_users", return_value=1) as send:
+            call_command("send_recordatorios", stdout=io.StringIO())
+            self.assertEqual(send.call_args.args[2], "1 tareas pendientes")
+            send.reset_mock()
+            call_command("send_recordatorios", "--hora-actual", stdout=io.StringIO())
+            send.assert_not_called()

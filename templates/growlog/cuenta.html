@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Tu cuenta{% endblock %}
+{% block extra_head %}
+<style>
+  .cu { max-width: 560px; }
+  .cu-seccion { margin-top: var(--sp-6); }
+  .cu-seccion > .mo { margin-bottom: var(--sp-2); }
+  .cu-form { display: grid; gap: var(--sp-3); }
+  .cu-radios ul, .cu-radios > div { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--sp-1); }
+  .cu-radios label, .cu-check { display: flex; align-items: center; gap: 10px; min-height: var(--toque); margin: 0;
+    font: 500 var(--t-md) var(--font-body); text-transform: none; letter-spacing: 0; color: var(--ink); }
+  .cu-form .btn { width: 100%; }
+  .cu-ayuda { color: var(--mu); font-size: var(--t-sm); margin: 0; }
+  .cu-error { color: var(--bad); font-size: var(--t-sm); margin: 4px 0 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cu">
+  <a href="{% url 'growlog:mas' %}" class="mo" style="color: var(--mu); display: inline-flex; min-height: var(--toque); align-items: center;">‹ Más</a>
+  <div class="mo">{{ user.username }}</div>
+  <h1 class="h1" style="margin-top: 8px;">Tu cuenta</h1>
+
+  <section class="cu-seccion" aria-labelledby="pref-title">
+    <h2 class="mo" id="pref-title">Preferencias</h2>
+    <form method="post" class="cu-form card">
+      {% csrf_token %}<input type="hidden" name="accion" value="preferencias">
+      <label>{{ preferencias.nombre.label }}{{ preferencias.nombre }}</label>
+      <div>
+        <div class="mo">{{ preferencias.unidad_ec.label }}</div>
+        <div class="cu-radios">{{ preferencias.unidad_ec }}</div>
+        <p class="cu-ayuda">Se usa en toda la app para mostrar la EC. Al cargar seguís tipeando lo que dice el medidor.</p>
+      </div>
+      <div>
+        <div class="mo">Avisos de pendientes</div>
+        <label class="cu-check">{{ preferencias.avisar_ambiente }} {{ preferencias.avisar_ambiente.label }}</label>
+        <label class="cu-check">{{ preferencias.avisar_tareas }} {{ preferencias.avisar_tareas.label }}</label>
+        <label class="cu-check">{{ preferencias.avisar_seguimientos }} {{ preferencias.avisar_seguimientos.label }}</label>
+      </div>
+      <label>{{ preferencias.hora_avisos.label }}{{ preferencias.hora_avisos }}</label>
+      <p class="cu-ayuda">Los avisos llegan a los dispositivos donde los activaste desde Más.</p>
+      <button type="submit" class="btn sm">Guardar preferencias</button>
+    </form>
+  </section>
+
+  <section class="cu-seccion" aria-labelledby="clave-title">
+    <h2 class="mo" id="clave-title">Contraseña</h2>
+    <form method="post" class="cu-form card">
+      {% csrf_token %}<input type="hidden" name="accion" value="clave">
+      {% for campo in clave %}
+      <label>{% if campo.name == 'old_password' %}La de ahora{% elif campo.name == 'new_password1' %}La nueva{% else %}La nueva, otra vez{% endif %}{{ campo }}
+        {% for e in campo.errors %}<span class="cu-error">{{ e }}</span>{% endfor %}</label>
+      {% endfor %}
+      <button type="submit" class="btn g sm">Cambiar contraseña</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

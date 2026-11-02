@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.db.models import OuterRef, Subquery
 from django.utils.functional import SimpleLazyObject
 
-from .models import CultivoMiembro
+from .models import CultivoMiembro, perfil_de
 from .permissions import cultivos_visibles
 
 # Pestaña del menú del cultivo que queda marcada en cada pantalla.
@@ -45,7 +45,9 @@ def pestanas_cultivo(cultivo, *, puede_editar, seccion):
 
 def push_settings(request):
     cultivo = getattr(request, "cultivo_actual", None)
+    perfil = SimpleLazyObject(lambda: perfil_de(request.user))
     return {
+        "unidad_ec": SimpleLazyObject(lambda: perfil.unidad_ec if perfil else "us"),
         "vapid_public_key": settings.VAPID_PUBLIC_KEY,
         "can_edit_cultivo": getattr(request, "puede_editar_cultivo", False),
         "can_manage_cultivo": bool(cultivo and cultivo.propietario_id == request.user.pk),
@@ -71,7 +73,7 @@ def cultivos_del_menu(usuario):
 
 
 # Pantallas globales que cuelgan de "Más" en la barra.
-PANTALLAS_MAS = {"mas", "nutrientes", "nutriente_crear", "nutriente_editar", "invitados_panel", "faq", "actividad"}
+PANTALLAS_MAS = {"mas", "cuenta", "nutrientes", "nutriente_crear", "nutriente_editar", "invitados_panel", "faq", "actividad"}
 
 
 def cultivo_destino(request, cultivo, grupos):

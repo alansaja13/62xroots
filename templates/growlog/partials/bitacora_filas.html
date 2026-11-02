@@ -12,9 +12,9 @@
         Ambiente {{ o.temperatura_c|floatformat:1 }}° · {{ o.humedad_relativa|floatformat:0 }}%
         {% with estado=o.vpd_estado %}· <span class="nc-{{ estado|default:'x' }}">VPD {{ o.vpd|floatformat:2 }}{% if estado %} {{ estado }}{% endif %}</span>{% endwith %}
       {% elif reg.tipo == 'riego' %}
-        Riego {{ o.volumen_total_ml }} ml{% if o.ph_agua %} · pH {{ o.ph_agua|floatformat:1 }}{% endif %}{% if o.ec_solucion %} · EC {{ o.ec_solucion|ec_us }} µS{% endif %}
+        Riego {{ o.volumen_total_ml }} ml{% if o.ph_agua %} · pH {{ o.ph_agua|floatformat:1 }}{% endif %}{% if o.ec_solucion %} · EC {% ec o.ec_solucion %}{% endif %}
       {% elif reg.tipo == 'medicion_ec' %}
-        {% if o.ph %}pH {{ o.ph|floatformat:1 }}{% endif %}{% if o.ph and o.ec %} · {% endif %}{% if o.ec %}EC {{ o.ec|ec_us }} µS{% endif %}{% if o.temp_agua %} · agua {{ o.temp_agua|floatformat:1 }}°{% endif %}
+        {% if o.ph %}pH {{ o.ph|floatformat:1 }}{% endif %}{% if o.ph and o.ec %} · {% endif %}{% if o.ec %}EC {% ec o.ec %}{% endif %}{% if o.temp_agua %} · agua {{ o.temp_agua|floatformat:1 }}°{% endif %}
       {% elif reg.tipo == 'evento' %}
         <span class="nc-tag">{{ o.get_tipo_display }}</span> {{ o.descripcion|truncatechars:140 }}
       {% elif reg.tipo == 'etapa' %}

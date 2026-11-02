@@ -77,7 +77,7 @@
     <div class="cd-reg cd-reg--riego">
       <span class="cd-reg__capa" aria-hidden="true"></span>
       {% ficha_url 'riego' rp.riego_id as ficha %}<a class="cd-reg__texto cd-reg__texto--link" href="{{ ficha }}">
-        <div class="cd-reg__titulo">{{ rp.volumen_ml }} ml{% if rp.runoff_observado %} · runoff{% if rp.ph_runoff %} pH {{ rp.ph_runoff|floatformat:1 }}{% endif %}{% if rp.ec_runoff %} EC {{ rp.ec_runoff|ec_us }} µS{% endif %}{% endif %}</div>
+        <div class="cd-reg__titulo">{{ rp.volumen_ml }} ml{% if rp.runoff_observado %} · runoff{% if rp.ph_runoff %} pH {{ rp.ph_runoff|floatformat:1 }}{% endif %}{% if rp.ec_runoff %} EC {% ec rp.ec_runoff %}{% endif %}{% endif %}</div>
         <div class="mo cd-reg__meta">{{ rp.riego.timestamp|date:"d/m H:i" }}{% if rp.notas %} · {{ rp.notas|truncatechars:60 }}{% endif %}</div>
       </a>
       {% if can_edit_cultivo %}<a href="{% url 'growlog:riego_editar' rp.riego_id %}" class="cd-reg__mas" aria-label="Editar riego">⋯</a>{% endif %}
