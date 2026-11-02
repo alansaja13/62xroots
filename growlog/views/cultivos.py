@@ -125,18 +125,15 @@ def cultivo_detail(request, slug):
     })
 
 
-@login_required
-def cultivo_tendencias(request, slug):
-    cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
-    return render(request, "growlog/tendencias.html", {"cultivo": cultivo})
 
 
 @login_required
-def cultivo_vpd(request, slug):
+def cultivo_aire(request, slug):
+    """Aire: mapa de VPD, curvas de temperatura, HR y VPD con el ideal de cada etapa, y pH/EC."""
     cultivo = objeto_del_cultivo(request, Cultivo, slug=slug)
     datos = mapa_vpd(cultivo, request.GET.get("rango", RANGO_DEFAULT))
     ultima = cultivo.mediciones.order_by("-timestamp").first()
-    return render(request, "growlog/vpd.html", {
+    return render(request, "growlog/aire.html", {
         "cultivo": cultivo, "datos": datos,
         # La última lectura aunque quede fuera del rango elegido: es "cómo está ahora".
         "ultima": ultima,
@@ -144,6 +141,10 @@ def cultivo_vpd(request, slug):
         "ultima_vieja": bool(ultima and timezone.now() - ultima.timestamp > timedelta(hours=6)),
         "etapa_nombre": dict(ParametroIdeal.ETAPA_CHOICES).get(datos["etapa_actual"]),
     })
+
+
+# Direcciones viejas de la misma pantalla (marcadores y links que ya existían).
+cultivo_vpd = cultivo_tendencias = cultivo_aire
 
 
 @login_required

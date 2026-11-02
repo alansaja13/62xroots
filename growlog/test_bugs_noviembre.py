@@ -171,7 +171,7 @@ class MapaVpdTests(TestCase):
         self.assertIsNone(secado["vpd"])
 
     def test_pantalla_y_enlace_desde_el_cultivo(self):
-        url = reverse("growlog:cultivo_vpd", args=[self.cultivo.slug])
+        url = reverse("growlog:cultivo_aire", args=[self.cultivo.slug])
         self.assertContains(self.client.get(reverse("growlog:cultivo_detail", args=[self.cultivo.slug])), url)
         page = self.client.get(url + "?rango=cualquiera")
         self.assertEqual(page.context["datos"]["rango"], "7d")
@@ -214,7 +214,7 @@ class ResumenCultivoTests(TestCase):
         page = self.client.get(self.url)
         self.assertEqual(page.context["tareas_vencidas"], 1)
         self.assertContains(page, "1 vencida")
-        for vista in ("cultivo_vpd", "cultivo_etapa"):
+        for vista in ("cultivo_aire", "cultivo_etapa"):
             self.assertContains(page, reverse(f"growlog:{vista}", args=[self.cultivo.slug]))
         # Hechas existe siempre: completar una tarea la agrega ahí por OOB.
         self.assertContains(page, 'id="tareas-done"')
@@ -268,3 +268,20 @@ class BitacoraTests(TestCase):
         self.assertNotContains(mas, "<h1")
         self.assertContains(mas, "nc-reg")
         self.assertEqual(self.client.get(self.url + "?desde=x&dia=2026-99-99").status_code, 200)
+
+
+class AirePhEcTests(TestCase):
+    def test_solucion_runoff_y_mediciones_en_microsiemens(self):
+        from .models import MedicionEC, RiegoPlanta
+        from .services.vpd import mapa_vpd
+        user = User.objects.create_user("aire")
+        cultivo = Cultivo.objects.create(nombre="Carpa", fecha_inicio=timezone.localdate() - timedelta(days=10), propietario=user)
+        planta = Planta.objects.create(cultivo=cultivo, apodo="Luna")
+        riego = Riego.objects.create(cultivo=cultivo, volumen_total_ml=500, ph_agua="6.2", ec_solucion="1.40")
+        RiegoPlanta.objects.create(riego=riego, planta=planta, volumen_ml=500, runoff_observado=True, ph_runoff="6.6", ec_runoff="1.90")
+        MedicionEC.objects.create(cultivo=cultivo, tipo="entrada", ph="7.1", ec="0.30")
+        puntos = mapa_vpd(cultivo)["ph_ec"]
+        self.assertEqual(sorted((p["fuente"], p["ec"]) for p in puntos),
+                         [("entrada", 300.0), ("runoff", 1900.0), ("solucion", 1400.0)])
+        self.client.force_login(user)
+        self.assertContains(self.client.get(reverse("growlog:cultivo_tendencias", args=[cultivo.slug])), "solución contra runoff")

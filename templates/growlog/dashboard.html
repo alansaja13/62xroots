@@ -22,7 +22,7 @@
       <h2 class="mo hoy-sec" id="atencion-title">Para revisar · {{ atencion_total }}</h2>
       {% for a in alertas %}
       {% with m=a.medicion %}
-      <a class="fila hoy-fila" href="{% url 'growlog:cultivo_vpd' a.cultivo.slug %}">
+      <a class="fila hoy-fila" href="{% url 'growlog:cultivo_aire' a.cultivo.slug %}">
         <span class="ck hoy-ck--alerta" aria-hidden="true"></span>
         <span class="fila__texto">
           <span class="hoy-titulo">{{ a.cultivo.nombre }}: VPD {{ m.vpd|floatformat:2 }} {{ a.estado }}</span>

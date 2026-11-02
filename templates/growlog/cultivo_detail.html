@@ -37,7 +37,7 @@
 
   <nav class="seg cd-seg" aria-label="Vistas del cultivo">
     <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="on" aria-current="page">Núcleo</a>
-    <a href="{% url 'growlog:cultivo_vpd' cultivo.slug %}">Aire</a>
+    <a href="{% url 'growlog:cultivo_aire' cultivo.slug %}">Aire</a>
     <a href="{% url 'growlog:plantas_list' cultivo.slug %}">Plantas</a>
     <a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}">Ciclo</a>
   </nav>
@@ -56,7 +56,7 @@
           <div class="vital__valor cd-{{ semaforo.hr|default:'x' }}">{% if ultima_medicion %}{{ ultima_medicion.humedad_relativa|floatformat:0 }}<small>%</small>{% else %}-{% endif %}</div>
           <div class="mo vital__edad">{% if semaforo %}{{ semaforo.hr }}{% else %}sin ref.{% endif %}</div>
         </div>
-        <a href="{% url 'growlog:cultivo_vpd' cultivo.slug %}" class="vital cd-vital-link{% if ambiente_viejo and ultima_medicion %} vital--viejo{% endif %}" aria-label="VPD: ver el mapa con el historial">
+        <a href="{% url 'growlog:cultivo_aire' cultivo.slug %}" class="vital cd-vital-link{% if ambiente_viejo and ultima_medicion %} vital--viejo{% endif %}" aria-label="VPD: ver el mapa con el historial">
           <div class="mo">VPD <span class="cd-ver">mapa ›</span></div>
           <div class="vital__valor cd-{{ semaforo.vpd|default:'x' }}">{% if ultima_medicion %}{{ ultima_medicion.vpd|floatformat:2 }}{% else %}-{% endif %}</div>
           <div class="mo vital__edad">{% if semaforo %}{{ semaforo.vpd }}{% else %}sin ref.{% endif %}</div>

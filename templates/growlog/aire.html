@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}VPD · {{ cultivo.nombre }}{% endblock %}
+{% block title %}Aire · {{ cultivo.nombre }}{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -34,13 +34,24 @@
   .vpd-stats .card { padding: 10px 12px; }
   .vpd-stats b { display: block; font: 600 26px/1.15 var(--font-display); }
   .vpd-nota { color: var(--mu); font-size: var(--t-sm); margin-top: var(--sp-3); }
+
+  .aire-seccion { margin-top: var(--sp-6); }
+  .aire-seccion > .mo { margin-bottom: var(--sp-2); }
+  .aire-curva { padding: 10px 8px 6px; margin-bottom: var(--sp-2); }
+  .aire-curva__cab { display: flex; justify-content: space-between; padding: 0 6px 4px; }
+  .aire-curva__cab b { font: 600 var(--t-md) var(--font-display); }
+  .aire-curva svg { display: block; width: 100%; height: 96px; overflow: visible; }
+  .aire-franja { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin: 4px 6px 0; }
+  .aire-ejes { display: flex; justify-content: space-between; padding: 4px 6px 0; text-transform: none; }
+  .aire-vacio { color: var(--mu); padding: var(--sp-3) 0; margin: 0; }
+  .aire-ultimo { text-transform: none; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="vpd-pagina">
   <div class="mo">{% if etapa_nombre %}{{ etapa_nombre }}{% else %}Sin etapa{% endif %}</div>
-  <h1 class="h1" style="margin-top: 10px;">VPD</h1>
+  <h1 class="h1" style="margin-top: 10px;">Aire</h1>
 
   {% if ultima %}
   {% with estado=ultima_estado %}
@@ -103,7 +114,33 @@
     <div class="card"><div class="mo">Sin luz</div><b class="{% if datos.en_rango_noche is not None and datos.en_rango_noche < 60 %}vpd-viejo{% endif %}">{% if datos.en_rango_noche is not None %}{{ datos.en_rango_noche }}%{% else %}-{% endif %}</b></div>
   </div>
   <p class="vpd-nota">{{ datos.lecturas|length }} lecturas. Cada una se compara con el ideal de la etapa en que se midió.</p>
+
+  <section class="aire-seccion" aria-labelledby="curvas-title">
+    <h2 class="mo" id="curvas-title">En el tiempo · la banda es el ideal de cada etapa</h2>
+    <div class="card aire-curva" data-curva="t" data-unidad="°" data-nombre="Temperatura"><div class="aire-curva__cab"><b>Temperatura</b><span class="mo aire-ultimo" data-ultimo></span></div><svg viewBox="0 0 340 96" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+    <div class="card aire-curva" data-curva="h" data-unidad="%" data-nombre="Humedad"><div class="aire-curva__cab"><b>Humedad</b><span class="mo aire-ultimo" data-ultimo></span></div><svg viewBox="0 0 340 96" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+    <div class="card aire-curva" data-curva="vpd" data-unidad=" kPa" data-nombre="VPD"><div class="aire-curva__cab"><b>VPD</b><span class="mo aire-ultimo" data-ultimo></span></div><svg viewBox="0 0 340 96" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+    <div class="aire-franja" data-franja aria-hidden="true"></div>
+    <div class="mo aire-ejes" data-ejes></div>
+  </section>
   {% endif %}
+
+  <section class="aire-seccion" aria-labelledby="phec-title">
+    <h2 class="mo" id="phec-title">pH y EC · solución contra runoff</h2>
+    {% if datos.ph_ec %}
+    <div class="card aire-curva" data-phec="ph" data-unidad=""><div class="aire-curva__cab"><b>pH</b><span class="mo aire-ultimo" data-ultimo></span></div><svg viewBox="0 0 340 96" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+    <div class="card aire-curva" data-phec="ec" data-unidad=" µS"><div class="aire-curva__cab"><b>EC</b><span class="mo aire-ultimo" data-ultimo></span></div><svg viewBox="0 0 340 96" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+    <div class="vpd-leyenda" style="margin-left: 0;" aria-hidden="true">
+      <span><i style="background: var(--w)"></i>solución</span>
+      <span><i style="background: var(--e)"></i>runoff</span>
+      <span><i style="background: var(--mu)"></i>agua de entrada</span>
+      <span><i style="background: var(--m)"></i>sustrato</span>
+    </div>
+    <p class="vpd-nota">Si el runoff sale con más EC que la solución, se están juntando sales en el sustrato.</p>
+    {% else %}
+    <p class="aire-vacio">No hay pH ni EC en este rango.{% if can_edit_cultivo %} <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=ec">Cargar una medición</a>{% endif %}</p>
+    {% endif %}
+  </section>
 </div>
 {{ datos|json_script:"vpd-datos" }}
 {% endblock %}
@@ -255,8 +292,81 @@
   if (activo) activo.scrollIntoView({ block: 'nearest', inline: 'center' });
 
   // Si cambia el tema, se redibuja con los colores nuevos.
+  // ── Curvas en el tiempo: la banda sigue la etapa de cada lectura ──
+  function curvas() {
+    var L = D.lecturas, P = D.ph_ec || [];
+    var todos = L.map(function (l) { return Date.parse(l.ts); }).concat(P.map(function (p) { return Date.parse(p.ts); }));
+    if (!todos.length) return;
+    var x0 = Math.min.apply(null, todos), x1 = Math.max.apply(null, todos), span = (x1 - x0) || 1;
+    var X = function (ts) { return 4 + (Date.parse(ts) - x0) / span * 332; };
+    var IDEAL = { t: 'temp', h: 'hr', vpd: 'vpd', ph: 'ph', ec: 'ec' };
+    var COLOR_FUENTE = { solucion: '--w', runoff: '--e', entrada: '--mu', sustrato: '--m' };
+
+    function dibujar(caja, puntos, clave, conColor) {
+      var svg = caja.querySelector('svg'); svg.innerHTML = '';
+      var vals = puntos.map(function (p) { return p[clave]; }).filter(function (v) { return v !== null && v !== undefined; });
+      if (!vals.length) { caja.hidden = true; return; }
+      var bandas = puntos.map(function (p) { var e = etapas[p.etapa]; return e && e[IDEAL[clave]]; }).filter(Boolean);
+      var lo = Math.min.apply(null, vals.concat(bandas.map(function (b) { return b[0]; })));
+      var hi = Math.max.apply(null, vals.concat(bandas.map(function (b) { return b[1]; })));
+      var pad = (hi - lo) * 0.12 || 1; lo -= pad; hi += pad;
+      var Y = function (v) { return 92 - (v - lo) / (hi - lo) * 88; };
+      // Banda ideal por tramos de la misma etapa.
+      var i = 0;
+      while (i < puntos.length) {
+        var j = i, e = etapas[puntos[i].etapa], r = e && e[IDEAL[clave]];
+        while (j + 1 < puntos.length && puntos[j + 1].etapa === puntos[i].etapa) j++;
+        if (r) {
+          var xa = i ? (X(puntos[i - 1].ts) + X(puntos[i].ts)) / 2 : 0, xb = j + 1 < puntos.length ? (X(puntos[j].ts) + X(puntos[j + 1].ts)) / 2 : 340;
+          el('rect', { x: xa, y: Y(r[1]), width: Math.max(1, xb - xa), height: Math.max(1, Y(r[0]) - Y(r[1])),
+            fill: css('--ac'), opacity: 0.13 }, svg);
+        }
+        i = j + 1;
+      }
+      var conValor = puntos.filter(function (p) { return p[clave] !== null && p[clave] !== undefined; });
+      if (!conColor) {
+        el('polyline', { points: conValor.map(function (p) { return X(p.ts).toFixed(1) + ',' + Y(p[clave]).toFixed(1); }).join(' '),
+          fill: 'none', stroke: css('--ink'), 'stroke-width': 1.6, 'vector-effect': 'non-scaling-stroke', 'stroke-linejoin': 'round' }, svg);
+      }
+      conValor.forEach(function (p) {
+        var e = etapas[p.etapa], r = e && e[IDEAL[clave]], fuera = r && (p[clave] < r[0] || p[clave] > r[1]);
+        var color = conColor ? css(COLOR_FUENTE[p.fuente] || '--ink') : css(fuera ? '--bad' : '--ac');
+        el('circle', { cx: X(p.ts), cy: Y(p[clave]), r: conColor ? 3 : 2, fill: color }, svg);
+      });
+      var ultimo = conValor[conValor.length - 1];
+      var u = caja.dataset.unidad || '';
+      caja.querySelector('[data-ultimo]').textContent = 'última ' + fmt(ultimo[clave], clave === 'ec' ? 0 : clave === 'vpd' ? 2 : 1) + u;
+    }
+
+    document.querySelectorAll('[data-curva]').forEach(function (c) { dibujar(c, L, c.dataset.curva, false); });
+    document.querySelectorAll('[data-phec]').forEach(function (c) { dibujar(c, P, c.dataset.phec, true); });
+
+    // Franja de etapas bajo las curvas de ambiente.
+    var franja = document.querySelector('[data-franja]');
+    if (franja && L.length) {
+      franja.innerHTML = '';
+      var k = 0;
+      while (k < L.length) {
+        var m = k;
+        while (m + 1 < L.length && L[m + 1].etapa === L[k].etapa) m++;
+        var desde = k ? (X(L[k - 1].ts) + X(L[k].ts)) / 2 : 0, hasta = m + 1 < L.length ? (X(L[m].ts) + X(L[m + 1].ts)) / 2 : 340;
+        var tramo = document.createElement('i');
+        tramo.style.flex = String(Math.max(1, hasta - desde));
+        tramo.style.background = css(/flora/.test(L[k].etapa || '') ? '--flo' : /secado|curado/.test(L[k].etapa || '') ? '--m' : '--veg');
+        tramo.title = nombre(L[k].etapa);
+        franja.appendChild(tramo);
+        k = m + 1;
+      }
+      var opts = { day: '2-digit', month: '2-digit' };
+      document.querySelector('[data-ejes]').innerHTML = '<span>' + new Date(x0).toLocaleDateString('es-AR', opts) + '</span><span>' +
+        new Date(x1).toLocaleDateString('es-AR', opts) + '</span>';
+    }
+  }
+  curvas();
+
   new MutationObserver(function () { elegir((document.querySelector('#vpd-etapas .chip.on') || {}).dataset ? document.querySelector('#vpd-etapas .chip.on').dataset.etapa : inicial); })
     .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  new MutationObserver(curvas).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 })();
 </script>
 {% endblock %}
