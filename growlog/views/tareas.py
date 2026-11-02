@@ -11,6 +11,7 @@ from django.views.decorators.http import require_POST
 from ..forms import TareaForm
 from ..models import Cultivo, Tarea
 from ..permissions import objeto_del_cultivo
+from ..services.hoy import item_tarea
 
 
 @login_required
@@ -50,6 +51,11 @@ def tarea_eliminar(request, pk):
     })
 
 
+def _fila_hoy(request, tarea, plantilla):
+    hoy = timezone.localdate()
+    return render(request, plantilla, {"item": item_tarea(tarea, puede_editar=True, hoy=hoy), "hoy": hoy})
+
+
 @require_POST
 @login_required
 def tarea_completar(request, pk):
@@ -61,6 +67,8 @@ def tarea_completar(request, pk):
         # La lista de tareas no tiene panel de completadas: solo se borra la fila.
         if request.POST.get("origen") == "lista":
             return HttpResponse("")
+        if request.POST.get("origen") == "hoy":
+            return _fila_hoy(request, tarea, "growlog/partials/hoy_tarea_hecha.html")
         return render(request, "growlog/partials/tarea_completar_oob.html", {"tarea": tarea})
     return redirect("growlog:cultivo_detail", tarea.cultivo.slug)
 
@@ -72,6 +80,8 @@ def tarea_descompletar(request, pk):
     tarea.completada = False
     tarea.completada_en = None
     tarea.save()
+    if request.htmx and request.POST.get("origen") == "hoy":
+        return _fila_hoy(request, tarea, "growlog/partials/hoy_item.html")
     if request.htmx:
         return render(request, "growlog/partials/tarea_descompletar_oob.html", {"tarea": tarea})
     return redirect("growlog:cultivo_detail", tarea.cultivo.slug)

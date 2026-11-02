@@ -1,0 +1,11 @@
+{# Tarea recién completada desde Hoy: queda tachada con "Deshacer" hasta que se recargue la página. #}
+<div class="fila hoy-fila hoy-fila--hecha" id="hoy-tarea-{{ item.pk }}">
+  <span class="ck hoy-ck--hecha" aria-hidden="true">✓</span>
+  <span class="fila__texto">
+    <span class="hoy-titulo">{{ item.titulo|truncatechars:120 }}</span>
+    <span class="mo hoy-meta">hecha</span>
+  </span>
+  <button type="button" class="pill hoy-deshacer"
+          hx-post="{% url 'growlog:tarea_descompletar' item.pk %}" hx-vals='{"origen": "hoy"}'
+          hx-target="#hoy-tarea-{{ item.pk }}" hx-swap="outerHTML">Deshacer</button>
+</div>

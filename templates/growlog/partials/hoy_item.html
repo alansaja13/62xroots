@@ -1,0 +1,25 @@
+{# Una fila de "Para revisar". Las tareas se completan acá mismo; al completarlas queda la fila con "Deshacer". #}
+{% if item.tipo == 'Tarea' %}
+<div class="fila hoy-fila" id="hoy-tarea-{{ item.pk }}">
+  {% if item.puede_editar %}
+  <button type="button" class="ck{% if item.vencido %} hoy-ck--alerta{% endif %}"
+          hx-post="{% url 'growlog:tarea_completar' item.pk %}" hx-vals='{"origen": "hoy"}'
+          hx-target="#hoy-tarea-{{ item.pk }}" hx-swap="outerHTML"
+          aria-label="Marcar como hecha: {{ item.titulo }}"></button>
+  {% else %}<span class="ck" aria-hidden="true"></span>{% endif %}
+  <a class="fila__texto" href="{% url 'growlog:tareas_list' item.cultivo.slug %}">
+    <span class="hoy-titulo">{{ item.titulo|truncatechars:120 }}</span>
+    <span class="mo hoy-meta">{{ item.cultivo.nombre }} · {% if item.vencido %}venció {{ item.fecha|date:"d/m" }}{% elif item.fecha %}{% if item.fecha == hoy %}hoy{% else %}{{ item.fecha|date:"d/m" }}{% endif %}{% else %}sin fecha{% endif %}</span>
+  </a>
+  {% if item.urgente %}<span class="pill hoy-pill--warn">urgente</span>{% endif %}
+</div>
+{% else %}
+<a class="fila hoy-fila" href="{% url 'growlog:cultivo_detail' item.cultivo.slug %}#followup-row-{{ item.pk }}">
+  <span class="ck{% if item.vencido %} hoy-ck--alerta{% endif %}" aria-hidden="true"></span>
+  <span class="fila__texto">
+    <span class="hoy-titulo">{{ item.titulo|truncatechars:120 }}</span>
+    <span class="mo hoy-meta">{{ item.cultivo.nombre }} · seguimiento{% if item.vencido %} · venció {{ item.fecha|date:"d/m" }}{% endif %}</span>
+  </span>
+  <span class="fila__chevron" aria-hidden="true">›</span>
+</a>
+{% endif %}

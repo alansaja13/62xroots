@@ -1,56 +1,81 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Hoy · Tu bitácora{% endblock %}
+{% block title %}Hoy{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'growlog/hoy.css' %}">{% endblock %}
 {% block content %}
 <div class="hoy">
-  <header class="hoy-header">
-    <div><p class="hoy-eyebrow">Tu bitácora · {{ hoy|date:"j \d\e F" }}</p><h1>Hoy</h1><p>Lo que tenés pendiente y lo último que registraste.</p></div>
-    <div class="hoy-actions">{% if puede_registrar %}<a class="btn-brand" href="{% url 'growlog:registrar' %}">Registrar</a>{% endif %}<a class="btn-ghost" href="{% url 'growlog:nuevo_cultivo' %}">Nuevo cultivo</a></div>
+  <header class="hoy-head">
+    <div class="mo">{{ hoy|date:"l j \d\e F" }}</div>
+    <h1 class="h1">Hoy</h1>
   </header>
+
   {% if not activos and not finalizados and not archivados %}
-  <section class="hoy-panel"><h2>Tu bitácora empieza con un cultivo</h2><p>Creá uno para registrar observaciones, riegos y tareas. Si vas a colaborar, pedile al propietario que te comparta su cultivo.</p><a href="{% url 'growlog:nuevo_cultivo' %}" class="btn-brand">Crear mi primer cultivo</a></section>
+  <section class="vacio card">
+    <h2 class="h2">Tu bitácora empieza con un cultivo</h2>
+    <p>Creá uno para anotar riegos, mediciones y tareas. Si vas a colaborar, pedile al dueño que te comparta el suyo.</p>
+    <a href="{% url 'growlog:nuevo_cultivo' %}" class="btn sm">Crear mi primer cultivo</a>
+  </section>
   {% else %}
-  {% if activos %}
-  <div class="hoy-summary" aria-label="Resumen de cultivos activos">
-    <a href="#atencion"{% if atencion_total %} class="is-alert"{% endif %}><strong>{{ atencion_total }}</strong><span>para revisar</span></a>
-    <a href="{% if propios %}#cultivos{% else %}#compartidos{% endif %}"><strong>{{ activos|length }}</strong><span>cultivos activos</span></a>
-    <a href="#cultivos"><strong>{{ sin_medicion_hoy }}</strong><span>sin medición de ambiente de hoy</span></a>
-  </div>
-  <section class="hoy-panel" id="atencion" aria-labelledby="atencion-title">
-    <div class="hoy-section-head"><h2 id="atencion-title">Para revisar</h2><span>Vencimientos de hoy, anteriores y tareas urgentes</span></div>
-    {% if atencion %}
-    <ul class="hoy-tasks">
-      {% for item in atencion %}
-      <li><div><span class="hoy-tag{% if item.vencido %} hoy-tag--warning{% endif %}">{% if item.vencido %}Vencido · {{ item.fecha|date:"d/m/Y" }}{% elif item.fecha == hoy %}Hoy{% elif item.fecha %}{{ item.fecha|date:"d/m/Y" }}{% else %}Sin fecha{% endif %}</span>{% if item.urgente %} <span class="hoy-tag hoy-tag--warning">Urgente</span>{% endif %}<h3>{{ item.titulo|truncatechars:180 }}</h3><p>{{ item.cultivo.nombre }} · {{ item.tipo }}</p></div><a href="{% if item.tipo == 'Tarea' %}{% url 'growlog:tareas_list' item.cultivo.slug %}{% else %}{% url 'growlog:cultivo_detail' item.cultivo.slug %}#followup-row-{{ item.pk }}{% endif %}" class="btn-ghost" aria-label="Revisar {{ item.tipo|lower }}: {{ item.titulo|truncatechars:80 }}">Revisar</a></li>
+  <div class="hoy-cols">
+    {% if activos %}
+    <section id="atencion" aria-labelledby="atencion-title">
+      <h2 class="mo hoy-sec" id="atencion-title">Para revisar · {{ atencion_total }}</h2>
+      {% for a in alertas %}
+      {% with m=a.medicion %}
+      <a class="fila hoy-fila" href="{% url 'growlog:cultivo_vpd' a.cultivo.slug %}">
+        <span class="ck hoy-ck--alerta" aria-hidden="true"></span>
+        <span class="fila__texto">
+          <span class="hoy-titulo">{{ a.cultivo.nombre }}: VPD {{ m.vpd|floatformat:2 }} {{ a.estado }}</span>
+          <span class="mo hoy-meta">{% if a.estado == 'alto' %}aire seco{% else %}aire húmedo{% endif %} · hace {{ m.timestamp|timesince }}</span>
+        </span>
+        <span class="pill hoy-pill--bad">ver aire</span>
+      </a>
+      {% endwith %}
       {% endfor %}
-    </ul>
-    {% if atencion_restante %}<p class="hoy-note">Hay {{ atencion_restante }} pendientes más para revisar. Abrí las tareas o los seguimientos de cada cultivo para verlos todos.</p>{% endif %}
-    {% else %}<p>No hay tareas urgentes ni vencimientos hasta hoy en tus cultivos activos.</p>{% endif %}
-    <p class="hoy-note">{{ tareas_total }} tareas pendientes en total · {{ tareas_sin_fecha }} sin fecha. Las tareas futuras y sin fecha también están en cada cultivo.</p>
-  </section>
-  {% if propios %}
-  <section id="cultivos" aria-labelledby="cultivos-title">
-    <div class="hoy-section-head"><h2 id="cultivos-title">Mis cultivos activos</h2><span>Última medición guardada · no es monitoreo en vivo</span></div>
-    <div class="hoy-grid">{% for item in propios %}{% include "growlog/partials/hoy_cultivo.html" %}{% endfor %}</div>
-  </section>
-  {% endif %}
-  {% if compartidos %}
-  <section id="compartidos" aria-labelledby="compartidos-title">
-    <div class="hoy-section-head"><h2 id="compartidos-title">Compartidos conmigo</h2><span>Cultivos de otros growers que podés ver</span></div>
-    <div class="hoy-grid">{% for item in compartidos %}{% include "growlog/partials/hoy_cultivo.html" %}{% endfor %}</div>
-  </section>
-  {% endif %}
-  {% else %}<section class="hoy-panel" id="cultivos"><h2>No tenés cultivos activos</h2><p>Podés consultar tus ciclos anteriores en el historial o iniciar uno nuevo.</p></section>{% endif %}
-  {% if historial_total %}
-  <section class="hoy-history" id="historial" aria-labelledby="historial-title">
-    <div class="hoy-section-head"><h2 id="historial-title">Historial · {{ historial_total }}</h2><span>Finalizados y archivados</span></div>
-    <ul>
-      {% for item in finalizados %}<li><a href="{% url 'growlog:cultivo_detail' item.cultivo.slug %}">{{ item.cultivo.nombre }}</a><span><span class="hoy-tag">Finalizado</span> {{ item.cultivo.fecha_inicio|date:"d/m/Y" }} al {% if item.cultivo.fecha_fin %}{{ item.cultivo.fecha_fin|date:"d/m/Y" }}{% else %}fecha de cierre sin registrar{% endif %}</span></li>{% endfor %}
-      {% for item in archivados %}<li><a href="{% url 'growlog:cultivo_detail' item.cultivo.slug %}">{{ item.cultivo.nombre }}</a><span><span class="hoy-tag">Archivado</span> {{ item.cultivo.get_estado_display }} · inicio {{ item.cultivo.fecha_inicio|date:"d/m/Y" }}</span></li>{% endfor %}
-    </ul>
-  </section>
-  {% endif %}
+      <div id="hoy-lista">
+        {% for item in atencion %}{% include "growlog/partials/hoy_item.html" %}{% endfor %}
+      </div>
+      {% if not atencion and not alertas %}
+      <p class="hoy-nada">Nada vencido ni urgente. Buen momento para medir o mirar las plantas.</p>
+      {% endif %}
+      {% if atencion_restante %}<p class="hoy-nota">Hay {{ atencion_restante }} pendientes más en las tareas de cada cultivo.</p>{% endif %}
+      <p class="hoy-nota">{{ tareas_total }} tareas pendientes en total, {{ tareas_sin_fecha }} sin fecha.</p>
+    </section>
+    {% endif %}
+
+    <div>
+      {% if propios %}
+      <section id="cultivos" aria-labelledby="cultivos-title">
+        <h2 class="mo hoy-sec" id="cultivos-title">Mis cultivos activos · {{ propios|length }}</h2>
+        {% for item in propios %}{% include "growlog/partials/hoy_cultivo.html" %}{% endfor %}
+      </section>
+      {% endif %}
+      {% if compartidos %}
+      <section id="compartidos" aria-labelledby="compartidos-title">
+        <h2 class="mo hoy-sec" id="compartidos-title">Compartidos conmigo · {{ compartidos|length }}</h2>
+        {% for item in compartidos %}{% include "growlog/partials/hoy_cultivo.html" %}{% endfor %}
+      </section>
+      {% endif %}
+      {% if not activos %}
+      <section class="vacio card" id="cultivos">
+        <h2 class="h2">No tenés cultivos activos</h2>
+        <p>Tus ciclos anteriores están en el historial.</p>
+        <a href="{% url 'growlog:nuevo_cultivo' %}" class="btn sm">Empezar un cultivo</a>
+      </section>
+      {% endif %}
+      {% if historial_total %}
+      <section id="historial" aria-labelledby="historial-title">
+        <h2 class="mo hoy-sec" id="historial-title">Historial · {{ historial_total }}</h2>
+        {% for item in finalizados %}
+        <a class="fila" href="{% url 'growlog:cultivo_detail' item.cultivo.slug %}"><span class="fila__texto">{{ item.cultivo.nombre }}<br><span class="mo hoy-meta">finalizado · {{ item.cultivo.fecha_inicio|date:"d/m/Y" }} al {% if item.cultivo.fecha_fin %}{{ item.cultivo.fecha_fin|date:"d/m/Y" }}{% else %}sin fecha de cierre{% endif %}</span></span><span class="fila__chevron" aria-hidden="true">›</span></a>
+        {% endfor %}
+        {% for item in archivados %}
+        <a class="fila" href="{% url 'growlog:cultivo_detail' item.cultivo.slug %}"><span class="fila__texto">{{ item.cultivo.nombre }}<br><span class="mo hoy-meta">archivado · inicio {{ item.cultivo.fecha_inicio|date:"d/m/Y" }}</span></span><span class="fila__chevron" aria-hidden="true">›</span></a>
+        {% endfor %}
+      </section>
+      {% endif %}
+    </div>
+  </div>
   {% endif %}
 </div>
 {% endblock %}
