@@ -1,795 +1,255 @@
 {% extends "base.html" %}
-{% load ec %}
-{% load static %}
+{% load static ec %}
+
 {% block title %}{{ cultivo.nombre }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'growlog/cultivo.css' %}">{% endblock %}
 
-{% block extra_head %}
-<style>
-  /* ── HEADER ── */
-  .cd-header {
-    display: grid; grid-template-columns: 1fr auto; gap: 32px;
-    align-items: flex-start; margin-bottom: 24px;
-    padding-bottom: 22px; border-bottom: 1px solid var(--rule);
-  }
-  .cd-title {
-    font-family: var(--font-display), sans-serif;
-    font-variation-settings: "wdth" 85, "opsz" 96;
-    font-size: 88px; font-weight: 700; letter-spacing: -.022em; line-height: .95;
-    margin: 0; color: var(--cream); display: block;
-  }
-  .cd-title__accent {
-    color: var(--green); font-size: 48px; font-weight: 700; font-style: italic;
-    display: block; margin-top: 4px;
-  }
-  .cd-meta {
-    display: flex; align-items: center; gap: 14px; margin-top: 16px; flex-wrap: wrap;
-    font-family: var(--font-mono), monospace; font-size: 12px; color: var(--cream-soft);
-  }
-  .cd-meta__sep { color: var(--fine); }
-
-  .cd-actions { display: flex; flex-direction: column; gap: 12px; align-items: flex-end; }
-  .cd-day-box {
-    border: 2px solid var(--green); padding: 14px 28px; text-align: center;
-    background: var(--green-wash); min-width: 200px;
-  }
-  .cd-day-box--plum { border-color: var(--plum); background: rgba(179,132,216,.08); }
-  .cd-day-box__label {
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    letter-spacing: .05em; text-transform: uppercase; color: var(--green);
-    margin-bottom: 4px; display: block;
-  }
-  .cd-day-box--plum .cd-day-box__label { color: var(--plum); }
-  .cd-day-box__num {
-    font-family: var(--font-display), sans-serif;
-    font-variation-settings: "wdth" 85, "opsz" 96;
-    font-size: 84px; font-weight: 800; line-height: .85; color: var(--green);
-    display: block; letter-spacing: -.022em;
-  }
-  .cd-day-box--plum .cd-day-box__num { color: var(--plum); }
-  .cd-day-group { display: flex; gap: 10px; }
-  .cd-day-group .cd-day-box { min-width: 140px; flex: 1; }
-  /* Cambiar etapa y Registrar: misma altura, uno al lado del otro. */
-  .cd-cta { display: flex; gap: 10px; }
-  .cd-cta > a { padding: 13px 22px; font-size: 14px; white-space: nowrap; justify-content: center; }
-  .cd-cta > .btn-brand { border: 1px solid transparent; }
-
-  /* ── VITALS ── */
-  .cd-vitals {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-    margin-bottom: 26px;
-  }
-  @media (max-width: 900px)  { .cd-vitals { grid-template-columns: repeat(2, 1fr); } }
-  .cd-vital {
-    background: var(--card); border: 1px solid var(--rule);
-    border-left: 4px solid var(--rule);
-    padding: 16px 22px;
-  }
-  .cd-vital--ideal { border-left-color: var(--green); }
-  .cd-vital--alto  { border-left-color: var(--rust); }
-  .cd-vital--bajo  { border-left-color: var(--honey); }
-  .cd-vital--neutral { border-left-color: var(--rule); }
-  .cd-vital--link { display: block; color: inherit; }
-  .cd-vital--link:hover { color: inherit; opacity: 1; background: var(--s2); }
-  .cd-vital__ver { float: right; color: var(--ac); text-transform: none; }
-  .cd-vital__val {
-    font-family: var(--font-display), sans-serif;
-    font-variation-settings: "wdth" 85, "opsz" 96;
-    font-size: 52px; font-weight: 800; line-height: .9;
-    color: var(--cream); letter-spacing: -.022em;
-  }
-  .cd-vital--ideal .cd-vital__val { color: var(--green); }
-  .cd-vital--alto  .cd-vital__val { color: var(--rust); }
-  .cd-vital--bajo  .cd-vital__val { color: var(--honey); }
-  .cd-vital__val--empty { color: var(--fine); }
-  .cd-vital__unit { font-family: var(--font-mono), monospace; font-size: 16px; color: var(--cream-soft); margin-left: 4px; }
-  .cd-vital__status {
-    font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 600;
-    letter-spacing: .05em; text-transform: uppercase; margin-top: 6px;
-  }
-
-  /* ── MAIN GRID ── */
-  .cd-main { display: grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: start; }
-  @media (max-width: 1024px) { .cd-main { grid-template-columns: 1fr; } }
-
-  /* ── PLANTAS ── */
-  .cd-plantas-grid { display: grid; grid-template-columns: 1fr 1fr; }
-  @media (max-width: 640px) { .cd-plantas-grid { grid-template-columns: 1fr; } }
-  .cd-planta-row {
-    display: flex; align-items: center; gap: 14px;
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--rule-soft);
-    color: var(--cream); text-decoration: none;
-  }
-  .cd-plantas-grid > .cd-planta-row:nth-child(odd) { border-right: 1px solid var(--rule-soft); }
-  .cd-plantas-grid > .cd-planta-row:nth-last-child(-n+2) { border-bottom: none; }
-  .cd-archivadas { border-top: 1px solid var(--rule-soft); }
-  .cd-archivadas summary { padding: 12px 16px; cursor: pointer; min-height: 44px; display: flex; align-items: center; }
-  .cd-archivadas .cd-planta-row { opacity: .75; }
-  .cd-planta-row:hover { background: rgba(255,255,255,.012); color: var(--cream); }
-  .cd-planta-row__badge {
-    width: 40px; height: 40px;
-    background: var(--green-wash); border: 1px solid var(--green-deep);
-    display: flex; align-items: center; justify-content: center;
-    color: var(--green); flex-shrink: 0;
-    font-family: var(--font-mono), monospace; font-size: 14px; font-weight: 700;
-  }
-  .cd-planta-row__badge--descartada { background: rgba(217,106,61,.08); border-color: var(--rust); color: var(--rust); }
-  .cd-planta-row__badge--cosechada  { background: rgba(212,146,58,.08); border-color: var(--honey); color: var(--honey); }
-  .cd-planta-row__name {
-    font-family: var(--font-display), sans-serif;
-    font-variation-settings: "wdth" 85, "opsz" 96;
-    font-size: 18px; font-weight: 700; line-height: 1;
-  }
-  .cd-planta-row__sub {
-    font-family: var(--font-mono), monospace; font-size: 12px; color: var(--fine);
-    margin-top: 4px;
-  }
-
-  /* ── TAREAS ── */
-  .cd-tarea {
-    display: flex; gap: 10px; padding: 12px 18px;
-    border-bottom: 1px solid var(--rule-soft);
-    border-left: 3px solid transparent;
-  }
-  .cd-tarea--urgente { border-left-color: var(--rust); }
-  .cd-tarea__title { font-size: 13px; color: var(--cream); line-height: 1.3; }
-  .cd-tarea__meta {
-    margin-top: 4px; display: flex; gap: 10px;
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    letter-spacing: .05em; text-transform: uppercase; color: var(--fine);
-  }
-  .cd-tarea__meta--urg { color: var(--rust); }
-
-  /* Estado vacío de tareas: se muestra sólo si no hay ningún .cd-tarea en la lista */
-  .tareas-empty { display: none; }
-  #tareas-lista:not(:has(.cd-tarea)) .tareas-empty { display: block; }
-
-  /* ── SETUP STRIP ── */
-  .cd-setup-strip {
-    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
-    background: var(--card); border: 1px solid var(--rule);
-    padding: 9px 18px; margin-bottom: 20px;
-    font-family: var(--font-mono), monospace;
-  }
-  .cd-setup-strip__sig {
-    font-size: 12px; letter-spacing: .05em; text-transform: uppercase;
-    color: var(--fine); margin-right: 14px; flex-shrink: 0;
-  }
-  .cd-setup-strip__item {
-    display: flex; align-items: center; gap: 6px;
-    padding: 2px 14px; border-left: 1px solid var(--rule);
-  }
-  .cd-setup-strip__key {
-    font-size: 12px; letter-spacing: .05em; text-transform: uppercase;
-    color: var(--fine); flex-shrink: 0;
-  }
-  .cd-setup-strip__val {
-    font-size: 12px; color: var(--cream); font-variant-numeric: tabular-nums;
-  }
-  .cd-setup-strip__notas {
-    font-size: 12px; color: var(--fine); font-style: italic;
-    font-family: var(--font-body), sans-serif; padding: 2px 14px;
-    border-left: 1px solid var(--rule); flex: 1; min-width: 0;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .cd-setup-strip__edit {
-    margin-left: auto; padding-left: 14px;
-    font-size: 12px; letter-spacing: .05em; text-transform: uppercase;
-    color: var(--fine); text-decoration: none; flex-shrink: 0;
-  }
-  .cd-setup-strip__edit:hover { color: var(--green); }
-
-  @media (max-width: 900px) {
-    /* minmax(0,…) evita que un hijo ancho estire la grilla más allá de la pantalla */
-    .cd-header { grid-template-columns: minmax(0, 1fr); }
-    .cd-title { font-size: clamp(36px, 11vw, 48px); overflow-wrap: anywhere; }
-    .cd-title__accent { font-size: 32px; }
-    .cd-actions { flex-direction: row; flex-wrap: wrap; align-items: stretch; }
-    .cd-day-group { flex: 1 1 100%; }
-    .cd-cta { flex: 1 1 100%; }
-    .cd-cta > a { flex: 1; padding: 12px 14px; }
-    .cd-day-box { min-width: 0; flex: 1; padding: 10px 20px; }
-    .cd-day-box__num { font-size: 56px; }
-  }
-  @media (max-width: 640px) {
-    .cd-vital { padding: 12px 14px; }
-    .cd-vital__val { font-size: 34px; }
-    .cd-vital__unit { font-size: 13px; }
-  }
-
-  /* ── NEON LUZ + SETUP ROW ── */
-  .cd-luz-setup-row {
-    display: flex; align-items: stretch; margin-bottom: 20px;
-  }
-  .luz-neon {
-    display: flex; align-items: center; justify-content: center; gap: 14px;
-    width: 25%; flex-shrink: 0;
-    padding: 11px 20px;
-    border: 2px solid;
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
-  }
-  .cd-luz-setup-row .cd-setup-strip {
-    flex: 1; margin-bottom: 0;
-    border-left: none;
-  }
-  @media (max-width: 700px) {
-    .cd-luz-setup-row { flex-direction: column; }
-    .luz-neon { width: 100%; }
-    .cd-luz-setup-row .cd-setup-strip { border-left: 1px solid var(--rule); }
-  }
-  .luz-neon__dot {
-    width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
-  }
-  .luz-neon--on {
-    color: #d9b0ff;
-    border-color: rgba(179,132,216,.7);
-    background: rgba(179,132,216,.06);
-    text-shadow: 0 0 8px rgba(179,132,216,.95), 0 0 18px rgba(179,132,216,.5);
-    box-shadow: 0 0 10px rgba(179,132,216,.25), 0 0 26px rgba(179,132,216,.1),
-                inset 0 0 12px rgba(179,132,216,.05);
-    animation: neon-flicker 4s ease-in-out infinite;
-  }
-  .luz-neon--on .luz-neon__dot {
-    background: #d9b0ff;
-    box-shadow: 0 0 6px 3px rgba(179,132,216,.8);
-    animation: dot-pulse 1.8s ease-in-out infinite;
-  }
-  .luz-neon--off {
-    color: rgba(255,255,255,.18);
-    border-color: rgba(255,255,255,.08);
-    background: transparent;
-  }
-  .luz-neon--off .luz-neon__dot {
-    background: rgba(255,255,255,.12);
-  }
-  @keyframes neon-flicker {
-    0%,92%,96%,100% {
-      text-shadow: 0 0 8px rgba(179,132,216,.95), 0 0 18px rgba(179,132,216,.5);
-      box-shadow: 0 0 10px rgba(179,132,216,.25), 0 0 26px rgba(179,132,216,.1), inset 0 0 12px rgba(179,132,216,.05);
-    }
-    93%,95% { text-shadow: none; box-shadow: none; opacity:.7; }
-  }
-  @keyframes dot-pulse {
-    0%,100% { box-shadow: 0 0 6px 3px rgba(179,132,216,.8); }
-    50%      { box-shadow: 0 0 14px 5px rgba(179,132,216,.45), 0 0 22px 8px rgba(179,132,216,.18); }
-  }
-
-  /* ── PROGRESO ── */
-  .cd-progreso { margin-bottom: 20px; }
-  .cd-progreso__head {
-    display: flex; justify-content: space-between; align-items: baseline;
-    margin-bottom: 7px;
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    letter-spacing: .05em; text-transform: uppercase; color: var(--fine);
-  }
-  .cd-progreso__pct {
-    font-size: 13px; font-weight: 700; color: var(--cream-soft);
-    letter-spacing: .05em;
-  }
-  .cd-progreso__wrap {
-    position: relative; height: 6px;
-  }
-  .cd-progreso__track {
-    display: flex; height: 100%;
-    border: 1px solid var(--rule); overflow: hidden;
-  }
-  .cd-progreso__bg-veg   { height: 100%; background: rgba(92,184,120,.1); }
-  .cd-progreso__bg-flora { flex: 1; height: 100%; background: rgba(179,132,216,.1); }
-  .cd-progreso__fill {
-    position: absolute; top: 0; left: 0; height: 100%;
-    transition: width .6s ease;
-  }
-  .cd-progreso__fill--veg   { background: var(--green); }
-  .cd-progreso__fill--flora { background: var(--plum); }
-  .cd-progreso__divider {
-    position: absolute; top: -2px; height: calc(100% + 4px);
-    width: 1px; background: var(--rule-soft);
-    transform: translateX(-50%);
-  }
-  .cd-progreso__footer {
-    display: flex; margin-top: 5px;
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    letter-spacing: .05em; text-transform: uppercase;
-  }
-  .cd-progreso__phase-veg   { color: var(--green); opacity: .55; }
-  .cd-progreso__phase-flora { flex: 1; color: var(--plum); opacity: .55; text-align: right; }
-</style>
+{# En el Resumen el encabezado lleva el estado de la luz; las secciones van en el selector de abajo y en Más. #}
+{% block cultivo_tabs %}
+<div class="cultivo-head cd-head">
+  <div class="cultivo-head__fila">
+    {% include "growlog/partials/cultivo_selector.html" %}
+    {% if luz_estado_actual %}<span class="mo cd-luz">{% if luz_estado_actual == "on" %}◐ luz encendida{% else %}◑ luz apagada{% endif %}{% if fotoperiodo_activo %} · {{ fotoperiodo_activo.fotoperiodo }}{% endif %}</span>{% endif %}
+  </div>
+</div>
 {% endblock %}
 
 {% block content %}
-
-
-<!-- HEADER -->
-<div class="cd-header">
-  <div>
-    <div class="label-eyebrow">{% if cultivo.estado == 'finalizado' %}cultivo finalizado{% if cultivo.fecha_fin %} el {{ cultivo.fecha_fin|date:"d/m/Y" }}{% endif %}{% elif cultivo.archivado %}cultivo archivado{% else %}cultivo activo{% endif %}</div>
-    <h1 class="cd-title">{{ cultivo.nombre }}</h1>
-    <div class="cd-meta">
-      <a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}" title="Ver y cambiar la etapa del cultivo" style="text-decoration:none;"
-         class="pill pill--{% if cultivo.estado == 'vegetativo' %}green{% elif cultivo.estado == 'floracion' %}plum{% elif cultivo.estado == 'secado' or cultivo.estado == 'curado' %}honey{% else %}cream{% endif %}">
-        ● {% if cultivo.estado == 'finalizado' %}{{ cultivo.get_estado_display }}{% else %}{{ etapa_actual_display|default:cultivo.get_estado_display }}{% endif %}
-      </a>
-      <span>desde {{ cultivo.fecha_inicio|date:"d/m/Y" }}</span>
-      <span class="cd-meta__sep">·</span>
-      <span>{{ plantas_count }} plantas activas</span>
-      {% if dias_sin_riego is not None %}
-      <span class="cd-meta__sep">·</span>
-      <span class="{% if dias_sin_riego >= 5 %}c-rust{% elif dias_sin_riego >= 3 %}c-honey{% endif %}">
-        <i class="bi bi-droplet"></i>
-        {% if dias_sin_riego == 0 %}regado hoy{% elif dias_sin_riego == 1 %}último riego ayer{% else %}{{ dias_sin_riego }} días sin riego{% endif %}
-      </span>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="cd-actions">
-    <div class="cd-day-group">
-      <div class="cd-day-box">
-        <span class="cd-day-box__label">día</span>
-        <span class="cd-day-box__num">{{ cultivo.dias_desde_inicio }}</span>
-      </div>
-      {% if dia_flora is not None %}
-      <div class="cd-day-box cd-day-box--plum">
-        <span class="cd-day-box__label">flora</span>
-        <span class="cd-day-box__num">{{ dia_flora }}</span>
-      </div>
-      {% endif %}
-    </div>
-    {% if can_edit_cultivo %}
-    <div class="cd-cta">
-      {% if cultivo.estado != 'finalizado' %}
-      <a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}" class="btn-ghost">
-        <i class="bi bi-flower1"></i> cambiar etapa
-      </a>
-      {% endif %}
-      <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="btn-brand">
-        <i class="bi bi-pencil-square"></i> registrar
-      </a>
-    </div>
-    {% endif %}
-  </div>
-</div>
-
-<!-- VITALS -->
-<div class="cd-vitals">
-  <div class="cd-vital cd-vital--{% if semaforo %}{{ semaforo.temp }}{% else %}neutral{% endif %}">
-    <div class="label-eyebrow"><i class="bi bi-thermometer-half"></i> Temperatura</div>
-    <div class="cd-vital__val{% if not ultima_medicion %} cd-vital__val--empty{% endif %}" style="margin-top: 10px;">
-      {% if ultima_medicion %}{{ ultima_medicion.temperatura_c|floatformat:1 }}<span class="cd-vital__unit">°C</span>{% else %}-{% endif %}
-    </div>
-    <div class="cd-vital__status">
-      · {% if semaforo %}{{ semaforo.temp }}{% else %}sin ref.{% endif %}
-    </div>
-  </div>
-
-  <div class="cd-vital cd-vital--{% if semaforo %}{{ semaforo.hr }}{% else %}neutral{% endif %}">
-    <div class="label-eyebrow"><i class="bi bi-droplet-half"></i> Humedad</div>
-    <div class="cd-vital__val{% if not ultima_medicion %} cd-vital__val--empty{% endif %}" style="margin-top: 10px;">
-      {% if ultima_medicion %}{{ ultima_medicion.humedad_relativa|floatformat:0 }}<span class="cd-vital__unit">%</span>{% else %}-{% endif %}
-    </div>
-    <div class="cd-vital__status">
-      · {% if semaforo %}{{ semaforo.hr }}{% else %}sin ref.{% endif %}
-    </div>
-  </div>
-
-  <a href="{% url 'growlog:cultivo_vpd' cultivo.slug %}" class="cd-vital cd-vital--link cd-vital--{% if semaforo %}{{ semaforo.vpd }}{% else %}neutral{% endif %}" aria-label="VPD: ver el mapa con el historial">
-    <div class="label-eyebrow"><i class="bi bi-activity"></i> VPD <span class="cd-vital__ver">mapa ›</span></div>
-    <div class="cd-vital__val{% if not ultima_medicion %} cd-vital__val--empty{% endif %}" style="margin-top: 10px;">
-      {% if ultima_medicion %}{{ ultima_medicion.vpd }}<span class="cd-vital__unit">kPa</span>{% else %}-{% endif %}
-    </div>
-    <div class="cd-vital__status">
-      · {% if semaforo %}{{ semaforo.vpd }}{% else %}sin ref.{% endif %}
-    </div>
-  </a>
-
-  <div class="cd-vital cd-vital--neutral">
-    <div class="label-eyebrow"><i class="bi bi-moisture"></i> EC / pH</div>
-    <div class="cd-vital__val{% if not ultima_medicion_ec %} cd-vital__val--empty{% endif %}" style="margin-top: 10px;">
-      {% if ultima_medicion_ec %}
-        {% if ultima_medicion_ec.ec %}{{ ultima_medicion_ec.ec|ec_us }}<span class="cd-vital__unit">µS/cm</span>
-        {% elif ultima_medicion_ec.ph %}{{ ultima_medicion_ec.ph }}<span class="cd-vital__unit">pH</span>
-        {% else %}-{% endif %}
-      {% else %}-{% endif %}
-    </div>
-    <div class="cd-vital__status">
-      {% if ultima_medicion_ec %}
-        {% if ultima_medicion_ec.ec > 5 %}
-        <span class="c-honey">· valor fuera de lo habitual</span>{% if can_edit_cultivo %} <a href="{% url 'growlog:medicion_ec_editar' ultima_medicion_ec.pk %}" class="c-honey">revisar</a>{% endif %}
-        {% else %}
-        · {% if ultima_medicion_ec.ec %}medidor ×10: {{ ultima_medicion_ec.ec|ec_x10 }}{% if ultima_medicion_ec.ph %} · {% endif %}{% endif %}{% if ultima_medicion_ec.ph and ultima_medicion_ec.ec %}pH {{ ultima_medicion_ec.ph }}{% elif not ultima_medicion_ec.ec %}{{ ultima_medicion_ec.get_tipo_display }}{% endif %}
-        {% endif %}
-      {% else %}· sin datos{% endif %}
-    </div>
-  </div>
-</div>
-{% if ultima_medicion %}
-<div class="mono c-fine" style="font-size: 12px; text-align:right; margin-top:-12px; margin-bottom:18px; letter-spacing:.05em;">
-  última medición hace {{ ultima_medicion.timestamp|timesince }}
-</div>
-{% endif %}
-
-{% if luz_estado_actual or cultivo.lampara_modelo or cultivo.sustrato or cultivo.carpa_dimensiones or fotoperiodo_activo or can_edit_cultivo %}
-<div class="cd-luz-setup-row">
-
-  <!-- 1/4 NEON LUZ -->
-  {% if luz_estado_actual %}
-  <div class="luz-neon luz-neon--{{ luz_estado_actual }}">
-    <span class="luz-neon__dot"></span>
-    {% if luz_estado_actual == "on" %}luz encendida{% else %}luz apagada{% endif %}
-  </div>
+<div class="cd">
+  {% if cultivo.estado == 'finalizado' %}
+  <div class="mo">cultivo finalizado{% if cultivo.fecha_fin %} el {{ cultivo.fecha_fin|date:"d/m/Y" }}{% endif %}</div>
+  {% elif cultivo.archivado %}
+  <div class="mo">cultivo archivado</div>
   {% endif %}
+  <h1 class="h1 cd-titulo">{{ cultivo.nombre }}</h1>
 
-  <!-- 3/4 SETUP STRIP -->
-  <div class="cd-setup-strip">
-    <span class="cd-setup-strip__sig">setup</span>
-    <div class="cd-setup-strip__item">
-      <span class="cd-setup-strip__key">fotoperiodo</span>
-      {% if fotoperiodo_activo %}
-        {% if can_edit_cultivo %}
-        <a href="{% url 'growlog:fotoperiodo_list' cultivo.slug %}" class="cd-setup-strip__val" style="text-decoration:none; color:inherit;">{{ fotoperiodo_activo.fotoperiodo }} · enc. {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }} <span class="c-fine" style="font-size: 12px;">↗</span></a>
-        {% else %}
-        <span class="cd-setup-strip__val">{{ fotoperiodo_activo.fotoperiodo }} · enc. {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }}</span>
-        {% endif %}
-      {% else %}
-        {% if can_edit_cultivo %}
-        <a href="{% url 'growlog:fotoperiodo_list' cultivo.slug %}" class="c-fine" style="font-size: 12px; letter-spacing:.06em; text-decoration:none;">configurar →</a>
-        {% else %}
-        <span class="c-fine" style="font-size: 12px;">no configurado</span>
-        {% endif %}
-      {% endif %}
-    </div>
-    {% if cultivo.lampara_modelo %}
-    <div class="cd-setup-strip__item">
-      <span class="cd-setup-strip__key">lámpara</span>
-      <span class="cd-setup-strip__val">{{ cultivo.lampara_modelo }}{% if cultivo.lampara_watts_reales %} · {{ cultivo.lampara_watts_reales }}W{% endif %}</span>
-    </div>
+  <div class="cd-pills">
+    <a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}" class="pill" title="Ver y cambiar la etapa">
+      <i class="punto" style="color: var({% if cultivo.estado == 'floracion' %}--flo{% elif cultivo.estado == 'secado' or cultivo.estado == 'curado' %}--m{% elif cultivo.estado == 'finalizado' %}--mu{% else %}--veg{% endif %})"></i>
+      {% if cultivo.estado == 'finalizado' %}{{ cultivo.get_estado_display }}{% else %}{{ etapa_actual_display|default:cultivo.get_estado_display }}{% endif %}
+      · {% if dia_flora is not None %}flora día {{ dia_flora }}{% else %}día {{ cultivo.dias_desde_inicio }}{% endif %}
+    </a>
+    {% if dias_sin_riego is not None %}
+    <span class="pill{% if dias_sin_riego >= 5 %} cd-pill--bad{% elif dias_sin_riego >= 3 %} cd-pill--warn{% else %} cd-pill--mu{% endif %}">{% if dias_sin_riego == 0 %}regado hoy{% else %}sin riego {{ dias_sin_riego }} d{% endif %}</span>
     {% endif %}
-    {% if cultivo.sustrato %}
-    <div class="cd-setup-strip__item">
-      <span class="cd-setup-strip__key">sustrato</span>
-      <span class="cd-setup-strip__val">{{ cultivo.sustrato }}</span>
-    </div>
-    {% endif %}
-    {% if cultivo.carpa_dimensiones %}
-    <div class="cd-setup-strip__item">
-      <span class="cd-setup-strip__key">carpa</span>
-      <span class="cd-setup-strip__val">{{ cultivo.carpa_dimensiones }}</span>
-    </div>
-    {% endif %}
-    {% if can_edit_cultivo %}
-    <a href="{% url 'growlog:cultivo_editar' cultivo.slug %}" class="cd-setup-strip__edit">editar →</a>
-    {% endif %}
+    <a href="#plantas" class="pill cd-pill--mu">{{ plantas_count }} planta{{ plantas_count|pluralize }}</a>
   </div>
 
-</div>
-{% endif %}
+  <nav class="seg cd-seg" aria-label="Vistas del cultivo">
+    <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="on" aria-current="page">Núcleo</a>
+    <a href="{% url 'growlog:cultivo_vpd' cultivo.slug %}">Aire</a>
+    <a href="#plantas">Plantas</a>
+    <a href="{% url 'growlog:cultivo_etapa' cultivo.slug %}">Ciclo</a>
+  </nav>
 
-<!-- PROGRESO -->
-{% if progreso %}
-<div class="cd-progreso">
-  <div class="cd-progreso__head">
-    <span>progreso · día {{ progreso.dias }} de {{ progreso.total }}</span>
-    <span class="cd-progreso__pct">{{ progreso.pct }}%</span>
-  </div>
-  <div class="cd-progreso__wrap">
-    <div class="cd-progreso__track">
-      <div class="cd-progreso__bg-veg"   style="width:{{ progreso.veg_pct }}%"></div>
-      <div class="cd-progreso__bg-flora"></div>
-    </div>
-    <div class="cd-progreso__fill cd-progreso__fill--{% if progreso.en_flora %}flora{% else %}veg{% endif %}"
-         style="width:{{ progreso.pct }}%"></div>
-    <div class="cd-progreso__divider" style="left:{{ progreso.veg_pct }}%"></div>
-  </div>
-  <div class="cd-progreso__footer">
-    <span class="cd-progreso__phase-veg"   style="width:{{ progreso.veg_pct }}%">veg · {{ progreso.dias_veg }}d</span>
-    <span class="cd-progreso__phase-flora">flora · {{ progreso.dias_flora }}d</span>
-  </div>
-</div>
-{% endif %}
-
-<!-- MAIN -->
-<div class="cd-main">
-  <!-- LEFT -->
-  <div>
-    <!-- Actividad reciente — TABLE -->
-    <div class="panel">
-      <div class="panel__head">
-        <div class="panel__head-left">
-          <span class="label-eyebrow panel__title">actividad reciente</span>
-          <span class="mono c-fine" style="font-size: 12px;">· {{ ultimos_registros|length }}</span>
+  <div class="cd-cols">
+    <div class="cd-principal">
+      {# Vitales: cada dato con su frescura; lo viejo se ve viejo. #}
+      <div class="cd-vitales">
+        <div class="vital{% if ambiente_viejo and ultima_medicion %} vital--viejo{% endif %}">
+          <div class="mo">Temp</div>
+          <div class="vital__valor cd-{{ semaforo.temp|default:'x' }}">{% if ultima_medicion %}{{ ultima_medicion.temperatura_c|floatformat:1 }}<small>°</small>{% else %}-{% endif %}</div>
+          <div class="mo vital__edad">{% if semaforo %}{{ semaforo.temp }}{% else %}sin ref.{% endif %}</div>
         </div>
-        <div style="display:flex; gap:14px; align-items:center;">
-          {% if can_edit_cultivo %}
-          <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=evento" class="panel__action">+ evento</a>
-          <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=riego" class="panel__action">+ riego</a>
-          <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=ec" class="panel__action">+ EC/pH</a>
-          {% endif %}
-          <a href="{% url 'growlog:timeline' cultivo.slug %}" class="panel__action panel__action--green">bitácora completa →</a>
+        <div class="vital{% if ambiente_viejo and ultima_medicion %} vital--viejo{% endif %}">
+          <div class="mo">HR</div>
+          <div class="vital__valor cd-{{ semaforo.hr|default:'x' }}">{% if ultima_medicion %}{{ ultima_medicion.humedad_relativa|floatformat:0 }}<small>%</small>{% else %}-{% endif %}</div>
+          <div class="mo vital__edad">{% if semaforo %}{{ semaforo.hr }}{% else %}sin ref.{% endif %}</div>
         </div>
-      </div>
-      <table class="table tbl-log">
-        <thead>
-          <tr>
-            <th style="width:96px;">Fecha</th>
-            <th style="width:80px;">Tipo</th>
-            <th style="width:170px;">Dato</th>
-            <th>Detalle</th>
-            <th style="width:36px;"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for reg in ultimos_registros %}
-          <tr>
-            <td class="c-soft" style="white-space:nowrap;" data-col="fecha">
-              {{ reg.ts|date:"d/m H:i" }}
-              {% if reg.obj.creado_por %}<br><span class="c-fine" style="font-size: 12px;">@{{ reg.obj.creado_por.username }}</span>{% endif %}
-            </td>
-            <td data-col="tipo">
-              {% if reg.tipo == 'medicion' %}
-                <span class="tc tc--med">med</span>
-              {% elif reg.tipo == 'riego' %}
-                <span class="tc tc--riego">riego</span>
-              {% elif reg.tipo == 'medicion_ec' %}
-                <span class="tc tc--med" style="border-left-color:var(--plum);color:var(--plum);background:rgba(179,132,216,.08);">ec/ph</span>
-              {% else %}
-                <span class="tc tc--evento">{{ reg.obj.get_tipo_display|lower }}</span>
-              {% endif %}
-            </td>
-            <td class="c-cream" style="font-weight:600;" data-col="dato">
-              {% if reg.tipo == 'medicion' %}
-                <span style="font-size:14px;">{{ reg.obj.temperatura_c|floatformat:1 }}°C <span class="c-fine">/</span> {{ reg.obj.humedad_relativa|floatformat:0 }}%</span>
-              {% elif reg.tipo == 'riego' %}
-                <span style="font-size:14px;">{{ reg.obj.volumen_total_ml }} ml</span>
-              {% elif reg.tipo == 'medicion_ec' %}
-                <span style="font-size:14px;">{{ reg.obj.get_tipo_display }}</span>
-              {% else %}
-                <span class="c-honey">{{ reg.obj.get_tipo_display|upper }}</span>
-              {% endif %}
-            </td>
-            <td class="c-soft" style="font-size: 12px;" data-col="detalle">
-              {% if reg.tipo == 'medicion' %}
-                {% with estado=reg.obj.vpd_estado %}<span class="vpd{% if estado %} vpd--{{ estado }}{% endif %}">VPD {{ reg.obj.vpd }}{% if estado %} · {{ estado }}{% endif %}</span>{% endwith %}
-                {% if reg.obj.notas %}<span class="c-fine" style="font-style:italic; margin-left:10px;">"{{ reg.obj.notas|truncatechars:45 }}"</span>{% endif %}
-              {% elif reg.tipo == 'riego' %}
-                {% if reg.obj.ph_agua %}<span>pH <span class="c-cream">{{ reg.obj.ph_agua }}</span></span>{% endif %}
-                {% if reg.obj.ec_solucion %}<span class="c-fine"> · </span><span>EC <span class="c-cream">{{ reg.obj.ec_solucion|ec_us }}</span> µS/cm</span>{% endif %}
-                {% if reg.obj.detalle_plantas.exists %}
-                  <span style="display:inline-flex; gap:5px; flex-wrap:wrap; margin-left:8px;">
-                    {% for rp in reg.obj.detalle_plantas.all %}
-                      <span class="tc tc--baja" style="font-weight:600; letter-spacing:.05em;">{{ rp.planta.apodo }}{% if rp.runoff_observado %} · runoff ✓{% endif %}</span>
-                    {% endfor %}
-                  </span>
-                {% endif %}
-                {% if reg.obj.nutrientes_aplicados.exists %}
-                  <span style="display:inline-flex; gap:5px; flex-wrap:wrap; margin-left:8px;">
-                    {% for na in reg.obj.nutrientes_aplicados.all %}
-                      <span class="tc tc--riego" style="font-weight:600; letter-spacing:.05em;">{{ na.nutriente }} · {{ na.dosis_g_por_litro }}g/L</span>
-                    {% endfor %}
-                  </span>
-                {% endif %}
-              {% elif reg.tipo == 'medicion_ec' %}
-                {% if reg.obj.ph %}<span>pH <span class="c-cream">{{ reg.obj.ph }}</span></span>{% endif %}
-                {% if reg.obj.ec %}<span class="c-fine">{% if reg.obj.ph %} · {% endif %}</span><span>EC <span class="c-cream">{{ reg.obj.ec|ec_us }}</span> µS/cm</span>{% endif %}
-                {% if reg.obj.temp_agua %}<span class="c-fine"> · </span><span>{{ reg.obj.temp_agua }}°C agua</span>{% endif %}
-              {% else %}
-                <span class="c-cream">{{ reg.obj.descripcion|truncatechars:60 }}</span>
-              {% endif %}
-            </td>
-            <td style="text-align:right;" data-col="action">
-              {% if can_edit_cultivo %}
-              {% if reg.tipo == 'riego' %}
-                <a href="{% url 'growlog:riego_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
-              {% elif reg.tipo == 'evento' %}
-                <a href="{% url 'growlog:evento_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
-              {% elif reg.tipo == 'medicion_ec' %}
-                <a href="{% url 'growlog:medicion_ec_editar' reg.obj.pk %}" class="c-fine" title="Editar"><i class="bi bi-three-dots"></i></a>
-              {% elif reg.tipo == 'medicion' %}
-                <a href="{% url 'growlog:medicion_ambiente_editar' reg.obj.pk %}" class="c-fine" title="Corregir"><i class="bi bi-three-dots"></i></a>
-              {% endif %}
-              {% endif %}
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="5" style="text-align:center; padding:36px 16px; color:var(--fine);">
-              <i class="bi bi-journal-x" style="font-size:22px; display:block; margin-bottom:8px; opacity:.5;"></i>
-              Sin registros. {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="c-green">Anotá el primero →</a>{% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Plantas -->
-    <div class="panel" id="plantas">
-      <div class="panel__head">
-        <div class="panel__head-left">
-          <span class="label-eyebrow panel__title">plantas · {{ plantas|length }}</span>
-        </div>
-        {% if can_edit_cultivo %}<a href="{% url 'growlog:planta_crear' cultivo.slug %}" class="panel__action">+ agregar</a>{% endif %}
-      </div>
-      {% if plantas %}
-      <div class="cd-plantas-grid">
-        {% for p in plantas %}
-          <a href="{% url 'growlog:planta_detail' p.pk %}" class="cd-planta-row">
-            <div class="cd-planta-row__badge cd-planta-row__badge--{{ p.estado }}">
-              <span class="num">{{ forloop.counter|stringformat:"02d" }}</span>
-            </div>
-            <div style="flex:1; min-width: 0;">
-              <div class="cd-planta-row__name">{{ p.apodo }}</div>
-              <div class="cd-planta-row__sub">
-                {{ p.strain|default:"sin strain" }} · {{ p.get_posicion_tent_display|lower }}
-                {% if p.etapa_actual_display %} · {{ p.etapa_actual_display|lower }}{% endif %}
-              </div>
-            </div>
-            <span class="c-green mono" style="font-size:14px;">→</span>
-          </a>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div style="padding:36px 16px; text-align:center;">
-        <i class="bi bi-flower1" style="font-size:22px; color:var(--fine); opacity:.4; display:block; margin-bottom:10px;"></i>
-        <div class="c-fine" style="font-size:13px; margin-bottom:14px;">Sin plantas registradas aún.</div>
-        {% if can_edit_cultivo %}
-        <a href="{% url 'growlog:planta_crear' cultivo.slug %}" class="btn-brand">
-          <i class="bi bi-plus-lg"></i> agregar planta
+        <a href="{% url 'growlog:cultivo_vpd' cultivo.slug %}" class="vital cd-vital-link{% if ambiente_viejo and ultima_medicion %} vital--viejo{% endif %}" aria-label="VPD: ver el mapa con el historial">
+          <div class="mo">VPD <span class="cd-ver">mapa ›</span></div>
+          <div class="vital__valor cd-{{ semaforo.vpd|default:'x' }}">{% if ultima_medicion %}{{ ultima_medicion.vpd|floatformat:2 }}{% else %}-{% endif %}</div>
+          <div class="mo vital__edad">{% if semaforo %}{{ semaforo.vpd }}{% else %}sin ref.{% endif %}</div>
         </a>
-        {% endif %}
+        <div class="vital cd-vital-ec">
+          <div class="mo">pH / EC</div>
+          {% if ultima_medicion_ec %}
+          <div class="vital__valor">{% if ultima_medicion_ec.ph %}{{ ultima_medicion_ec.ph|floatformat:1 }}{% else %}-{% endif %}<small> pH</small></div>
+          <div class="mo vital__edad">
+            {% if ultima_medicion_ec.ec %}EC {{ ultima_medicion_ec.ec|ec_us }} µS · {{ ultima_medicion_ec.ec|ec_x10 }} medidor{% else %}{{ ultima_medicion_ec.get_tipo_display }}{% endif %}
+            {% if ultima_medicion_ec.ec > 5 %}<span class="cd-warn"> · fuera de lo habitual</span>{% if can_edit_cultivo %} <a href="{% url 'growlog:medicion_ec_editar' ultima_medicion_ec.pk %}">revisar</a>{% endif %}{% endif %}
+          </div>
+          {% else %}
+          <div class="vital__valor cd-x">-</div>
+          <div class="mo vital__edad">sin datos</div>
+          {% endif %}
+        </div>
       </div>
+
+      {% if ambiente_viejo %}
+      <div class="aviso cd-aviso">
+        <span>{% if ultima_medicion %}Última medición de ambiente: hace {{ ultima_medicion.timestamp|timesince }}{% else %}Todavía no hay mediciones de ambiente{% endif %}</span>
+        {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=ambiente" class="pill cd-pill--ac">medir</a>{% endif %}
+      </div>
+      {% elif ultima_medicion %}
+      <div class="mo cd-edad">● medido hace {{ ultima_medicion.timestamp|timesince }}</div>
       {% endif %}
-      {% if plantas_archivadas %}
-      <details class="cd-archivadas">
-        <summary class="label-eyebrow">archivadas · {{ plantas_archivadas|length }}</summary>
-        <div class="cd-plantas-grid">
+
+      {# Actividad reciente: lista legible; el ⋯ abre la corrección. #}
+      <section class="cd-seccion" aria-labelledby="actividad-title">
+        <div class="cd-seccion__head">
+          <h2 class="mo" id="actividad-title">Actividad reciente</h2>
+          <a href="{% url 'growlog:timeline' cultivo.slug %}" class="mo cd-link">bitácora completa ›</a>
+        </div>
+        {% for reg in ultimos_registros %}
+        <div class="cd-reg cd-reg--{{ reg.tipo }}">
+          <span class="cd-reg__capa" aria-hidden="true"></span>
+          <div class="cd-reg__texto">
+            <div class="cd-reg__titulo">
+              {% if reg.tipo == 'medicion' %}
+                Ambiente {{ reg.obj.temperatura_c|floatformat:1 }}° · {{ reg.obj.humedad_relativa|floatformat:0 }}%
+                {% with estado=reg.obj.vpd_estado %}· <span class="cd-{{ estado|default:'x' }}">VPD {{ reg.obj.vpd|floatformat:2 }}</span>{% endwith %}
+              {% elif reg.tipo == 'riego' %}
+                Riego {{ reg.obj.volumen_total_ml }} ml{% if reg.obj.ph_agua %} · pH {{ reg.obj.ph_agua|floatformat:1 }}{% endif %}{% if reg.obj.ec_solucion %} · EC {{ reg.obj.ec_solucion|ec_us }} µS{% endif %}
+              {% elif reg.tipo == 'medicion_ec' %}
+                {% if reg.obj.ph %}pH {{ reg.obj.ph|floatformat:1 }}{% endif %}{% if reg.obj.ph and reg.obj.ec %} · {% endif %}{% if reg.obj.ec %}EC {{ reg.obj.ec|ec_us }} µS{% endif %}
+              {% else %}
+                {{ reg.obj.get_tipo_display }}: {{ reg.obj.descripcion|truncatechars:90 }}
+              {% endif %}
+            </div>
+            <div class="mo cd-reg__meta">
+              {{ reg.ts|date:"d/m H:i" }}
+              {% if reg.tipo == 'riego' %}{% with n=reg.obj.detalle_plantas.all|length %}{% if n %} · {{ n }} planta{{ n|pluralize }}{% endif %}{% endwith %}{% for na in reg.obj.nutrientes_aplicados.all %} · {{ na.nutriente.nombre }} {{ na.dosis_g_por_litro|floatformat:"-2" }} g/L{% endfor %}{% for rp in reg.obj.detalle_plantas.all %}{% if rp.runoff_observado and forloop.first %} · runoff{% endif %}{% endfor %}{% endif %}
+              {% if reg.tipo == 'medicion_ec' %} · {{ reg.obj.get_tipo_display|lower }}{% endif %}
+              {% if reg.tipo == 'evento' %}{% for p in reg.obj.plantas_afectadas.all %}{% if forloop.first %} · {% else %}, {% endif %}{{ p.apodo }}{% endfor %}{% endif %}
+              {% if reg.obj.creado_por %} · {{ reg.obj.creado_por.username }}{% endif %}
+            </div>
+          </div>
+          {% if can_edit_cultivo %}
+          {% if reg.tipo == 'riego' %}<a href="{% url 'growlog:riego_editar' reg.obj.pk %}" class="cd-reg__mas" aria-label="Editar riego">⋯</a>
+          {% elif reg.tipo == 'evento' %}<a href="{% url 'growlog:evento_editar' reg.obj.pk %}" class="cd-reg__mas" aria-label="Editar evento">⋯</a>
+          {% elif reg.tipo == 'medicion_ec' %}<a href="{% url 'growlog:medicion_ec_editar' reg.obj.pk %}" class="cd-reg__mas" aria-label="Editar pH y EC">⋯</a>
+          {% elif reg.tipo == 'medicion' %}<a href="{% url 'growlog:medicion_ambiente_editar' reg.obj.pk %}" class="cd-reg__mas" aria-label="Corregir medición de ambiente">⋯</a>
+          {% endif %}
+          {% endif %}
+        </div>
+        {% empty %}
+        <div class="vacio">
+          <h3 class="h2">Todavía no hay registros</h3>
+          <p>El primer riego o medición arranca la bitácora.</p>
+          {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}" class="btn sm">Registrar el primero</a>{% endif %}
+        </div>
+        {% endfor %}
+      </section>
+
+      {# Plantas #}
+      <section class="cd-seccion" id="plantas" aria-labelledby="plantas-title">
+        <div class="cd-seccion__head">
+          <h2 class="mo" id="plantas-title">Plantas · {{ plantas|length }}</h2>
+          {% if can_edit_cultivo %}<a href="{% url 'growlog:planta_crear' cultivo.slug %}" class="mo cd-link">+ agregar</a>{% endif %}
+        </div>
+        {% if plantas %}
+        <div class="cd-plantas">
+          {% for p in plantas %}
+          <a href="{% url 'growlog:planta_detail' p.pk %}" class="fila cd-planta">
+            <span class="cd-planta__estado cd-planta__estado--{{ p.estado }}" aria-hidden="true"></span>
+            <span class="fila__texto"><b>{{ p.apodo }}</b><br><span class="mo cd-reg__meta">{{ p.strain|default:"sin strain" }}{% if p.etapa_actual_display %} · {{ p.etapa_actual_display|lower }}{% endif %}{% if p.estado != 'activa' %} · {{ p.get_estado_display|lower }}{% endif %}</span></span>
+            <span class="fila__chevron" aria-hidden="true">›</span>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="vacio">
+          <h3 class="h2">Sin plantas todavía</h3>
+          <p>Cargalas para registrar el riego de cada una.</p>
+          {% if can_edit_cultivo %}<a href="{% url 'growlog:planta_crear' cultivo.slug %}" class="btn sm">Agregar planta</a>{% endif %}
+        </div>
+        {% endif %}
+        {% if plantas_archivadas %}
+        <details class="cd-archivadas">
+          <summary class="mo">archivadas · {{ plantas_archivadas|length }}</summary>
           {% for p in plantas_archivadas %}
-            <a href="{% url 'growlog:planta_detail' p.pk %}" class="cd-planta-row">
-              <div class="cd-planta-row__badge"><i class="bi bi-archive"></i></div>
-              <div style="flex:1; min-width: 0;">
-                <div class="cd-planta-row__name">{{ p.apodo }}</div>
-                <div class="cd-planta-row__sub">{{ p.strain|default:"sin strain" }}</div>
-              </div>
-              <span class="c-green mono" style="font-size:14px;">→</span>
-            </a>
+          <a href="{% url 'growlog:planta_detail' p.pk %}" class="fila cd-planta"><span class="fila__texto">{{ p.apodo }}<br><span class="mo cd-reg__meta">{{ p.strain|default:"sin strain" }}</span></span><span class="fila__chevron" aria-hidden="true">›</span></a>
+          {% endfor %}
+        </details>
+        {% endif %}
+      </section>
+    </div>
+
+    <aside class="cd-lateral">
+      {# Pendientes: lo accionable, arriba en el celular. #}
+      <section class="cd-seccion cd-pendientes" aria-labelledby="tareas-title">
+        <div class="cd-seccion__head">
+          <h2 class="mo" id="tareas-title">Tareas · {{ tareas_pendientes|length }}{% if tareas_vencidas %} <span class="cd-bad">· {{ tareas_vencidas }} vencida{{ tareas_vencidas|pluralize }}</span>{% endif %}</h2>
+          <span class="cd-head-links">
+            <a href="{% url 'growlog:tareas_list' cultivo.slug %}" class="mo cd-link">ver todas</a>
+            {% if can_edit_cultivo %}<a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=tarea" class="mo cd-link">+ nueva</a>{% endif %}
+          </span>
+        </div>
+        <div id="tareas-lista">
+          {% for tarea in tareas_pendientes %}{% include "growlog/partials/tarea_row.html" %}{% endfor %}
+          <div class="tareas-empty">Sin tareas pendientes ✓</div>
+        </div>
+      </section>
+
+      {% if followups_pendientes %}
+      <section class="cd-seccion" id="followups-panel" aria-labelledby="seg-title">
+        <div class="cd-seccion__head"><h2 class="mo" id="seg-title">Seguimientos · {{ followups_pendientes|length }}</h2></div>
+        <div id="followups-lista">
+          {% for ev in followups_pendientes %}
+          <div class="fila cd-tarea" id="followup-row-{{ ev.pk }}">
+            {% if can_edit_cultivo %}
+            <button type="button" class="ck{% if ev.follow_up_fecha < hoy %} cd-ck--bad{% endif %}"
+                    hx-post="{% url 'growlog:evento_resolver_followup' ev.pk %}" hx-target="#followup-row-{{ ev.pk }}" hx-swap="outerHTML"
+                    aria-label="Marcar resuelto: {{ ev.follow_up_descripcion|default:ev.descripcion|truncatechars:60 }}"></button>
+            {% else %}<span class="ck" aria-hidden="true"></span>{% endif %}
+            <span class="fila__texto">
+              <span class="cd-tarea__titulo">{{ ev.follow_up_descripcion|default:ev.descripcion|truncatechars:80 }}</span>
+              <span class="mo cd-reg__meta{% if ev.follow_up_fecha < hoy %} cd-bad{% endif %}">{{ ev.get_tipo_display }} · {{ ev.follow_up_fecha|date:"d/m" }}{% if ev.follow_up_fecha < hoy %} · vencido{% elif ev.follow_up_fecha == hoy %} · hoy{% endif %}</span>
+            </span>
+            {% if can_edit_cultivo %}<a href="{% url 'growlog:evento_editar' ev.pk %}" class="cd-reg__mas" aria-label="Editar seguimiento">⋯</a>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {# Completadas: siempre en el DOM porque completar desde arriba las agrega acá. #}
+      <details class="cd-seccion cd-hechas" id="tareas-done-panel"{% if not tareas_completadas %} hidden{% endif %}>
+        <summary class="mo">Hechas hace poco</summary>
+        <div id="tareas-done">
+          {% for tarea in tareas_completadas %}
+          <div id="tarea-done-{{ tarea.pk }}" class="fila cd-tarea cd-tarea--hecha">
+            <span class="ck cd-ck--hecha" aria-hidden="true">✓</span>
+            <span class="fila__texto">
+              <span class="cd-tarea__titulo">{{ tarea.titulo }}</span>
+              <span class="mo cd-reg__meta">{% if tarea.completada_en %}{{ tarea.completada_en|date:"d/m" }} · {% endif %}{{ tarea.get_categoria_display|lower }}</span>
+            </span>
+            {% if can_edit_cultivo %}
+            <button type="button" class="pill cd-reabrir" hx-post="{% url 'growlog:tarea_descompletar' tarea.pk %}"
+                    hx-target="#tarea-done-{{ tarea.pk }}" hx-swap="delete">Reabrir</button>
+            {% endif %}
+          </div>
           {% endfor %}
         </div>
       </details>
-      {% endif %}
-    </div>
-  </div>
 
-  <!-- RIGHT SIDEBAR -->
-  <div>
-    <!-- Tareas pendientes -->
-    <div class="panel">
-      <div class="panel__head">
-        <div class="panel__head-left">
-          <span class="label-eyebrow panel__title">tareas · pendientes</span>
-          <span class="mono c-fine" style="font-size: 12px;">· {{ tareas_pendientes|length }}</span>
+      {# Setup del cultivo, en segundo plano. #}
+      <section class="cd-seccion cd-setup">
+        <div class="cd-seccion__head">
+          <h2 class="mo">Setup</h2>
+          {% if can_edit_cultivo %}<a href="{% url 'growlog:cultivo_editar' cultivo.slug %}" class="mo cd-link">editar</a>{% endif %}
         </div>
-        <div style="display:flex; gap:12px; align-items:center;">
-          <a href="{% url 'growlog:tareas_list' cultivo.slug %}" class="panel__action">ver todas →</a>
-          {% if can_edit_cultivo %}
-          <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=tarea" class="panel__action">+ nueva</a>
-          {% endif %}
-        </div>
-      </div>
-
-      <div id="tareas-lista">
-        {% for tarea in tareas_pendientes %}
-          {% include "growlog/partials/tarea_row.html" %}
-        {% endfor %}
-        <div class="tareas-empty" style="padding:28px 16px; text-align:center; color:var(--fine); font-size:13px;">
-          Sin tareas pendientes ✓
-        </div>
-      </div>
-    </div>
-
-    <!-- Follow-ups pendientes -->
-    {% if followups_pendientes %}
-    <div class="panel" id="followups-panel">
-      <div class="panel__head">
-        <div class="panel__head-left">
-          
-          <span class="label-eyebrow panel__title">seguimientos · pendientes</span>
-          <span class="mono c-fine" style="font-size: 12px;">· {{ followups_pendientes|length }}</span>
-        </div>
-      </div>
-      <div id="followups-lista">
-        {% for ev in followups_pendientes %}
-        <div class="cd-tarea cd-tarea--followup {% if ev.follow_up_fecha <= hoy %}cd-tarea--urgente{% endif %}"
-             id="followup-row-{{ ev.pk }}">
-          <div style="flex:1; min-width:0;">
-            <div class="cd-tarea__title">
-              <span class="c-fine" style="font-size: 12px; letter-spacing: .05em; text-transform:uppercase; margin-right:6px;">{{ ev.get_tipo_display }}</span>
-              {{ ev.follow_up_descripcion|default:ev.descripcion|truncatechars:55 }}
-            </div>
-            <div class="cd-tarea__meta">
-              <span {% if ev.follow_up_fecha < hoy %}class="cd-tarea__meta--urg"{% endif %}>
-                {{ ev.follow_up_fecha|date:"d/m" }}
-                {% if ev.follow_up_fecha < hoy %} · vencido{% elif ev.follow_up_fecha == hoy %} · hoy{% endif %}
-              </span>
-            </div>
-          </div>
-          <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
-            {% if can_edit_cultivo %}
-            <a href="{% url 'growlog:evento_editar' ev.pk %}" class="c-fine" style="font-size: 12px;" title="Editar">
-              <i class="bi bi-pencil"></i>
-            </a>
-            <button
-              hx-post="{% url 'growlog:evento_resolver_followup' ev.pk %}"
-              hx-target="#followup-row-{{ ev.pk }}"
-              hx-swap="outerHTML"
-              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-              style="background:none; border:none; cursor:pointer; padding:4px; color:var(--fine); font-size: 12px;"
-              title="Marcar resuelto">
-              <i class="bi bi-check-lg"></i>
-            </button>
-            {% endif %}
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Tareas completadas — siempre en DOM para OOB -->
-    <div class="panel" id="tareas-done-panel" {% if not tareas_completadas %}style="display:none"{% endif %}>
-      <div class="panel__head" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#tareas-done">
-        <div class="panel__head-left">
-          <span class="label-eyebrow panel__title c-fine">completadas</span>
-        </div>
-        <span class="mono c-fine" style="font-size: 12px;">▾</span>
-      </div>
-      <div id="tareas-done" class="collapse">
-        {% for tarea in tareas_completadas %}
-        <div id="tarea-done-{{ tarea.pk }}" class="cd-tarea opacity-50" style="border-left-color: var(--fine);">
-          <span style="display:inline-flex; align-items:center; justify-content:center;
-                       width:16px; height:16px; background:var(--green); color:var(--bg);
-                       margin-top:2px; flex-shrink:0; font-size: 12px; font-weight:800;">✓</span>
-          <div style="flex:1; min-width:0;">
-            <div class="cd-tarea__title text-decoration-line-through c-fine">{{ tarea.titulo }}</div>
-            <div class="cd-tarea__meta">
-              {% if tarea.completada_en %}
-                <span>{{ tarea.completada_en|date:"d/m" }}</span>
-                <span class="c-fine">·</span>
-              {% endif %}
-              <span class="c-fine">{{ tarea.get_categoria_display }}</span>
-            </div>
-          </div>
-          {% if can_edit_cultivo %}
-          <button
-            hx-post="{% url 'growlog:tarea_descompletar' tarea.pk %}"
-            hx-target="#tarea-done-{{ tarea.pk }}"
-            hx-swap="delete"
-            title="Reabrir tarea"
-            style="background:transparent; border:none; cursor:pointer; color:var(--fine); font-size: 12px; padding:4px;"
-            onmouseover="this.style.color='var(--honey)'" onmouseout="this.style.color='var(--fine)'">
-            <i class="bi bi-arrow-counterclockwise"></i>
-          </button>
-          <a href="{% url 'growlog:tarea_editar' tarea.pk %}"
-             style="color: var(--fine); font-size: 12px; text-decoration: none; padding: 4px;" title="Editar">
-            <i class="bi bi-pencil"></i>
-          </a>
-          {% endif %}
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-
+        <dl class="cd-setup__lista">
+          <div><dt class="mo">Fotoperíodo</dt><dd>{% if fotoperiodo_activo %}{% if can_edit_cultivo %}<a href="{% url 'growlog:fotoperiodo_list' cultivo.slug %}">{{ fotoperiodo_activo.fotoperiodo }} · enciende {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }}</a>{% else %}{{ fotoperiodo_activo.fotoperiodo }} · enciende {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }}{% endif %}{% elif can_edit_cultivo %}<a href="{% url 'growlog:fotoperiodo_list' cultivo.slug %}">configurar</a>{% else %}sin configurar{% endif %}</dd></div>
+          {% if cultivo.lampara_modelo or cultivo.lampara_watts_reales %}<div><dt class="mo">Lámpara</dt><dd>{{ cultivo.lampara_modelo }}{% if cultivo.lampara_watts_reales %}{% if cultivo.lampara_modelo %} · {% endif %}{{ cultivo.lampara_watts_reales }} W{% endif %}</dd></div>{% endif %}
+          {% if cultivo.sustrato %}<div><dt class="mo">Sustrato</dt><dd>{{ cultivo.sustrato }}</dd></div>{% endif %}
+          {% if cultivo.carpa_dimensiones %}<div><dt class="mo">Carpa</dt><dd>{{ cultivo.carpa_dimensiones }}</dd></div>{% endif %}
+          <div><dt class="mo">Inicio</dt><dd>{{ cultivo.fecha_inicio|date:"d/m/Y" }}</dd></div>
+        </dl>
+      </section>
+    </aside>
   </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-document.body.addEventListener('htmx:afterSettle', function() {
-  var done = document.getElementById('tareas-done');
-  var panel = document.getElementById('tareas-done-panel');
-  if (done && panel && done.children.length > 0) {
-    panel.style.removeProperty('display');
-  }
+// Al completar una tarea llega a "Hechas"; si el bloque estaba oculto, se muestra.
+document.body.addEventListener('htmx:afterSettle', function () {
+  var hechas = document.getElementById('tareas-done');
+  var bloque = document.getElementById('tareas-done-panel');
+  if (hechas && bloque && hechas.children.length > 0) bloque.hidden = false;
 });
 </script>
 {% endblock %}

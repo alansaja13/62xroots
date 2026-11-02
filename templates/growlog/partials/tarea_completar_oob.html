@@ -1,24 +1,14 @@
-{# El elemento #tarea-{pk} se borra con hx-swap="delete". Este OOB lo mueve a completadas. #}
+{# El elemento #tarea-{pk} se borra con hx-swap="delete". Este OOB lo suma a "Hechas" en el Resumen. #}
 <div hx-swap-oob="afterbegin:#tareas-done">
-<div class="cd-tarea opacity-50" style="border-left-color: var(--fine);">
-  <span style="display:inline-flex; align-items:center; justify-content:center;
-               width:16px; height:16px; background:var(--green); color:var(--bg);
-               margin-top:2px; flex-shrink:0; font-size: 12px; font-weight:800;">✓</span>
-  <div style="flex:1; min-width:0;">
-    <div class="cd-tarea__title text-decoration-line-through c-fine">{{ tarea.titulo }}</div>
-    <div class="cd-tarea__meta">
-      {% if tarea.completada_en %}
-        <span>{{ tarea.completada_en|date:"d/m" }}</span>
-        <span class="c-fine">·</span>
-      {% endif %}
-      <span class="c-fine">{{ tarea.get_categoria_display }}</span>
-    </div>
-  </div>
+<div id="tarea-done-{{ tarea.pk }}" class="fila cd-tarea cd-tarea--hecha">
+  <span class="ck cd-ck--hecha" aria-hidden="true">✓</span>
+  <span class="fila__texto">
+    <span class="cd-tarea__titulo">{{ tarea.titulo }}</span>
+    <span class="mo cd-reg__meta">{% if tarea.completada_en %}{{ tarea.completada_en|date:"d/m" }} · {% endif %}{{ tarea.get_categoria_display|lower }}</span>
+  </span>
   {% if can_edit_cultivo %}
-  <a href="{% url 'growlog:tarea_editar' tarea.pk %}"
-     style="color: var(--fine); font-size: 12px; text-decoration: none; padding: 4px;" title="Editar">
-    <i class="bi bi-pencil"></i>
-  </a>
+  <button type="button" class="pill cd-reabrir" hx-post="{% url 'growlog:tarea_descompletar' tarea.pk %}"
+          hx-target="#tarea-done-{{ tarea.pk }}" hx-swap="delete">Reabrir</button>
   {% endif %}
 </div>
 </div>

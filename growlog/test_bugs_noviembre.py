@@ -67,7 +67,7 @@ class BugsNoviembreTests(TestCase):
         for nombre in ("growlog:timeline", "growlog:cultivo_detail"):
             response = self.client.get(reverse(nombre, args=[self.cultivo.slug]))
             self.assertNotContains(response, ">ajuste_ambiente<")
-            self.assertContains(response, "ajuste de ambiente")
+            self.assertContains(response, "juste de ambiente")  # "Ajuste…" en el Resumen, "ajuste…" en la bitácora
             self.assertNotContains(response, "· None")
 
     # Energía no repite los mensajes que ya muestra base.html.
@@ -178,3 +178,37 @@ class MapaVpdTests(TestCase):
         CultivoMiembro.objects.create(cultivo=self.cultivo, usuario=lector, rol="lector")
         self.client.force_login(lector)
         self.assertEqual(self.client.get(reverse("growlog:cultivo_vpd", args=[self.cultivo.slug])).status_code, 200)
+
+
+class ResumenCultivoTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.owner = User.objects.create_user("resumen")
+        cls.cultivo = Cultivo.objects.create(nombre="Carpa", fecha_inicio=timezone.localdate() - timedelta(days=10),
+                                             propietario=cls.owner)
+
+    def setUp(self):
+        self.client.force_login(self.owner)
+        self.url = reverse("growlog:cultivo_detail", args=[self.cultivo.slug])
+
+    def test_dato_viejo_ofrece_medir(self):
+        MedicionAmbiente.objects.create(cultivo=self.cultivo, temperatura_c=24, humedad_relativa=60,
+                                        timestamp=timezone.now() - timedelta(hours=9))
+        page = self.client.get(self.url)
+        self.assertTrue(page.context["ambiente_viejo"])
+        self.assertContains(page, "vital--viejo")
+        self.assertContains(page, f"?cultivo={self.cultivo.pk}&kind=ambiente")
+        MedicionAmbiente.objects.update(timestamp=timezone.now())
+        page = self.client.get(self.url)
+        self.assertFalse(page.context["ambiente_viejo"])
+        self.assertNotContains(page, "vital--viejo")
+
+    def test_vistas_del_cultivo_y_tareas_vencidas(self):
+        Tarea.objects.create(cultivo=self.cultivo, titulo="Podar", fecha_objetivo=timezone.localdate() - timedelta(days=2))
+        page = self.client.get(self.url)
+        self.assertEqual(page.context["tareas_vencidas"], 1)
+        self.assertContains(page, "1 vencida")
+        for vista in ("cultivo_vpd", "cultivo_etapa"):
+            self.assertContains(page, reverse(f"growlog:{vista}", args=[self.cultivo.slug]))
+        # Hechas existe siempre: completar una tarea la agrega ahí por OOB.
+        self.assertContains(page, 'id="tareas-done"')

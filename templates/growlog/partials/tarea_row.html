@@ -1,47 +1,13 @@
-<div id="tarea-{{ tarea.pk }}" class="cd-tarea cd-tarea--{{ tarea.prioridad }}{% if tarea.completada %} opacity-50{% endif %}">
-  <div style="display: flex; gap: 10px; align-items: flex-start; flex: 1; min-width: 0;">
-    {% if not tarea.completada %}
-    {% if can_edit_cultivo %}
-    <button
-      class="border-0 p-0"
-      style="background: transparent; cursor: pointer; width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0;"
-      hx-post="{% url 'growlog:tarea_completar' tarea.pk %}"
-      hx-target="#tarea-{{ tarea.pk }}"
-      hx-swap="delete"
-      title="Completar">
-      <span style="display: inline-block; width: 16px; height: 16px; border: 1.5px solid var(--fine); transition: border-color .12s, background .12s;"></span>
-    </button>
-    {% else %}
-    <span style="display: inline-block; width: 16px; height: 16px; border: 1.5px solid var(--rule); margin-top: 2px; flex-shrink: 0; opacity:.4;"></span>
-    {% endif %}
-    {% else %}
-    <span style="display: inline-flex; align-items: center; justify-content: center;
-                 width: 16px; height: 16px; background: var(--green); color: var(--bg);
-                 margin-top: 2px; flex-shrink: 0; font-size: 12px; font-weight: 800;">✓</span>
-    {% endif %}
-
-    <div style="flex: 1; min-width: 0;">
-      <div class="cd-tarea__title{% if tarea.completada %} text-decoration-line-through c-fine{% endif %}">
-        {{ tarea.titulo }}
-      </div>
-      <div class="cd-tarea__meta{% if tarea.prioridad == 'urgente' and not tarea.completada %} cd-tarea__meta--urg{% endif %}">
-        {% if tarea.fecha_objetivo %}
-          <span>{{ tarea.fecha_objetivo|date:"d/m" }}</span>
-          <span class="c-fine">·</span>
-        {% endif %}
-        <span class="c-fine">{{ tarea.get_categoria_display }}</span>
-        {% if tarea.prioridad == 'urgente' and not tarea.completada %}
-          <span class="c-fine">·</span>
-          <span>● urgente</span>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
+{# Tarea pendiente en el Resumen del cultivo. Completar la saca de la lista y la manda a "Hechas" (tarea_completar_oob). #}
+<div id="tarea-{{ tarea.pk }}" class="fila cd-tarea">
   {% if can_edit_cultivo %}
-  <a href="{% url 'growlog:tarea_editar' tarea.pk %}"
-     style="color: var(--fine); font-size: 12px; text-decoration: none; padding: 4px;" title="Editar">
-    <i class="bi bi-pencil"></i>
-  </a>
-  {% endif %}
+  <button type="button" class="ck{% if tarea.prioridad == 'urgente' %} cd-ck--bad{% endif %}"
+          hx-post="{% url 'growlog:tarea_completar' tarea.pk %}" hx-target="#tarea-{{ tarea.pk }}" hx-swap="delete"
+          aria-label="Marcar como hecha: {{ tarea.titulo }}"></button>
+  {% else %}<span class="ck" aria-hidden="true"></span>{% endif %}
+  <span class="fila__texto">
+    <span class="cd-tarea__titulo">{{ tarea.titulo }}</span>
+    <span class="mo cd-reg__meta">{% if tarea.fecha_objetivo %}{{ tarea.fecha_objetivo|date:"d/m" }} · {% endif %}{{ tarea.get_categoria_display|lower }}{% if tarea.prioridad == 'urgente' %} · <span class="cd-warn">urgente</span>{% endif %}</span>
+  </span>
+  {% if can_edit_cultivo %}<a href="{% url 'growlog:tarea_editar' tarea.pk %}" class="cd-reg__mas" aria-label="Editar tarea">⋯</a>{% endif %}
 </div>

@@ -13,7 +13,7 @@ from ..forms import CambioEtapaCultivoForm, NuevoCultivoForm
 from ..models import CambioEtapaCultivo, CambioEtapaPlanta, Cultivo, ParametroIdeal
 from ..permissions import objeto_del_cultivo
 from ..services.etapas import cambiar_etapa, reabrir_cultivo, sincronizar_cultivo
-from ..services.hoy import resumen_hoy
+from ..services.hoy import DATO_VIEJO, resumen_hoy
 from ..services.vpd import RANGO_DEFAULT, estado_de, mapa_vpd
 from ..utils import (
     calcular_luz_estado,
@@ -117,6 +117,9 @@ def cultivo_detail(request, slug):
         "etapa_actual": etapa_cultivo,
         "etapa_actual_display": etapa_display_map.get(etapa_cultivo),
         "dias_sin_riego": dias_sin_riego,
+        # Una lectura de más de 6 h se muestra como dato viejo y se ofrece medir.
+        "ambiente_viejo": not finalizado and (ultima_medicion is None or timezone.now() - ultima_medicion.timestamp > DATO_VIEJO),
+        "tareas_vencidas": sum(1 for t in tareas_pendientes if t.fecha_objetivo and t.fecha_objetivo < hoy),
     })
 
 

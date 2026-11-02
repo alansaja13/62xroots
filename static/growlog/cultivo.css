@@ -1,0 +1,100 @@
+/* Resumen del cultivo (Núcleo). */
+.cd { max-width: 1200px; }
+.cd-head { margin-bottom: var(--sp-3); }
+.cd-luz { text-transform: none; white-space: nowrap; }
+.cd-titulo { margin: 6px 0 0; overflow-wrap: anywhere; }
+@media (min-width: 992px) { .cd-titulo { font-size: 46px; } }
+.cd-pills { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
+.cd-pills a.pill { color: var(--ink); }
+.cd-pill--mu { color: var(--mu) !important; }
+.cd-pill--warn { color: var(--warn); }
+.cd-pill--bad { color: var(--bad); }
+.cd-pill--ac { background: var(--ac); color: var(--on) !important; font-weight: 500; min-height: 36px; padding: 0 14px; }
+.cd-seg { margin-top: var(--sp-4); }
+.cd-seg > a { color: var(--mu); }
+.cd-seg > a.on { color: var(--ink); }
+@media (min-width: 992px) { .cd-seg { max-width: 460px; } }
+
+.cd-cols { display: grid; gap: var(--sp-5); margin-top: var(--sp-4); }
+.cd-cols > * { min-width: 0; }
+/* En el celular lo accionable (tareas, seguimientos) va antes que la actividad. */
+.cd-cols { grid-template-areas: "lateral" "principal"; }
+.cd-principal { grid-area: principal; }
+.cd-lateral { grid-area: lateral; }
+@media (min-width: 992px) {
+  .cd-cols { grid-template-columns: 1fr 360px; grid-template-areas: "principal lateral"; gap: var(--sp-6); align-items: start; }
+  .cd-lateral { border-left: 1px solid var(--ln); padding-left: var(--sp-5); }
+}
+/* Los vitales van primero aunque la grilla ponga el lateral arriba: se mueven con order en el celular. */
+@media (max-width: 991px) {
+  .cd-cols { display: flex; flex-direction: column; }
+  .cd-principal, .cd-lateral { display: contents; }
+  .cd-vitales, .cd-aviso, .cd-edad { order: 1; }
+  .cd-pendientes, #followups-panel, .cd-hechas { order: 2; }
+  .cd-principal > .cd-seccion { order: 3; }
+  .cd-setup { order: 4; }
+}
+
+.cd-vitales { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+.cd-vital-ec { grid-column: 1 / -1; }
+@media (min-width: 992px) { .cd-vitales { grid-template-columns: repeat(4, 1fr); } .cd-vital-ec { grid-column: auto; } }
+.cd-vitales .vital { min-width: 0; }
+.cd-vitales .vital__valor { font-size: 28px; white-space: nowrap; }
+.cd-vitales .vital__edad { text-transform: none; }
+.cd-vital-link { display: block; color: var(--ink); }
+.cd-vital-link:hover { color: var(--ink); opacity: 1; background: var(--s2); }
+.cd-ver { float: right; color: var(--ac); text-transform: none; }
+.cd-ideal { color: var(--ac); } .cd-alto { color: var(--bad); } .cd-bajo { color: var(--w); } .cd-x { color: var(--mu); }
+.cd-warn { color: var(--warn); } .cd-bad { color: var(--bad); }
+.cd-aviso { display: flex; align-items: center; gap: var(--sp-3); justify-content: space-between; margin-top: var(--sp-2); }
+.cd-edad { margin-top: var(--sp-2); text-transform: none; }
+
+.cd-seccion { margin-top: var(--sp-5); }
+.cd-lateral > .cd-seccion:first-child { margin-top: 0; }
+.cd-seccion__head { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); min-height: var(--toque); }
+.cd-seccion__head h2 { margin: 0; }
+.cd-head-links { display: flex; gap: var(--sp-4); }
+.cd-link { color: var(--mu); text-transform: none; display: inline-flex; align-items: center; min-height: var(--toque); }
+.cd-link:hover { color: var(--ac); opacity: 1; }
+
+/* Actividad: capa de color por tipo, texto y acceso a corregir. */
+.cd-reg { display: flex; align-items: center; gap: var(--sp-3); min-height: 60px; border-top: 1px solid var(--ln); }
+.cd-reg__capa { align-self: stretch; width: 6px; border-radius: 3px; margin: 8px 0; flex: none; background: var(--n); }
+.cd-reg--riego .cd-reg__capa { background: var(--w); }
+.cd-reg--medicion .cd-reg__capa { background: var(--m); }
+.cd-reg--evento .cd-reg__capa { background: var(--e); }
+.cd-reg--medicion_ec .cd-reg__capa { background: var(--flo); }
+.cd-reg__texto { flex: 1; min-width: 0; padding: 8px 0; }
+.cd-reg__titulo { font-weight: 600; font-size: var(--t-md); line-height: 1.3; overflow-wrap: anywhere; }
+.cd-reg__meta { text-transform: none; letter-spacing: .02em; display: block; margin-top: 2px; }
+.cd-reg__mas { flex: none; display: grid; place-items: center; width: var(--toque); height: var(--toque); border-radius: var(--r-md); color: var(--mu); font-size: 20px; }
+.cd-reg__mas:hover { background: var(--s1); color: var(--ink); opacity: 1; }
+
+/* Tareas y seguimientos */
+.cd-tarea .fila__texto { display: flex; flex-direction: column; min-width: 0; }
+.cd-tarea__titulo { font-weight: 600; line-height: 1.3; }
+.cd-tarea button.ck { background: none; padding: 0; cursor: pointer; position: relative; }
+.cd-tarea button.ck::before { content: ""; position: absolute; inset: -9px; }
+.cd-tarea button.ck:hover { border-color: var(--ac); }
+.cd-ck--bad { border-color: var(--bad); }
+.cd-ck--hecha { background: var(--ac); border-color: var(--ac); color: var(--on); display: grid; place-items: center; font-size: 14px; font-weight: 700; }
+.cd-tarea--hecha .cd-tarea__titulo { text-decoration: line-through; color: var(--mu); }
+.cd-reabrir { border: 0; min-height: 36px; cursor: pointer; color: var(--ink); }
+.tareas-empty { display: none; color: var(--mu); padding: var(--sp-3) 0; border-top: 1px solid var(--ln); }
+#tareas-lista:not(:has(.cd-tarea)) .tareas-empty { display: block; }
+.cd-hechas summary { min-height: var(--toque); display: flex; align-items: center; cursor: pointer; }
+
+/* Plantas */
+.cd-plantas { display: grid; }
+@media (min-width: 640px) { .cd-plantas { grid-template-columns: 1fr 1fr; column-gap: var(--sp-5); } }
+.cd-planta b { font-weight: 600; }
+.cd-planta__estado { width: 10px; height: 10px; border-radius: 50%; background: var(--ac); flex: none; }
+.cd-planta__estado--cosechada { background: var(--m); }
+.cd-planta__estado--descartada { background: var(--bad); }
+.cd-archivadas summary { min-height: var(--toque); display: flex; align-items: center; cursor: pointer; border-top: 1px solid var(--ln); }
+
+/* Setup */
+.cd-setup__lista { margin: 0; }
+.cd-setup__lista > div { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 10px 0; border-top: 1px solid var(--ln); }
+.cd-setup__lista dt { font-weight: 500; }
+.cd-setup__lista dd { margin: 0; text-align: right; min-width: 0; overflow-wrap: anywhere; }
