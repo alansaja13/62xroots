@@ -60,7 +60,7 @@ def cambio_fotoperiodo_editar(request, pk):
                 form.add_error(None, mensaje)
     return render(request, "growlog/crud_form.html", {
         "form": form,
-        "title": f"Editar fotoperiodo: {cultivo.nombre}",
+        "title": "Corregir fotoperíodo", "subtitle": cultivo.nombre,
         "back_url": reverse("growlog:fotoperiodo_list", args=[cultivo.slug]),
         "delete_url": reverse("growlog:cambio_fotoperiodo_eliminar", args=[pk]),
     })
@@ -75,7 +75,7 @@ def cambio_fotoperiodo_eliminar(request, pk):
         messages.success(request, "Registro de fotoperiodo eliminado.")
         return redirect("growlog:fotoperiodo_list", slug=cultivo.slug)
     return render(request, "growlog/crud_delete.html", {
-        "title": f"Eliminar fotoperiodo {cambio.fotoperiodo}",
-        "object_name": f"{cambio.fotoperiodo} · desde {cambio.fecha_inicio}",
+        "title": "Eliminar fotoperíodo",
+        "object_name": f"{cambio.fotoperiodo} · desde el {cambio.fecha_inicio:%d/%m/%Y}",
         "back_url": reverse("growlog:cambio_fotoperiodo_editar", args=[pk]),
     })

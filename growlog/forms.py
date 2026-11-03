@@ -27,6 +27,9 @@ class NuevoCultivoForm(forms.ModelForm):
         fields = ["nombre", "fecha_inicio", "sustrato", "carpa_dimensiones",
                   "lampara_modelo", "lampara_watts_reales",
                   "dias_veg_estimados", "dias_flora_estimados", "notas"]
+        labels = {"fecha_inicio": "Arrancó el", "carpa_dimensiones": "Carpa (cm)", "lampara_modelo": "Lámpara",
+                  "lampara_watts_reales": "Watts reales", "dias_veg_estimados": "Días de vege estimados",
+                  "dias_flora_estimados": "Días de flora estimados"}
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Gorilla #3", "autofocus": True}),
             "fecha_inicio": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),
@@ -103,6 +106,11 @@ class PlantaForm(forms.ModelForm):
         fields = ["apodo", "strain", "tipo", "posicion_tent", "dias_flora_estimados",
                   "indica_sativa_ratio", "thc_estimado", "yield_estimado_g",
                   "yield_real_g", "fecha_corte", "peso_humedo_g", "fecha_seco", "estado", "notas_genetica", "archivado"]
+        labels = {"posicion_tent": "Posición en la carpa", "dias_flora_estimados": "Días de flora estimados",
+                  "indica_sativa_ratio": "Índica / sativa", "thc_estimado": "THC estimado (%)",
+                  "yield_estimado_g": "Yield estimado (g)", "yield_real_g": "Peso seco (g)",
+                  "notas_genetica": "Notas de la genética", "archivado": "Archivada"}
+        help_texts = {"indica_sativa_ratio": "", "yield_real_g": ""}
         widgets = {
             "apodo": forms.TextInput(attrs={"class": "form-control", "autofocus": True}),
             "strain": forms.TextInput(attrs={"class": "form-control"}),
@@ -195,6 +203,8 @@ class CambioFotoperiodoForm(forms.ModelForm):
     class Meta:
         model = CambioFotoperiodo
         fields = ["fotoperiodo", "hora_lights_on", "fecha_inicio", "notas"]
+        labels = {"fotoperiodo": "Fotoperíodo", "hora_lights_on": "Prende a las", "fecha_inicio": "Desde"}
+        help_texts = {"fotoperiodo": "Horas de luz / horas de oscuridad, por ejemplo 18/6.", "hora_lights_on": "", "fecha_inicio": ""}
         widgets = {
             "fotoperiodo": forms.TextInput(attrs={"class": "form-control field-narrow", "placeholder": "12/12", "autofocus": True}),
             "hora_lights_on": forms.TimeInput(attrs={"class": "form-control field-narrow", "type": "time"}),
@@ -207,6 +217,8 @@ class CambioEtapaCultivoForm(forms.ModelForm):
     class Meta:
         model = CambioEtapaCultivo
         fields = ["etapa", "fecha_inicio", "notas"]
+        labels = {"fecha_inicio": "Desde"}
+        help_texts = {"fecha_inicio": ""}
         widgets = {
             "etapa": forms.Select(attrs={"class": "form-select", "autofocus": True}),
             "fecha_inicio": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),
@@ -218,6 +230,8 @@ class CambioEtapaPlantaForm(forms.ModelForm):
     class Meta:
         model = CambioEtapaPlanta
         fields = ["etapa", "fecha_inicio", "notas"]
+        labels = {"fecha_inicio": "Desde"}
+        help_texts = {"fecha_inicio": ""}
         widgets = {
             "etapa": forms.Select(attrs={"class": "form-select", "autofocus": True}),
             "fecha_inicio": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),

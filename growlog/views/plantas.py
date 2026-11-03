@@ -76,8 +76,8 @@ def planta_editar(request, pk):
         messages.success(request, "Planta actualizada.")
         return redirect("growlog:planta_detail", pk=pk)
     return render(request, "growlog/crud_form.html", {
-        "form": form, "title": f"Editar: {planta.apodo}",
-        "subtitle": planta.cultivo.nombre,
+        "form": form, "title": "Editar planta",
+        "subtitle": f"{planta.apodo} · {planta.cultivo.nombre}",
         "back_url": reverse("growlog:planta_detail", args=[pk]),
         "delete_url": reverse("growlog:planta_eliminar", args=[pk]),
     })
@@ -98,8 +98,9 @@ def planta_eliminar(request, pk):
     if planta.tiene_historial():
         return render(request, "growlog/crud_delete.html", {
             "title": "Archivar planta", "object_name": planta.apodo,
-            "warn": "tiene historial: se archiva y se conservan sus riegos, fotos y etapas",
-            "confirm_label": "archivar planta", "confirm_icon": "bi-archive",
+            "warn": "Tiene historial, así que no se borra: se archiva y se conservan sus riegos, fotos y etapas. "
+                    "La podés restaurar después.",
+            "confirm_label": "Archivar", "confirm_seguro": True,
             "back_url": reverse("growlog:planta_detail", args=[pk]),
         })
     return render(request, "growlog/crud_delete.html", {
@@ -214,7 +215,7 @@ def cambio_etapa_planta_editar(request, pk):
                 form.add_error(None, mensaje)
     return render(request, "growlog/crud_form.html", {
         "form": form,
-        "title": f"Editar etapa: {planta.apodo}",
+        "title": "Corregir etapa", "subtitle": planta.apodo,
         "back_url": reverse("growlog:planta_etapa_list", args=[planta.pk]),
         "delete_url": reverse("growlog:cambio_etapa_planta_eliminar", args=[pk]),
     })
@@ -229,7 +230,7 @@ def cambio_etapa_planta_eliminar(request, pk):
         messages.success(request, "Registro de etapa eliminado.")
         return redirect("growlog:planta_etapa_list", pk=planta.pk)
     return render(request, "growlog/crud_delete.html", {
-        "title": f"Eliminar etapa {cambio.get_etapa_display()}",
-        "object_name": f"{cambio.get_etapa_display()} · desde {cambio.fecha_inicio}",
+        "title": "Eliminar etapa",
+        "object_name": f"{planta.apodo} · {cambio.get_etapa_display()} desde el {cambio.fecha_inicio:%d/%m/%Y}",
         "back_url": reverse("growlog:cambio_etapa_planta_editar", args=[pk]),
     })

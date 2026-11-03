@@ -70,7 +70,7 @@ def nutriente_editar(request, pk):
         messages.success(request, "Nutriente actualizado.")
         return redirect("growlog:nutrientes")
     return render(request, "growlog/crud_form.html", {
-        "form": form, "title": f"Editar: {nutriente}",
+        "form": form, "title": "Editar nutriente", "subtitle": str(nutriente),
         "back_url": reverse("growlog:nutrientes"),
     })
 

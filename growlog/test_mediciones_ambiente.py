@@ -1,5 +1,5 @@
 """Corrección y borrado de mediciones de ambiente desde la web."""
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
@@ -10,9 +10,13 @@ from django.utils import timezone
 from .models import CambioFotoperiodo, Cultivo, CultivoMiembro, Evento, MedicionAmbiente
 
 
+def ayer():
+    return timezone.localdate() - timedelta(days=1)
+
+
 def local(hora, minuto=0):
-    """Hoy a la hora local indicada, como datetime con zona horaria."""
-    return timezone.make_aware(datetime.combine(timezone.localdate(), time(hora, minuto)))
+    """Ayer a la hora local indicada: así ninguna hora queda en el futuro, corra el test cuando corra."""
+    return timezone.make_aware(datetime.combine(ayer(), time(hora, minuto)))
 
 
 class MedicionAmbienteWebTests(TestCase):
@@ -22,13 +26,13 @@ class MedicionAmbienteWebTests(TestCase):
         cls.lector = User.objects.create_user("lector")
         cls.ajeno = User.objects.create_user("ajeno")
         cls.cultivo = Cultivo.objects.create(
-            nombre="Ambiente", fecha_inicio=timezone.localdate(), creado_por=cls.duenio,
+            nombre="Ambiente", fecha_inicio=ayer(), creado_por=cls.duenio,
         )
         CultivoMiembro.objects.create(cultivo=cls.cultivo, usuario=cls.lector, rol="lector")
         # Luz de 08:00 a 20:00: una medición a las 10 es de día y a las 22, de noche.
         CambioFotoperiodo.objects.create(
             cultivo=cls.cultivo, fotoperiodo="12/12", hora_lights_on=time(8, 0),
-            fecha_inicio=timezone.localdate(),
+            fecha_inicio=ayer(),
         )
 
     def setUp(self):

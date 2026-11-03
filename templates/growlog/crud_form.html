@@ -1,164 +1,63 @@
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
 
-{# Formularios: foco en la tarea, sin el menú del cultivo. #}
+{# Formularios de edición: foco en la tarea, sin el menú del cultivo; la barra del celular queda en "Volver". #}
 {% block cultivo_tabs %}{% endblock %}
-
-{% block bottom_nav %}
-<a href="{{ back_url }}" class="bottom-nav__item">
-  <i class="bi bi-arrow-left"></i>
-  <span>Volver</span>
-</a>
-{% endblock %}
+{% block bottom_nav %}<a href="{{ back_url }}" class="bottom-nav__item">‹ Volver</a>{% endblock %}
 
 {% block extra_head %}
 <style>
-  .cf-back {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    color: var(--cream-soft); text-decoration: none;
-    margin-bottom: 14px; letter-spacing: .1em;
-  }
-  .cf-back:hover { color: var(--green); }
-
-  .cf-header { margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid var(--rule); }
-  .cf-title {
-    font-family: var(--font-display), sans-serif;
-    font-variation-settings: "wdth" 85, "opsz" 96;
-    font-size: 52px; font-weight: 800; line-height: .95;
-    letter-spacing: -.022em; margin: 8px 0 4px; color: var(--cream);
-  }
-  .cf-subtitle {
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    color: var(--cream-soft); margin-top: 6px;
-  }
-
-  /* M2M checkboxes — chip-style.
-     Django's CheckboxSelectMultiple renders <div id="id_x"><div><label>…</label></div>…</div>
-     (no <ul>/<li>), so the chip rules target that actual structure. */
-  .m2m-group > div {
-    list-style: none; padding: 0; margin: 0;
-    display: flex; flex-wrap: wrap; gap: 6px;
-  }
-  .m2m-group label {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 7px 12px;
-    border: 1px solid var(--rule); background: var(--bg-alt);
-    color: var(--cream-soft);
-    font-family: var(--font-body), sans-serif; font-size: 12px; font-weight: 500;
-    cursor: pointer; transition: border-color .12s, color .12s;
-    margin-bottom: 0;
-    text-transform: none; letter-spacing: 0;
-  }
-  .m2m-group label:has(input:checked) {
-    border-color: var(--green); color: var(--green); background: var(--green-wash);
-  }
-  .m2m-group label:hover { border-color: var(--green); color: var(--green); }
-  .m2m-group input[type=checkbox] { width: 14px; height: 14px; }
-
-  .cf-delete-link {
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    color: var(--fine); text-decoration: none;
-    display: inline-flex; align-items: center; gap: 6px;
-    letter-spacing: .1em;
-  }
-  .cf-delete-link:hover { color: var(--rust); }
-
-  /* Grid de campos: por default cada campo ocupa la fila entera; los
-     campos cortos (.field-narrow, ej. pH, EC, dosis) se agrupan de a
-     varios por fila para no dejar una caja enorme vacía con "6.2" adentro. */
-  .cf-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    column-gap: 12px;
-  }
-  .cf-grid > .mb-3 { grid-column: 1 / -1; }
-  .cf-grid > .mb-3.field-narrow { grid-column: auto; }
-
-  @media (max-width: 600px) {
-    .cf-title { font-size: 36px; }
-  }
+  .cf { max-width: 560px; }
+  .cf-volver { color: var(--mu); display: inline-flex; min-height: var(--toque); align-items: center; }
+  .cf-sub { color: var(--mu); font-size: var(--t-sm); margin: var(--sp-2) 0 0; }
+  .cf-form { display: grid; gap: var(--sp-4); margin-top: var(--sp-5); }
+  /* Los campos cortos (pH, fechas, números) van de a varios por fila; el resto ocupa la fila entera. */
+  .cf-campos { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--sp-4) var(--sp-3); }
+  .cf-campo { grid-column: 1 / -1; margin: 0; }
+  .cf-campo--corto { grid-column: auto; }
+  .cf-campo > input, .cf-campo > select, .cf-campo > textarea { margin-top: 6px; }
+  .cf-campo .field-narrow { max-width: none; }
+  .cf-campo .field-error, .cf-campo .field-hint { display: block; text-transform: none; letter-spacing: 0; }
+  .cf-check { display: flex; align-items: center; gap: 10px; min-height: var(--toque);
+    font: 500 var(--t-md) var(--font-body); text-transform: none; letter-spacing: 0; color: var(--ink); }
+  .cf-acciones { display: flex; gap: var(--sp-2); }
+  .cf-acciones .btn:first-child { flex: 1; }
+  .cf-borrar { display: inline-flex; align-items: center; min-height: var(--toque); color: var(--mu); font-size: var(--t-sm); justify-self: center; }
+  .cf-borrar:hover { color: var(--bad); opacity: 1; }
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="cf">
+  <a href="{{ back_url }}" class="mo cf-volver">‹ Volver</a>
+  <h1 class="h1" style="margin-top: 8px;">{{ title }}</h1>
+  {% if subtitle %}<p class="cf-sub">{{ subtitle }}</p>{% endif %}
 
-<a href="{{ back_url }}" class="cf-back">
-  <i class="bi bi-chevron-left"></i> volver
-</a>
+  <form method="post" class="cf-form">
+    {% csrf_token %}
+    {% for e in form.non_field_errors %}<div class="aviso aviso--bad" role="alert">{{ e }}</div>{% endfor %}
 
-<div class="cf-header">
-  <div class="label-eyebrow">formulario</div>
-  <h1 class="cf-title">{{ title }}</h1>
-  {% if subtitle %}<p class="cf-subtitle">{{ subtitle }}</p>{% endif %}
-</div>
-
-<div class="row">
-  <div class="col-12 col-lg-8">
-    <div class="panel">
-      <div class="panel__head">
-        <div class="panel__head-left">
-          <span class="label-eyebrow panel__title">datos</span>
-        </div>
-      </div>
-      <div class="panel__body">
-        <form method="post">
-          {% csrf_token %}
-
-          {% if form.non_field_errors %}
-          <div class="form-errors">
-            <div class="form-errors__title">⚠ Errores en el formulario</div>
-            {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
-          </div>
-          {% endif %}
-
-          <div class="cf-grid">
-          {% for field in form %}
-            {% with wclass=field.field.widget.attrs.class %}
-            <div class="mb-3{% if field.errors %} has-error{% endif %}{% if wclass and 'field-narrow' in wclass %} field-narrow{% endif %}">
-
-            {% if wclass == 'form-check-input' %}
-              <label class="form-check-label d-inline-flex align-items-center gap-2" style="cursor: pointer;">
-                {{ field }}
-                <span style="font-size:13px; color: var(--cream); font-weight: 500;">{{ field.label }}</span>
-              </label>
-
-            {% elif not wclass %}
-              <label>{{ field.label }}</label>
-              <div class="m2m-group {% if field.errors %}has-error{% endif %}">{{ field }}</div>
-
-            {% else %}
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {{ field }}
-            {% endif %}
-
-            {% if field.errors %}<div class="field-error">{{ field.errors.0 }}</div>{% endif %}
-            {% if field.help_text %}<div class="field-hint">{{ field.help_text }}</div>{% endif %}
-
-            </div>
-            {% endwith %}
-          {% endfor %}
-          </div>
-
-          <div class="d-flex gap-2 mt-4">
-            <button type="submit" class="btn-brand" style="flex: 1;">
-              <i class="bi bi-check-lg"></i> {{ submit_label|default:"guardar" }}
-            </button>
-            <a href="{{ back_url }}" class="btn-ghost">cancelar</a>
-          </div>
-
-          {% if delete_url %}
-          <div class="text-center mt-3">
-            <a href="{{ delete_url }}" class="cf-delete-link">
-              <i class="bi bi-trash3"></i> eliminar
-            </a>
-          </div>
-          {% endif %}
-
-        </form>
-      </div>
+    <div class="cf-campos">
+    {% for field in form %}
+      {% with wclass=field.field.widget.attrs.class|default:"" %}
+      {% if 'form-check-input' in wclass %}
+      <div class="cf-campo">
+        <label class="cf-check">{{ field }} {{ field.label }}</label>
+      {% else %}
+      <label class="cf-campo{% if 'field-narrow' in wclass %} cf-campo--corto{% endif %}{% if field.errors %} has-error{% endif %}" for="{{ field.id_for_label }}">{{ field.label }}{{ field }}
+      {% endif %}
+        {% for e in field.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+        {% if field.help_text %}<span class="field-hint">{{ field.help_text }}</span>{% endif %}
+      {% if 'form-check-input' in wclass %}</div>{% else %}</label>{% endif %}
+      {% endwith %}
+    {% endfor %}
     </div>
-  </div>
-</div>
 
+    <div class="cf-acciones">
+      <button type="submit" class="btn">{{ submit_label|default:"Guardar" }}</button>
+      <a href="{{ back_url }}" class="btn g">Cancelar</a>
+    </div>
+    {% if delete_url %}<a href="{{ delete_url }}" class="cf-borrar">Eliminar</a>{% endif %}
+  </form>
+</div>
 {% endblock %}

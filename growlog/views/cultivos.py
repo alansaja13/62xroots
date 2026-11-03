@@ -201,8 +201,8 @@ def cultivo_editar(request, slug):
         messages.success(request, "Cultivo actualizado.")
         return redirect("growlog:cultivo_detail", cultivo.slug)
     return render(request, "growlog/crud_form.html", {
-        "form": form, "title": f"Editar: {cultivo.nombre}",
-        "subtitle": f"Día {cultivo.dias_desde_inicio}",
+        "form": form, "title": "Datos del cultivo",
+        "subtitle": f"{cultivo.nombre} · día {cultivo.dias_desde_inicio}",
         "back_url": reverse("growlog:cultivo_detail", args=[cultivo.slug]),
     })
 
@@ -280,7 +280,7 @@ def cambio_etapa_cultivo_editar(request, pk):
             for mensaje in e.messages:
                 form.add_error(None, mensaje)
     return render(request, "growlog/crud_form.html", {
-        "form": form, "title": f"Editar etapa: {cultivo.nombre}",
+        "form": form, "title": "Corregir etapa", "subtitle": cultivo.nombre,
         "back_url": reverse("growlog:cultivo_etapa", args=[cultivo.slug]),
         "delete_url": reverse("growlog:cambio_etapa_cultivo_eliminar", args=[pk]),
     })
@@ -296,8 +296,8 @@ def cambio_etapa_cultivo_eliminar(request, pk):
         messages.success(request, "Registro de etapa eliminado.")
         return redirect("growlog:cultivo_etapa", cultivo.slug)
     return render(request, "growlog/crud_delete.html", {
-        "title": f"Eliminar etapa {cambio.get_etapa_display()}",
-        "object_name": f"{cambio.get_etapa_display()} · desde {cambio.fecha_inicio}",
+        "title": "Eliminar etapa",
+        "object_name": f"{cambio.get_etapa_display()} · desde el {cambio.fecha_inicio:%d/%m/%Y}",
         "back_url": reverse("growlog:cambio_etapa_cultivo_editar", args=[pk]),
     })
 
