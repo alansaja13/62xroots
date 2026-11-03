@@ -103,6 +103,7 @@ urlpatterns = [
     path("cultivo/<slug:slug>/etapa/", views.cultivo_etapa, name="cultivo_etapa"),
     path("etapa-cultivo/<int:pk>/editar/", views.cambio_etapa_cultivo_editar, name="cambio_etapa_cultivo_editar"),
     path("etapa-cultivo/<int:pk>/eliminar/", views.cambio_etapa_cultivo_eliminar, name="cambio_etapa_cultivo_eliminar"),
+    path("cultivo/<slug:slug>/empezar/", views.cultivo_empezar, name="cultivo_empezar"),
     path("cultivo/<slug:slug>/ajustes/", views.cultivo_ajustes, name="cultivo_ajustes"),
     path("cultivo/<slug:slug>/archivar/", views.cultivo_archivar, name="cultivo_archivar"),
     path("cultivo/<slug:slug>/finalizar/", views.cultivo_finalizar, name="cultivo_finalizar"),

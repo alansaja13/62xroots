@@ -49,6 +49,51 @@ class NuevoCultivoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
             del self.fields["etapa_inicial"]
+        else:
+            # Al crear, la lámpara y la duración se piden en los primeros pasos.
+            for nombre in ("lampara_modelo", "lampara_watts_reales", "dias_veg_estimados", "dias_flora_estimados"):
+                del self.fields[nombre]
+
+
+class DuracionCultivoForm(forms.ModelForm):
+    class Meta:
+        model = Cultivo
+        fields = ["dias_veg_estimados", "dias_flora_estimados"]
+        labels = {"dias_veg_estimados": "Días de vege", "dias_flora_estimados": "Días de flora"}
+        widgets = {
+            "dias_veg_estimados": forms.NumberInput(attrs={"class": "form-control field-narrow", "placeholder": "30", "inputmode": "numeric"}),
+            "dias_flora_estimados": forms.NumberInput(attrs={"class": "form-control field-narrow", "placeholder": "60", "inputmode": "numeric"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for campo in self.fields.values():
+            campo.required = True
+
+
+class LuzCultivoForm(forms.ModelForm):
+    class Meta:
+        model = Cultivo
+        fields = ["lampara_modelo", "lampara_watts_reales"]
+        labels = {"lampara_modelo": "Lámpara", "lampara_watts_reales": "Watts reales"}
+        widgets = {
+            "lampara_modelo": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Spider Farmer SF2000"}),
+            "lampara_watts_reales": forms.NumberInput(attrs={"class": "form-control field-narrow", "placeholder": "200", "inputmode": "numeric"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["lampara_watts_reales"].required = True
+
+
+class PlantasNuevasForm(forms.Form):
+    """Alta de varias plantas iguales; los apodos llegan aparte (apodo-1, apodo-2…)."""
+    cantidad = forms.IntegerField(min_value=1, max_value=30, initial=1, label="Cuántas",
+                                  widget=forms.NumberInput(attrs={"class": "form-control field-narrow", "inputmode": "numeric"}))
+    strain = forms.CharField(max_length=120, required=False, label="Strain",
+                             widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Lemon Haze"}))
+    tipo = forms.ChoiceField(choices=Planta.TIPO_CHOICES, initial="foto", label="Tipo",
+                             widget=forms.Select(attrs={"class": "form-select"}))
 
 
 class PlantaForm(forms.ModelForm):

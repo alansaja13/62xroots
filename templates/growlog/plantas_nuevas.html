@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Agregar plantas · {{ cultivo.nombre }}{% endblock %}
+{% block extra_head %}
+<style>
+  .pn { max-width: 560px; }
+  .pn-form { display: grid; gap: var(--sp-4); margin-top: var(--sp-5); }
+  .pn-fila { display: flex; gap: var(--sp-3); flex-wrap: wrap; align-items: flex-end; }
+  .pn-fila label { margin: 0; }
+  .pn-fila label > * { margin-top: 6px; }
+  .pn-fila__crece { flex: 1; min-width: 180px; }
+  .pn-apodos { display: grid; gap: var(--sp-2); }
+  .pn-apodos label { display: grid; grid-template-columns: 28px 1fr; align-items: center; gap: var(--sp-2); margin: 0; }
+  .pn-apodos label span { color: var(--mu); text-align: right; }
+  .pn-ayuda { color: var(--mu); font-size: var(--t-sm); margin: 0; }
+  .pn .btn[type=submit] { width: 100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pn">
+  <a href="{% if desde_empezar %}{% url 'growlog:cultivo_empezar' cultivo.slug %}{% else %}{% url 'growlog:plantas_list' cultivo.slug %}{% endif %}" class="mo" style="color: var(--mu); display: inline-flex; min-height: var(--toque); align-items: center;">‹ {% if desde_empezar %}Primeros pasos{% else %}Plantas{% endif %}</a>
+  <div class="mo">{{ cultivo.nombre }}</div>
+  <h1 class="h1" style="margin-top: 8px;">Agregar plantas</h1>
+
+  <form method="post" class="pn-form" id="pn-form">
+    {% csrf_token %}
+    {% if desde_empezar %}<input type="hidden" name="siguiente" value="empezar">{% endif %}
+    <div class="pn-fila">
+      <label>{{ form.cantidad.label }}{{ form.cantidad }}</label>
+      <label class="pn-fila__crece">{{ form.strain.label }}{{ form.strain }}</label>
+      <label>{{ form.tipo.label }}{{ form.tipo }}</label>
+    </div>
+    {% for campo in form %}{% for e in campo.errors %}<p class="field-error">{{ campo.label }}: {{ e }}</p>{% endfor %}{% endfor %}
+
+    <div>
+      <div class="mo" style="margin-bottom: var(--sp-2);">Apodos</div>
+      <div class="pn-apodos" id="pn-apodos">
+        <label><span>1</span><input type="text" name="apodo-1" maxlength="60" class="form-control" value="{{ apodos.0 }}"></label>
+      </div>
+      <p class="pn-ayuda" style="margin-top: var(--sp-2);">Si dejás alguno vacío se llama como el strain con su número. Lo demás (posición, yield estimado) lo cargás después en cada planta.</p>
+    </div>
+
+    <button type="submit" class="btn">Agregar</button>
+  </form>
+</div>
+{{ apodos|json_script:"pn-previos" }}
+<script>
+(function () {
+  var form = document.getElementById('pn-form');
+  var cantidad = form.querySelector('[name=cantidad]'), strain = form.querySelector('[name=strain]');
+  var caja = document.getElementById('pn-apodos');
+  var previos = JSON.parse(document.getElementById('pn-previos').textContent);
+  // Los apodos que tocaste a mano no se pisan al cambiar el strain.
+  function armar() {
+    var n = Math.max(1, Math.min(30, parseInt(cantidad.value, 10) || 1));
+    var actuales = Array.prototype.map.call(caja.querySelectorAll('input'), function (i) { return i; });
+    var base = strain.value.trim() || 'Planta';
+    for (var i = 1; i <= Math.max(n, actuales.length); i++) {
+      var input = actuales[i - 1];
+      if (i > n) { input.parentElement.remove(); continue; }
+      if (!input) {
+        var label = document.createElement('label');
+        label.innerHTML = '<span>' + i + '</span><input type="text" maxlength="60" class="form-control">';
+        input = label.querySelector('input'); input.name = 'apodo-' + i;
+        if (previos[i - 1]) { input.value = previos[i - 1]; input.dataset.tocado = '1'; }
+        caja.appendChild(label);
+      }
+      if (!input.dataset.tocado) input.placeholder = base + ' ' + i;
+    }
+  }
+  caja.addEventListener('input', function (e) { e.target.dataset.tocado = e.target.value ? '1' : ''; });
+  cantidad.addEventListener('input', armar);
+  strain.addEventListener('input', armar);
+  if (previos[0]) caja.querySelector('input').dataset.tocado = '1';
+  armar();
+})();
+</script>
+{% endblock %}

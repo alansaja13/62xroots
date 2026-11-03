@@ -15,7 +15,7 @@ SECCIONES_CULTIVO = {
     "canopy": "canopy",
     "energia": "energia",
     "reporte": "reporte",
-    "cultivo_ajustes": "ajustes",
+    "cultivo_ajustes": "ajustes", "cultivo_empezar": "ajustes", "planta_crear": "resumen",
     "cultivo_ciclo": "ciclo", "cultivo_etapa": "ciclo", "fotoperiodo_list": "ciclo",
 }
 

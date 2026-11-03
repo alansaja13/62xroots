@@ -7,7 +7,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from ..forms import CambioEtapaPlantaForm, MedicionPlantaForm, PlantaForm
+from ..forms import CambioEtapaPlantaForm, MedicionPlantaForm, PlantaForm, PlantasNuevasForm
 from ..models import CambioEtapaPlanta, Cultivo, MedicionPlanta, Planta
 from ..permissions import objeto_del_cultivo, puede_subir_fotos
 from ..services.plantas import curva, resumen_planta
@@ -46,19 +46,24 @@ def plantas_list(request, slug):
 
 @login_required
 def planta_crear(request, slug):
+    """Una o varias plantas de una vez: cantidad, strain y tipo, con un apodo editable para cada una."""
     cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
-    form = PlantaForm(request.POST or None)
+    form = PlantasNuevasForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        p = form.save(commit=False)
-        p.cultivo = cultivo
-        p.creado_por = request.user
-        p.save()
-        messages.success(request, f"Planta «{p.apodo}» creada.")
-        return redirect("growlog:cultivo_detail", cultivo.slug)
-    return render(request, "growlog/crud_form.html", {
-        "form": form, "title": "Nueva planta",
-        "subtitle": cultivo.nombre,
-        "back_url": reverse("growlog:cultivo_detail", args=[cultivo.slug]),
+        datos = form.cleaned_data
+        base = datos["strain"] or "Planta"
+        nuevas = [Planta(cultivo=cultivo, creado_por=request.user, strain=datos["strain"], tipo=datos["tipo"],
+                         apodo=(request.POST.get(f"apodo-{i}") or "").strip()[:60] or f"{base} {i}")
+                  for i in range(1, datos["cantidad"] + 1)]
+        Planta.objects.bulk_create(nuevas)
+        messages.success(request, f"Planta «{nuevas[0].apodo}» creada." if len(nuevas) == 1
+                         else f"{len(nuevas)} plantas creadas.")
+        return redirect(request.POST.get("siguiente") == "empezar" and reverse("growlog:cultivo_empezar", args=[cultivo.slug])
+                        or reverse("growlog:plantas_list", args=[cultivo.slug]))
+    return render(request, "growlog/plantas_nuevas.html", {
+        "cultivo": cultivo, "form": form, "desde_empezar": request.GET.get("desde") == "empezar"
+        or request.POST.get("siguiente") == "empezar",
+        "apodos": [request.POST.get(f"apodo-{i}", "") for i in range(1, 31)] if request.method == "POST" else [],
     })
 
 

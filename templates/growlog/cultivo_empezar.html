@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Primeros pasos · {{ cultivo.nombre }}{% endblock %}
+{% block extra_head %}
+<style>
+  .em { max-width: 620px; }
+  .em-progreso { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-4) 0 var(--sp-5); }
+  .em-progreso__barra { flex: 1; height: 8px; border-radius: 4px; background: var(--s1); overflow: hidden; }
+  .em-progreso__barra i { display: block; height: 100%; background: var(--ac); }
+  .em-paso { display: grid; grid-template-columns: 26px 1fr auto; gap: var(--sp-3); align-items: start; padding: var(--sp-4) 0; border-top: 1px solid var(--ln); }
+  .em-paso .ck { margin-top: 2px; }
+  .em-paso--hecho .ck { background: var(--ac); border-color: var(--ac); color: var(--on); display: grid; place-items: center; font-size: 14px; font-weight: 700; }
+  .em-paso--hecho .em-paso__titulo { color: var(--mu); }
+  .em-paso__titulo { font-weight: 600; font-size: var(--t-md); }
+  .em-paso__detalle { color: var(--mu); font-size: var(--t-sm); margin: 2px 0 0; }
+  .em-paso .btn { min-width: 88px; }
+  .em-form { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: flex-end; margin-top: var(--sp-2); }
+  .em-form label { margin: 0; flex: 1 1 100%; }
+  .em-form label:has(.field-narrow) { flex: 1 1 120px; }
+  .em-form .field-narrow { max-width: none; }
+  .em-form label > input { margin-top: 6px; }
+  .em-form .field-error { flex-basis: 100%; margin: 0; }
+  .em-fin { margin-top: var(--sp-6); display: flex; gap: var(--sp-3); flex-wrap: wrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="em">
+  <div class="mo">{{ cultivo.nombre }}</div>
+  <h1 class="h1" style="margin-top: 8px;">Primeros pasos</h1>
+  <div class="em-progreso">
+    <span class="em-progreso__barra" aria-hidden="true"><i style="width: {{ porcentaje }}%"></i></span>
+    <span class="mo">{{ hechos }} de {{ total }}</span>
+  </div>
+
+  {% for p in pasos %}
+  <section class="em-paso{% if p.hecho %} em-paso--hecho{% endif %}" aria-labelledby="paso-{{ p.clave }}">
+    <span class="ck" aria-hidden="true">{% if p.hecho %}✓{% endif %}</span>
+    <div>
+      <div class="em-paso__titulo" id="paso-{{ p.clave }}">{{ p.titulo }}{% if p.hecho %}<span class="visually-hidden">, listo</span>{% endif %}</div>
+      <p class="em-paso__detalle">{{ p.detalle }}</p>
+    </div>
+    {% if p.url %}
+    <a class="btn {% if p.hecho %}g {% endif %}sm" href="{{ p.url }}{% if p.clave == 'plantas' %}?desde=empezar{% endif %}">{% if p.hecho %}Ver{% else %}Hacer{% endif %}</a>
+    {% elif p.form and p.hecho and abierto != p.clave %}<button type="button" class="btn g sm" data-cambiar>Cambiar</button>
+    {% else %}<span></span>{% endif %}
+    {% if p.form %}
+    <form method="post" class="em-form"{% if p.hecho and abierto != p.clave %} hidden data-editable{% endif %}>
+      {% csrf_token %}<input type="hidden" name="accion" value="{{ p.clave }}">
+      {% for campo in p.form %}
+      <label>{{ campo.label }}{{ campo }}</label>
+      {% for e in campo.errors %}<p class="field-error">{{ campo.label }}: {{ e }}</p>{% endfor %}
+      {% endfor %}
+      <button type="submit" class="btn sm">Guardar</button>
+    </form>
+    {% endif %}
+  </section>
+  {% endfor %}
+
+  <div class="em-fin">
+    <a class="btn sm" href="{% url 'growlog:cultivo_detail' cultivo.slug %}">{% if completo %}Listo, ir al cultivo{% else %}Seguir después{% endif %}</a>
+  </div>
+  {% if not completo %}<p class="hoy-nota" style="color: var(--mu);">Podés volver cuando quieras desde Ajustes del cultivo.</p>{% endif %}
+</div>
+<script>
+  document.querySelectorAll('[data-cambiar]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var form = b.closest('.em-paso').querySelector('[data-editable]');
+      form.hidden = false; b.remove();
+      var campo = form.querySelector('input:not([type=hidden])'); if (campo) campo.focus();
+    });
+  });
+</script>
+{% endblock %}

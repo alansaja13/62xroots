@@ -156,7 +156,7 @@ class CultivoAccessTests(TestCase):
     def test_editor_sin_staff_registra_y_conserva_autoria(self):
         self.client.force_login(self.editor)
         response = self.client.post(reverse("growlog:planta_crear", args=[self.c.slug]),
-                                    {"apodo": "Nueva planta", "tipo": "foto", "posicion_tent": "otro", "estado": "activa"})
+                                    {"cantidad": 1, "tipo": "foto", "apodo-1": "Nueva planta"})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(m.Planta.objects.get(apodo="Nueva planta").creado_por, self.editor)
         response = self.client.post(f"/api/v1/cultivos/{self.c.slug}/tareas/", data=json.dumps({"titulo": "Revisar luz"}), content_type="application/json", **self.auth(self.editor))

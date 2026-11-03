@@ -37,6 +37,16 @@
   <p>La configuración del cultivo en un solo lugar. Lo del día a día (riegos, ambiente, eventos) se carga desde Registrar.</p>
 
   <div class="aj-list">
+    {% if cultivo.estado != 'finalizado' %}
+    <a class="aj-item" href="{% url 'growlog:cultivo_empezar' cultivo.slug %}">
+      <i class="bi bi-list-check" aria-hidden="true"></i>
+      <span class="aj-item__body">
+        <span class="aj-item__title">Primeros pasos</span>
+        <span class="aj-item__val">plantas, fotoperíodo, luz y duración estimada</span>
+      </span>
+      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+    </a>
+    {% endif %}
     <a class="aj-item" href="{% url 'growlog:cultivo_editar' cultivo.slug %}">
       <i class="bi bi-box" aria-hidden="true"></i>
       <span class="aj-item__body">

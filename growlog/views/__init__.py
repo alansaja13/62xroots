@@ -18,6 +18,7 @@ from .cultivos import (  # noqa: F401
     cultivo_ciclo,
     cultivo_archivar,
     cultivo_detail,
+    cultivo_empezar,
     cultivo_editar,
     cultivo_etapa,
     cultivo_finalizar,

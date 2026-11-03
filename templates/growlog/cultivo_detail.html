@@ -35,6 +35,14 @@
     <a href="{% url 'growlog:plantas_list' cultivo.slug %}" class="pill cd-pill--mu">{{ plantas_count }} planta{{ plantas_count|pluralize }}</a>
   </div>
 
+  {% if primeros_pasos %}
+  <a class="card cd-empezar" href="{% url 'growlog:cultivo_empezar' cultivo.slug %}">
+    <span><b>Primeros pasos</b> · {{ primeros_pasos.hechos }} de {{ primeros_pasos.total }}</span>
+    <span class="cd-empezar__barra" aria-hidden="true"><i style="width: {{ primeros_pasos.porcentaje }}%"></i></span>
+    <span class="mo">Terminar ›</span>
+  </a>
+  {% endif %}
+
   <nav class="seg cd-seg" aria-label="Vistas del cultivo">
     <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="on" aria-current="page">Núcleo</a>
     <a href="{% url 'growlog:cultivo_aire' cultivo.slug %}">Aire</a>

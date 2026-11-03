@@ -112,3 +112,10 @@
 .rf-borrar .aviso p { color: var(--mu); margin: 4px 0 var(--sp-3); }
 .cd-reg__texto--link, .nc-texto--link { display: block; color: var(--ink); }
 .cd-reg__texto--link:hover, .nc-texto--link:hover { color: var(--ink); opacity: 1; background: linear-gradient(90deg, var(--s1), transparent); }
+
+/* Primeros pasos mientras el cultivo es nuevo. */
+.cd-empezar { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-4) 0 0; min-height: 56px; color: var(--ink); }
+.cd-empezar:hover { color: var(--ink); opacity: 1; background: var(--s2); }
+.cd-empezar__barra { flex: 1; height: 6px; border-radius: 3px; background: var(--s2); overflow: hidden; }
+.cd-empezar__barra i { display: block; height: 100%; background: var(--ac); }
+.cd-empezar .mo { color: var(--ac); }

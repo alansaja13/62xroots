@@ -9,13 +9,14 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
-from ..forms import CambioEtapaCultivoForm, NuevoCultivoForm
+from ..forms import CambioEtapaCultivoForm, DuracionCultivoForm, LuzCultivoForm, NuevoCultivoForm
 from ..models import CambioEtapaCultivo, CambioEtapaPlanta, Cultivo, ParametroIdeal
 from ..permissions import objeto_del_cultivo
 from ..services.etapas import cambiar_etapa, reabrir_cultivo, sincronizar_cultivo
 from ..services.bitacora import bitacora
 from ..services.ciclo import hacer_flip, resumen_ciclo
 from ..services.hoy import DATO_VIEJO, resumen_hoy
+from ..services.onboarding import pasos, recordar
 from ..services.vpd import RANGO_DEFAULT, estado_de, mapa_vpd
 from ..utils import (
     calcular_luz_estado,
@@ -121,6 +122,7 @@ def cultivo_detail(request, slug):
         # Una lectura de más de 6 h se muestra como dato viejo y se ofrece medir.
         "ambiente_viejo": not finalizado and (ultima_medicion is None or timezone.now() - ultima_medicion.timestamp > DATO_VIEJO),
         "tareas_vencidas": sum(1 for t in tareas_pendientes if t.fecha_objetivo and t.fecha_objetivo < hoy),
+        "primeros_pasos": recordar(cultivo) if getattr(request, "puede_editar_cultivo", False) else None,
     })
 
 
@@ -166,9 +168,27 @@ def nuevo_cultivo(request):
         cultivo.propietario = request.user
         cultivo.save()
         cambiar_etapa(cultivo, form.cleaned_data["etapa_inicial"] or "veg_temprano", cultivo.fecha_inicio)
-        messages.success(request, f"Cultivo «{cultivo.nombre}» creado. ¡A cultivar!")
-        return redirect("growlog:cultivo_detail", cultivo.slug)
+        messages.success(request, f"Cultivo «{cultivo.nombre}» creado. Ahora, unos pasos para dejarlo listo.")
+        return redirect("growlog:cultivo_empezar", cultivo.slug)
     return render(request, "growlog/nuevo_cultivo.html", {"form": form})
+
+
+@login_required
+def cultivo_empezar(request, slug):
+    """Primeros pasos: duración y luz se cargan acá mismo; el resto lleva a su pantalla."""
+    cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
+    accion = request.POST.get("accion") if request.method == "POST" else None
+    duracion = DuracionCultivoForm(request.POST if accion == "duracion" else None, instance=cultivo, prefix="duracion")
+    luz = LuzCultivoForm(request.POST if accion == "luz" else None, instance=cultivo, prefix="luz")
+    form = {"duracion": duracion, "luz": luz}.get(accion)
+    if form is not None and form.is_valid():
+        form.save()
+        return redirect("growlog:cultivo_empezar", cultivo.slug)
+    datos = pasos(cultivo)
+    for paso in datos["pasos"]:
+        paso["form"] = {"duracion": duracion, "luz": luz}.get(paso["clave"])
+    return render(request, "growlog/cultivo_empezar.html", {"cultivo": cultivo, **datos,
+                                                            "abierto": accion})
 
 
 @login_required
