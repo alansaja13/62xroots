@@ -18,11 +18,10 @@
     transition: border-color .15s;
   }
   a.aj-item:hover { border-color: var(--green-deep); color: var(--cream); }
-  .aj-item > i { font-size: 20px; color: var(--green); width: 24px; text-align: center; flex-shrink: 0; }
   .aj-item__body { flex: 1; min-width: 0; }
   .aj-item__title { font-weight: 700; font-size: 15px; display: block; }
   .aj-item__val { font-family: var(--font-mono); font-size: 12px; color: var(--cream-soft); overflow-wrap: anywhere; }
-  .aj-item__go { color: var(--fine); font-size: 14px; }
+  .aj-item__go { color: var(--mu); font-size: 20px; }
   .aj h2 { font-size: 18px; font-weight: 800; margin: 0 0 12px; }
   .aj-ciclo { display: flex; flex-wrap: wrap; gap: 10px; }
   .aj-ciclo form { margin: 0; }
@@ -39,62 +38,55 @@
   <div class="aj-list">
     {% if cultivo.estado != 'finalizado' %}
     <a class="aj-item" href="{% url 'growlog:cultivo_empezar' cultivo.slug %}">
-      <i class="bi bi-list-check" aria-hidden="true"></i>
       <span class="aj-item__body">
         <span class="aj-item__title">Primeros pasos</span>
         <span class="aj-item__val">plantas, fotoperíodo, luz y duración estimada</span>
       </span>
-      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+      <span class="aj-item__go" aria-hidden="true">›</span>
     </a>
     {% endif %}
     <a class="aj-item" href="{% url 'growlog:cultivo_editar' cultivo.slug %}">
-      <i class="bi bi-box" aria-hidden="true"></i>
       <span class="aj-item__body">
         <span class="aj-item__title">Datos del cultivo</span>
         <span class="aj-item__val">{{ cultivo.carpa_dimensiones|default:"carpa sin cargar" }} · {{ cultivo.sustrato|default:"sustrato sin cargar" }} · {{ cultivo.lampara_modelo|default:"lámpara sin cargar" }}</span>
       </span>
-      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+      <span class="aj-item__go" aria-hidden="true">›</span>
     </a>
     <a class="aj-item" href="{% url 'growlog:cultivo_etapa' cultivo.slug %}">
-      <i class="bi bi-flower1" aria-hidden="true"></i>
       <span class="aj-item__body">
         <span class="aj-item__title">Etapa</span>
         <span class="aj-item__val">{% if cultivo.estado == 'finalizado' %}Finalizado{% else %}{{ etapa_actual_display|default:"sin etapa" }}{% endif %}{% if cultivo.dia_flora is not None %} · día {{ cultivo.dia_flora }} de flora{% endif %}</span>
       </span>
-      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+      <span class="aj-item__go" aria-hidden="true">›</span>
     </a>
     <a class="aj-item" href="{% url 'growlog:fotoperiodo_list' cultivo.slug %}">
-      <i class="bi bi-sun" aria-hidden="true"></i>
       <span class="aj-item__body">
         <span class="aj-item__title">Fotoperíodo</span>
         <span class="aj-item__val">{% if fotoperiodo_activo %}{{ fotoperiodo_activo.fotoperiodo }} · enciende {{ fotoperiodo_activo.hora_lights_on|time:"H:i" }}{% else %}sin configurar{% endif %}</span>
       </span>
-      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+      <span class="aj-item__go" aria-hidden="true">›</span>
     </a>
     <a class="aj-item" href="{% url 'growlog:energia' cultivo.slug %}">
-      <i class="bi bi-lightning-charge" aria-hidden="true"></i>
       <span class="aj-item__body">
         <span class="aj-item__title">Equipos y consumo eléctrico</span>
         <span class="aj-item__val">{% if equipos_count %}{{ equipos_count }} equipo{{ equipos_count|pluralize }} asignado{{ equipos_count|pluralize }}{% else %}sin equipos asignados{% endif %}</span>
       </span>
-      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+      <span class="aj-item__go" aria-hidden="true">›</span>
     </a>
     <a class="aj-item" href="{% url 'growlog:nutrientes' %}">
-      <i class="bi bi-droplet-half" aria-hidden="true"></i>
       <span class="aj-item__body">
         <span class="aj-item__title">Nutrientes</span>
         <span class="aj-item__val">los que aparecen al registrar un riego</span>
       </span>
-      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+      <span class="aj-item__go" aria-hidden="true">›</span>
     </a>
     {% if can_manage_cultivo %}
     <a class="aj-item" href="{% url 'growlog:invitados_panel' %}">
-      <i class="bi bi-people" aria-hidden="true"></i>
       <span class="aj-item__body">
         <span class="aj-item__title">Compartir</span>
         <span class="aj-item__val">{% for m in miembros %}{{ m.usuario.username }} ({{ m.get_rol_display|lower }}){% if not forloop.last %} · {% endif %}{% empty %}no está compartido con nadie{% endfor %}</span>
       </span>
-      <i class="bi bi-chevron-right aj-item__go" aria-hidden="true"></i>
+      <span class="aj-item__go" aria-hidden="true">›</span>
     </a>
     {% endif %}
   </div>
@@ -103,18 +95,18 @@
     <h2>Ciclo del cultivo</h2>
     <div class="aj-ciclo">
       {% if cultivo.estado != 'finalizado' %}
-      <a class="btn-ghost" href="{% url 'growlog:cultivo_cosecha' cultivo.slug %}"><i class="bi bi-flag"></i> Cosecha y cierre</a>
+      <a class="btn-ghost" href="{% url 'growlog:cultivo_cosecha' cultivo.slug %}">Cosecha y cierre</a>
       {% else %}
       <form method="post" action="{% url 'growlog:cultivo_reabrir' cultivo.slug %}"
             onsubmit="return confirm('¿Reabrir «{{ cultivo.nombre|escapejs }}»? Se quita la fecha de cierre y vuelve a la etapa de su historial.');">
         {% csrf_token %}
-        <button type="submit" class="btn-ghost"><i class="bi bi-arrow-counterclockwise"></i> Reabrir cultivo</button>
+        <button type="submit" class="btn-ghost">Reabrir cultivo</button>
       </form>
       {% endif %}
       {% if can_manage_cultivo %}
       <form method="post" action="{% url 'growlog:cultivo_archivar' cultivo.slug %}">
         {% csrf_token %}
-        <button type="submit" class="btn-ghost"><i class="bi bi-archive"></i> {% if cultivo.archivado %}Desarchivar{% else %}Archivar{% endif %}</button>
+        <button type="submit" class="btn-ghost">{% if cultivo.archivado %}Desarchivar{% else %}Archivar{% endif %}</button>
       </form>
       {% endif %}
     </div>

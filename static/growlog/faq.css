@@ -12,7 +12,7 @@
   padding: 0 16px; border: 1px solid var(--rule); border-radius: 999px; background: var(--card);
 }
 .faq-search:focus-within { border-color: var(--green); }
-.faq-search i { color: var(--fine); }
+.faq-search svg { color: var(--mu); flex-shrink: 0; }
 .faq-search input {
   flex: 1; min-width: 0; min-height: 46px; border: 0; background: transparent;
   color: var(--cream); font-family: var(--font-body); font-size: 15px; outline: none;

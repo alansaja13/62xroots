@@ -88,11 +88,13 @@
     font-family: var(--font-mono), monospace; font-size: 12px; color: var(--cream-soft);
   }
 
+  .fp-accion { display: inline-flex; align-items: center; min-height: var(--toque); color: var(--mu); font-size: 12px; }
+  .fp-accion:hover { color: var(--ink); }
+
   .fp-empty {
     text-align: center; padding: 48px 24px;
     color: var(--fine); font-family: var(--font-mono), monospace; font-size: 12px;
   }
-  .fp-empty__icon { font-size: 28px; opacity: .3; display: block; margin-bottom: 14px; }
 
   .fp-section-title {
     font-family: var(--font-mono), monospace; font-size: 12px;
@@ -105,7 +107,7 @@
 {% block content %}
 
 <a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="tl-back">
-  <i class="bi bi-chevron-left"></i> {{ cultivo.nombre }}
+  ‹ {{ cultivo.nombre }}
 </a>
 
 <div class="tl-header">
@@ -179,7 +181,7 @@
 
     <div style="margin-top: 16px;">
       <button type="submit" class="btn-brand">
-        <i class="bi bi-check-lg"></i> guardar
+        Guardar
       </button>
     </div>
   </form>
@@ -220,12 +222,8 @@
         </td>
         <td style="text-align:right;">
           <div style="display:flex; gap:10px; justify-content:flex-end;">
-            <a href="{% url 'growlog:cambio_fotoperiodo_editar' cambio.pk %}" class="c-fine" style="font-size:12px;" title="Editar">
-              <i class="bi bi-pencil"></i>
-            </a>
-            <a href="{% url 'growlog:cambio_fotoperiodo_eliminar' cambio.pk %}" class="c-fine" style="font-size:12px;" title="Eliminar">
-              <i class="bi bi-trash"></i>
-            </a>
+            <a href="{% url 'growlog:cambio_fotoperiodo_editar' cambio.pk %}" class="fp-accion">Editar</a>
+            <a href="{% url 'growlog:cambio_fotoperiodo_eliminar' cambio.pk %}" class="fp-accion">Eliminar</a>
           </div>
         </td>
       </tr>
@@ -235,7 +233,6 @@
   </div>
   {% else %}
   <div class="fp-empty">
-    <i class="bi bi-sun fp-empty__icon"></i>
     Todavía no hay registros de fotoperiodo.<br>
     <span style="margin-top:6px; display:block;">Usá el formulario de arriba para agregar el primero.</span>
   </div>
