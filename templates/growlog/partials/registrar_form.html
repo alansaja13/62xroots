@@ -30,6 +30,12 @@
     </label>
   </div>
 
+  <div class="reg-texto">
+    <label><span class="visually-hidden">Escribilo en una línea</span><input type="text" data-texto autocomplete="off" enterkeyhint="done"
+      placeholder="Escribilo: riego 1,5 L con grow 2, pH 6,2"></label>
+    <div class="reg-entendi" data-entendi hidden aria-live="polite"></div>
+  </div>
+
   <div class="reg-tipos" role="radiogroup" aria-label="Qué registrás">
     {% for valor, etiqueta in etiquetas.items %}
     <label class="chip reg-tipo reg-tipo--{{ valor }}"><input type="radio" name="kind" value="{{ valor }}"{% if valor == tipo %} checked{% endif %}><i aria-hidden="true"></i>{{ etiqueta }}</label>

@@ -109,8 +109,168 @@
       actualizar();
     }
 
+
+    // ── Texto libre: "riego 1,5 L con grow 2, pH 6,2" llena el formulario ──
+    // Gramática acotada y todo en el navegador: volumen, nutrientes del catálogo (aunque
+    // estén mal escritos), pH, EC, temperatura, humedad y nombres de planta. Lo que no
+    // entiende queda en las notas. Muestra lo que entendió antes de guardar.
+    const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const distancia = (a, b) => {
+      const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+      for (let j = 1; j <= b.length; j++) d[0][j] = j;
+      for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      return d[a.length][b.length];
+    };
+    const RELLENO = new Set(['riego', 'regue', 'regué', 'con', 'de', 'y', 'a', 'al', 'el', 'la', 'las', 'los', 'en', 'por', 'hoy', 'agua', 'litro', 'g', 'gr', 'ml', 'l']);
+
+    function catalogo() {
+      const c = cultivo();
+      const nutrientes = Array.from(form.querySelectorAll(`.reg-nutrientes[data-cultivo="${c}"] [data-nutriente]`)).map(input => ({
+        input, nombre: input.closest('label').querySelector('span').textContent.trim(),
+      }));
+      // Una palabra que aparece en varios nutrientes (la marca, casi siempre) no alcanza para elegir uno.
+      const veces = {};
+      nutrientes.forEach(n => { n.palabras = [...new Set(norm(n.nombre).split(/[^a-z0-9]+/).filter(p => p.length >= 3))];
+        n.palabras.forEach(p => { veces[p] = (veces[p] || 0) + 1; }); });
+      nutrientes.forEach(n => { n.propias = n.palabras.filter(p => veces[p] === 1); if (!n.propias.length) n.propias = n.palabras; });
+      const plantas = Array.from(form.querySelectorAll(`.reg-plantas[data-cultivo="${c}"] [data-planta]`)).map(input => ({
+        input, nombre: input.closest('label').querySelector('span').firstChild.textContent.trim(),
+      }));
+      return { nutrientes, plantas };
+    }
+
+    function interpretar(texto) {
+      let t = ' ' + norm(texto).replace(/(\d),(\d)/g, '$1.$2') + ' ';
+      const r = { nutrientes: [], plantas: [] };
+      const tomar = (re, fn) => { t = t.replace(re, (...m) => { fn(m); return ' '; }); };
+      const n = x => parseFloat(x);
+      tomar(/\bph\s*[:=]?\s*(\d+(?:\.\d+)?)/, m => { r.ph = n(m[1]); });
+      tomar(/\b(?:ec|ce)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(ms|us|µs)?/, m => {
+        const v = n(m[1]), u = m[2];
+        // El campo es el medidor ×10 (140 = 1,4 mS). Se acepta mS (1,4) y µS (1400).
+        r.ec = u === 'ms' || v < 10 ? Math.round(v * 100) : u || v >= 1000 ? Math.round(v / 10) : Math.round(v);
+      });
+      tomar(/\btemp(?:eratura)?\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(?:°|º)?c?/, m => { r.temp = n(m[1]); });
+      tomar(/(\d+(?:\.\d+)?)\s*(?:°|º|grados)c?/, m => { r.temp = n(m[1]); });
+      tomar(/\b(?:hr|humedad|hum)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*%?/, m => { r.hr = n(m[1]); });
+      tomar(/(\d+(?:\.\d+)?)\s*%/, m => { r.hr = n(m[1]); });
+      tomar(/(\d+(?:\.\d+)?)\s*(ml|cc|lts?|litros?|l)\b(?!\s*\/)/, m => { r.ml = Math.round(n(m[1]) * (/^(ml|cc)$/.test(m[2]) ? 1 : 1000)); });
+      tomar(/\b(c\/u|cada una|cada planta|por planta|c\/planta)\b/, () => { r.porPlanta = true; });
+      const cat = catalogo();
+      cat.plantas.forEach(p => {
+        const nombre = norm(p.nombre).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = new RegExp('(^|[^a-z0-9])' + nombre + '(?=[^a-z0-9]|$)');
+        if (re.test(t)) { r.plantas.push(p); t = t.replace(re, '$1 '); }
+      });
+      cat.nutrientes.forEach(nu => {
+        const palabras = t.split(/\s+/);
+        for (let i = 0; i < palabras.length; i++) {
+          const w = palabras[i].replace(/[^a-z0-9]/g, '');
+          if (w.length < 3 || !nu.propias.some(p => p === w || (p.length >= 4 && w.length >= 4 && distancia(p, w) <= 1))) continue;
+          let dosis = null, hasta = i;
+          for (let k = i + 1; k <= i + 2 && k < palabras.length; k++) {
+            const m = palabras[k].match(/^(\d+(?:\.\d+)?)/);
+            if (m) { dosis = n(m[1]); hasta = k; break; }
+            if (!nu.palabras.includes(palabras[k].replace(/[^a-z0-9]/g, ''))) break;
+          }
+          r.nutrientes.push({ ...nu, dosis });
+          palabras.splice(i, hasta - i + 1);
+          t = ' ' + palabras.join(' ') + ' ';
+          break;
+        }
+      });
+      // Lo que sobra, si dice algo, va a las notas.
+      const resto = t.split(/[\s,;.]+/).filter(w => w && !RELLENO.has(w) && !/^\d+(\.\d+)?$/.test(w));
+      if (resto.join('').replace(/[^a-z]/g, '').length >= 3) {
+        // Se toma del texto original para conservar mayúsculas y tildes.
+        const original = texto.split(/[\s,;]+/).filter(w => resto.includes(norm(w).replace(/[.;]$/, '')));
+        r.nota = original.join(' ');
+      }
+      r.tipo = r.ml || r.nutrientes.length || r.plantas.length ? 'riego'
+        : r.temp != null || r.hr != null ? 'ambiente'
+        : r.ph != null || r.ec != null ? 'ec' : null;
+      return r;
+    }
+
+    const auto = new Map();
+    function poner(input, valor) {
+      if (!input) return;
+      input.value = valor;
+      auto.set(input, String(valor));
+      const d = input.closest('details'); if (d) d.open = true;
+    }
+    function aplicarTexto() {
+      const caja = $('[data-entendi]'), campo = $('[data-texto]');
+      if (!caja || !campo) return;
+      // Lo que se completó antes desde el texto (y no se tocó a mano) se vuelve a calcular.
+      auto.forEach((v, input) => { if (input.value === v) input.value = ''; });
+      auto.clear();
+      const r = interpretar(campo.value);
+      const chips = [];
+      const chip = (texto, input) => chips.push({ texto, input });
+      if (r.tipo && r.tipo !== tipo()) {
+        const radio = form.querySelector(`input[name="kind"][value="${r.tipo}"]`);
+        if (radio) { radio.checked = true; actualizar(); }
+      }
+      if (tipo() === 'riego') {
+        const mismo = $('[data-mismo]'), todas = cultivoPlantas();
+        if (r.ml) {
+          if (r.plantas.length && r.plantas.length < todas.length) {
+            mismo.checked = false; actualizar();
+            r.plantas.forEach(p => poner(p.input, r.ml));
+            chip(`${fmt(r.ml, 0)} ml a ${r.plantas.map(p => p.nombre).join(', ')}`, r.plantas[0].input);
+          } else {
+            mismo.checked = true; actualizar();
+            const cada = r.porPlanta || r.plantas.length ? r.ml : Math.round(r.ml / Math.max(1, todas.length));
+            poner($('[name="riego-volumen_todas"]'), cada);
+            chip(`${fmt(cada, 0)} ml c/u${!r.porPlanta && !r.plantas.length && todas.length > 1 ? ` (${fmt(r.ml / 1000, 1)} L en total)` : ''}`, $('[name="riego-volumen_todas"]'));
+          }
+        }
+        r.nutrientes.forEach(nu => {
+          if (nu.dosis != null) poner(nu.input, String(nu.dosis).replace('.', ','));
+          chip(nu.dosis != null ? `${nu.nombre} ${fmt(nu.dosis, nu.dosis % 1 ? 1 : 0)}` : `${nu.nombre}, ¿cuánto?`, nu.input);
+        });
+        if (r.ph != null) { poner($('[name="riego-ph"]'), String(r.ph).replace('.', ',')); chip(`pH ${fmt(r.ph, 1)}`, $('[name="riego-ph"]')); }
+        if (r.ec != null) { poner($('[name="riego-ec"]'), r.ec); chip(`EC ${r.ec} (×10)`, $('[name="riego-ec"]')); }
+        if (r.nota) { poner($('[name="riego-notas"]'), r.nota); chip(`Nota: ${r.nota}`, $('[name="riego-notas"]')); }
+      } else if (tipo() === 'ambiente') {
+        if (r.temp != null) { poner($('[data-temp]'), String(r.temp).replace('.', ',')); chip(`${fmt(r.temp, 1)}°`, $('[data-temp]')); }
+        if (r.hr != null) { poner($('[data-hr]'), String(r.hr).replace('.', ',')); chip(`${fmt(r.hr, 0)} % HR`, $('[data-hr]')); }
+        if (r.nota) { poner($('[name="ambiente-notas"]'), r.nota); chip(`Nota: ${r.nota}`, $('[name="ambiente-notas"]')); }
+      } else if (tipo() === 'ec') {
+        if (r.ph != null) { poner($('[name="ec-ph"]'), String(r.ph).replace('.', ',')); chip(`pH ${fmt(r.ph, 1)}`, $('[name="ec-ph"]')); }
+        if (r.ec != null) { poner($('[name="ec-ec"]'), r.ec); chip(`EC ${r.ec} (×10)`, $('[name="ec-ec"]')); }
+        if (r.nota) { poner($('[name="ec-notas"]'), r.nota); chip(`Nota: ${r.nota}`, $('[name="ec-notas"]')); }
+      }
+      caja.replaceChildren();
+      if (chips.length) {
+        const titulo = document.createElement('span');
+        titulo.className = 'mo'; titulo.textContent = 'Entendí';
+        caja.append(titulo);
+        chips.forEach(c => {
+          const b = document.createElement('button');
+          b.type = 'button'; b.className = 'chip'; b.textContent = c.texto;
+          b.addEventListener('click', () => { if (c.input) { c.input.focus(); c.input.select && c.input.select(); } });
+          caja.append(b);
+        });
+      }
+      caja.hidden = !campo.value.trim();
+      if (!chips.length && campo.value.trim()) caja.textContent = 'No entendí nada todavía. Probá con "riego 1,5 L, pH 6,2" o "25° 60%".';
+      actualizar();
+    }
+    function cultivoPlantas() { return catalogo().plantas; }
+    let espera;
+    const campoTexto = $('[data-texto]');
+    if (campoTexto) {
+      campoTexto.addEventListener('input', () => { clearTimeout(espera); espera = setTimeout(aplicarTexto, 250); });
+      // Enter no manda el formulario: termina de interpretar.
+      campoTexto.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(espera); aplicarTexto(); } });
+    }
+
     form.addEventListener('change', e => {
       if (e.target.name === 'kind' || e.target === cultivoSel || e.target.matches('[data-mismo], [data-runoff]')) actualizar();
+      if (e.target === cultivoSel && campoTexto && campoTexto.value) aplicarTexto();
     });
     form.addEventListener('input', e => {
       if (e.target.matches('[data-temp], [data-hr]')) vivoVpd();

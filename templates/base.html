@@ -108,6 +108,20 @@
     document.querySelectorAll('details.nav-cultivo[open]').forEach(function (d) { if (!d.contains(e.target)) d.open = false; });
   });
   document.addEventListener('keydown', function (e) {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      var texto = document.querySelector('[data-texto]');
+      if (texto) { e.preventDefault(); texto.focus(); return; }
+      var abrir = document.querySelector('.lateral [hx-get*="hoja=1"], .barra__mas[hx-get]');
+      if (!abrir) return;
+      e.preventDefault();
+      document.body.addEventListener('htmx:afterSwap', function foco() {
+        var t = document.querySelector('#hoja [data-texto]');
+        if (t) t.focus();
+        document.body.removeEventListener('htmx:afterSwap', foco);
+      });
+      abrir.click();
+      return;
+    }
     if (e.key !== 'Escape') return;
     if (hoja.children.length) cerrar();
     document.querySelectorAll('details.nav-cultivo[open]').forEach(function (d) { d.open = false; });
