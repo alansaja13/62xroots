@@ -16,7 +16,7 @@ SECCIONES_CULTIVO = {
     "energia": "energia",
     "reporte": "reporte",
     "cultivo_ajustes": "ajustes", "cultivo_empezar": "ajustes", "planta_crear": "resumen",
-    "cultivo_ciclo": "ciclo", "cultivo_etapa": "ciclo", "fotoperiodo_list": "ciclo",
+    "cultivo_ciclo": "ciclo", "cultivo_cosecha": "ciclo", "cultivo_etapa": "ciclo", "fotoperiodo_list": "ciclo",
 }
 
 # Pestañas del cultivo: (sección, etiqueta, ícono, url name). Las "extra" van

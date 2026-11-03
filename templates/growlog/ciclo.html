@@ -71,6 +71,12 @@
     <div class="mo">Floración</div>
     <div class="ci-dato">Día {{ dia_flora }}</div>
     {% if cosecha_estimada %}<p style="margin: 4px 0 0; color: var(--mu);">Cosecha estimada cerca del {{ cosecha_estimada|date:"j/m" }}{% if dias_a_cosecha > 0 %} · faltan {{ dias_a_cosecha }} días{% elif dias_a_cosecha == 0 %} · es hoy{% else %} · ya pasó la fecha estimada{% endif %}.</p>{% endif %}
+    {% if can_edit_cultivo %}<a href="{% url 'growlog:cultivo_cosecha' cultivo.slug %}" class="btn g sm" style="margin-top: var(--sp-3);">Cosecha y cierre</a>{% endif %}
+  </section>
+  {% elif cultivo.estado == 'secado' or cultivo.estado == 'curado' or cultivo.estado == 'finalizado' %}
+  <section class="card" style="margin-top: var(--sp-4);">
+    <div class="mo">{{ cultivo.get_estado_display }}</div>
+    {% if can_edit_cultivo %}<a href="{% url 'growlog:cultivo_cosecha' cultivo.slug %}" class="btn sm" style="margin-top: var(--sp-3);">{% if cultivo.estado == 'finalizado' %}Ver la cosecha{% else %}Seguir con la cosecha{% endif %}</a>{% endif %}
   </section>
   {% endif %}
 

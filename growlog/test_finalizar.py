@@ -57,10 +57,10 @@ class CultivoFinalizadoTests(TestCase):
         self.assertIsNone(respuesta.context["dias_sin_riego"])
         self.assertContains(respuesta, "cultivo finalizado el")
         self.assertNotContains(respuesta, "cultivo activo")
-        # Finalizar y reabrir viven en los ajustes del cultivo.
+        # Reabrir vive en los ajustes; la cosecha ya no se ofrece en un cultivo cerrado.
         ajustes = self.client.get(reverse("growlog:cultivo_ajustes", args=[self.cultivo.slug]))
         self.assertContains(ajustes, self.reabrir)
-        self.assertNotContains(ajustes, reverse("growlog:cultivo_finalizar", args=[self.cultivo.slug]))
+        self.assertNotContains(ajustes, reverse("growlog:cultivo_cosecha", args=[self.cultivo.slug]))
 
     def test_reabrir_recupera_la_etapa_y_quita_el_cierre(self):
         self.client.force_login(self.duenio)

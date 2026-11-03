@@ -84,7 +84,7 @@ class CultivoAccessTests(TestCase):
 
     def web_writes(self):
         routes = [(name, self.c.slug) for name in (
-            "cultivo_editar", "cultivo_marcar_flora", "cultivo_finalizar", "cultivo_reabrir",
+            "cultivo_editar", "cultivo_marcar_flora", "cultivo_cosecha", "cultivo_reabrir",
             "planta_crear", "fotoperiodo_list", "canopy_guardar", "energia",
         )]
         for prefix, obj in (("planta", self.plant), ("tarea", self.task), ("evento", self.event), ("riego", self.water),

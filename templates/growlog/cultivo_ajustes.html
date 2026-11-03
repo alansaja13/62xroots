@@ -103,11 +103,7 @@
     <h2>Ciclo del cultivo</h2>
     <div class="aj-ciclo">
       {% if cultivo.estado != 'finalizado' %}
-      <form method="post" action="{% url 'growlog:cultivo_finalizar' cultivo.slug %}"
-            onsubmit="return confirm('¿Finalizar «{{ cultivo.nombre|escapejs }}»? Pasará a estado finalizado con fecha de fin hoy.');">
-        {% csrf_token %}
-        <button type="submit" class="btn-ghost" style="border-color:var(--rust);color:var(--rust);"><i class="bi bi-flag"></i> Finalizar cultivo</button>
-      </form>
+      <a class="btn-ghost" href="{% url 'growlog:cultivo_cosecha' cultivo.slug %}"><i class="bi bi-flag"></i> Cosecha y cierre</a>
       {% else %}
       <form method="post" action="{% url 'growlog:cultivo_reabrir' cultivo.slug %}"
             onsubmit="return confirm('¿Reabrir «{{ cultivo.nombre|escapejs }}»? Se quita la fecha de cierre y vuelve a la etapa de su historial.');">
@@ -122,7 +118,7 @@
       </form>
       {% endif %}
     </div>
-    <p class="aj-note">Finalizar cierra el ciclo con fecha de fin. Archivar lo saca de los activos sin borrar nada{% if cultivo.archivado %}; este cultivo está archivado{% endif %}. Los dos van al historial.</p>
+    <p class="aj-note">Cosecha y cierre te guía con el corte, los pesos y el cierre del ciclo. Archivar lo saca de los activos sin borrar nada{% if cultivo.archivado %}; este cultivo está archivado{% endif %}. Los dos van al historial.</p>
   </section>
 </div>
 {% endblock %}

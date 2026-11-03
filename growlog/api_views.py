@@ -345,6 +345,9 @@ def _planta_full(p):
         'thc_estimado': _num(p.thc_estimado),
         'yield_estimado_g': p.yield_estimado_g,
         'yield_real_g': p.yield_real_g,
+        'fecha_corte': p.fecha_corte.isoformat() if p.fecha_corte else None,
+        'peso_humedo_g': p.peso_humedo_g,
+        'fecha_seco': p.fecha_seco.isoformat() if p.fecha_seco else None,
         'notas_genetica': p.notas_genetica,
         'archivado': p.archivado,
     }

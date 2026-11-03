@@ -148,6 +148,10 @@ class Planta(models.Model):
         verbose_name="Yield real (g)",
         help_text="Peso seco final cosechado de esta planta.",
     )
+    # Cosecha guiada: corte, peso húmedo y fin del secado (el peso seco es yield_real_g).
+    fecha_corte = models.DateField(null=True, blank=True, verbose_name="Fecha de corte")
+    peso_humedo_g = models.PositiveIntegerField(null=True, blank=True, verbose_name="Peso húmedo (g)")
+    fecha_seco = models.DateField(null=True, blank=True, verbose_name="Fin del secado")
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default="activa")
     notas_genetica = models.TextField(blank=True)
     archivado = models.BooleanField(default=False)

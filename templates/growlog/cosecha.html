@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Cosecha · {{ cultivo.nombre }}{% endblock %}
+{% block extra_head %}
+<style>
+  .co { max-width: 620px; }
+  .co-pasos { display: flex; gap: var(--sp-2); margin: var(--sp-4) 0 var(--sp-2); overflow-x: auto; scrollbar-width: none; }
+  .co-pasos a { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 20px;
+    border: 1.5px solid var(--ln); color: var(--mu); font-weight: 600; font-size: var(--t-sm); }
+  .co-pasos a.hecho { color: var(--ink); }
+  .co-pasos a.hecho::before { content: "✓"; color: var(--ac); }
+  .co-pasos a.actual { border-color: var(--ac); color: var(--ink); }
+  .co-paso { padding: var(--sp-5) 0; border-top: 1px solid var(--ln); scroll-margin-top: var(--sp-5); }
+  .co-paso h2 { display: flex; align-items: baseline; gap: var(--sp-2); }
+  .co-paso h2 .mo { color: var(--mu); }
+  .co-ayuda { color: var(--mu); font-size: var(--t-sm); margin: 4px 0 var(--sp-3); }
+  .co-form { display: grid; gap: var(--sp-3); }
+  .co-form label { margin: 0; }
+  .co-check { display: flex; align-items: center; gap: 10px; min-height: var(--toque); margin: 0;
+    font: 500 var(--t-md) var(--font-body); text-transform: none; letter-spacing: 0; color: var(--ink); }
+  .co-peso { display: grid; grid-template-columns: 1fr 120px 24px; align-items: center; gap: var(--sp-2); min-height: var(--toque);
+    font: 500 var(--t-md) var(--font-body); text-transform: none; letter-spacing: 0; color: var(--ink); }
+  .co-peso small { color: var(--mu); display: block; font: 400 var(--t-xs) var(--font-mono); }
+  .co-peso .mo { color: var(--mu); text-transform: none; }
+  .co-fecha { max-width: 200px; }
+  .co-fecha input { margin-top: 6px; }
+  .co-totales { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-2); margin-bottom: var(--sp-4); }
+  .co-total b { display: block; font: 600 var(--t-2xl)/1.1 var(--font-display); letter-spacing: -.02em; }
+  .co-vacio { color: var(--mu); margin: 0; }
+  .co-cerrado { border-left: 4px solid var(--ac); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="co">
+  <a href="{% url 'growlog:cultivo_ciclo' cultivo.slug %}" class="mo" style="color: var(--mu); display: inline-flex; min-height: var(--toque); align-items: center;">‹ Ciclo</a>
+  <div class="mo">{{ cultivo.nombre }}</div>
+  <h1 class="h1" style="margin-top: 8px;">Cosecha</h1>
+  <nav class="co-pasos" aria-label="Pasos de la cosecha">
+    <a href="#cortar" class="{% if hechos.cortar %}hecho{% endif %}{% if actual == 'cortar' %} actual{% endif %}">1 Cortar</a>
+    <a href="#pesar" class="{% if hechos.pesar %}hecho{% endif %}{% if actual == 'pesar' %} actual{% endif %}">2 Pesar</a>
+    <a href="#secar" class="{% if hechos.secar %}hecho{% endif %}{% if actual == 'secar' %} actual{% endif %}">3 Secar</a>
+    <a href="#cerrar" class="{% if hechos.cerrar %}hecho{% endif %}{% if actual == 'cerrar' %} actual{% endif %}">4 Cerrar</a>
+  </nav>
+  {% for e in errores %}<div class="alert alert-error" role="alert"><span>{{ e }}</span></div>{% endfor %}
+
+  <section class="co-paso" id="cortar" aria-labelledby="cortar-t">
+    <h2 class="h2" id="cortar-t"><span class="mo">1</span> Cortar</h2>
+    {% if sin_cortar %}
+    <p class="co-ayuda">Marcá las que cortaste. Podés cortar en tandas: las que queden siguen activas.</p>
+    <form method="post" class="co-form">
+      {% csrf_token %}<input type="hidden" name="accion" value="cortar">
+      {% for p in sin_cortar %}
+      <label class="co-check"><input type="checkbox" name="plantas" value="{{ p.pk }}" checked> {{ p.apodo }}{% if p.strain %} <span class="mo" style="color: var(--mu);">{{ p.strain }}</span>{% endif %}</label>
+      {% endfor %}
+      <label class="co-fecha">Fecha de corte<input type="date" name="fecha" value="{{ hoy|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}" class="form-control"></label>
+      {% if etapa != 'secado' and etapa != 'curado' %}
+      <label class="co-check"><input type="checkbox" name="etapa" value="1" checked> Pasar el cultivo a Secado</label>
+      {% endif %}
+      <button type="submit" class="btn sm">Cortar</button>
+    </form>
+    {% endif %}
+    {% if cortadas %}
+    <p class="co-vacio" style="margin-top: var(--sp-3);">Cortadas: {% for p in cortadas %}{{ p.apodo }} ({{ p.fecha_corte|date:"d/m" }}){% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+    {% elif not sin_cortar %}
+    <p class="co-vacio">No hay plantas activas en este cultivo.</p>
+    {% endif %}
+  </section>
+
+  <section class="co-paso" id="pesar" aria-labelledby="pesar-t">
+    <h2 class="h2" id="pesar-t"><span class="mo">2</span> Pesar en húmedo</h2>
+    {% if cortadas %}
+    <p class="co-ayuda">Recién cortadas, antes de colgar. Es opcional, pero sirve para saber cuánto pierden al secar.</p>
+    <form method="post" class="co-form">
+      {% csrf_token %}<input type="hidden" name="accion" value="pesar">
+      {% for p in cortadas %}
+      <label class="co-peso"><span>{{ p.apodo }}</span><input type="text" inputmode="numeric" name="peso-{{ p.pk }}" value="{{ p.peso_humedo_g|default_if_none:'' }}" class="form-control" aria-label="Peso húmedo de {{ p.apodo }}"><span class="mo">g</span></label>
+      {% endfor %}
+      <button type="submit" class="btn sm">Guardar pesos</button>
+    </form>
+    {% else %}<p class="co-vacio">Primero cortá alguna planta.</p>{% endif %}
+  </section>
+
+  <section class="co-paso" id="secar" aria-labelledby="secar-t">
+    <h2 class="h2" id="secar-t"><span class="mo">3</span> Secar</h2>
+    {% if cortadas %}
+    <p class="co-ayuda">Cuando terminó el secado, el peso seco de cada planta. Es el yield real.</p>
+    <form method="post" class="co-form">
+      {% csrf_token %}<input type="hidden" name="accion" value="secar">
+      {% for p in cortadas %}
+      <label class="co-peso"><span>{{ p.apodo }}{% if p.yield_estimado_g %}<small>estimado {{ p.yield_estimado_g }} g</small>{% endif %}</span><input type="text" inputmode="numeric" name="peso-{{ p.pk }}" value="{{ p.yield_real_g|default_if_none:'' }}" class="form-control" aria-label="Peso seco de {{ p.apodo }}"><span class="mo">g</span></label>
+      {% endfor %}
+      <label class="co-fecha">Fin del secado<input type="date" name="fecha" value="{{ hoy|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}" class="form-control"></label>
+      {% if etapa != 'curado' %}
+      <label class="co-check"><input type="checkbox" name="etapa" value="1" checked> Pasar el cultivo a Curado</label>
+      {% endif %}
+      <button type="submit" class="btn sm">Guardar pesos</button>
+    </form>
+    {% else %}<p class="co-vacio">Primero cortá alguna planta.</p>{% endif %}
+  </section>
+
+  <section class="co-paso" id="cerrar" aria-labelledby="cerrar-t">
+    <h2 class="h2" id="cerrar-t"><span class="mo">4</span> Cerrar</h2>
+    {% if cortadas %}
+    <div class="co-totales">
+      <div class="card co-total"><span class="mo">Seco</span><b>{{ seco_total }} g</b></div>
+      <div class="card co-total"><span class="mo">Húmedo</span><b>{{ humedo_total }} g</b></div>
+      <div class="card co-total"><span class="mo">Merma al secar</span><b>{% if merma is not None %}{{ merma }} %{% else %}-{% endif %}</b></div>
+      <div class="card co-total"><span class="mo">g por watt</span><b>{{ g_por_watt|default:"-" }}</b></div>
+    </div>
+    {% endif %}
+    {% if cultivo.estado == 'finalizado' %}
+    <div class="card co-cerrado">Cerrado el {{ cultivo.fecha_fin|date:"d/m/Y" }}. <a href="{% url 'growlog:reporte' cultivo.slug %}">Ver el reporte</a></div>
+    {% else %}
+    <p class="co-ayuda">Cierra el cultivo con fecha de hoy y te lleva al reporte. Si te equivocaste, se puede reabrir desde Ajustes.</p>
+    <form method="post" onsubmit="return confirm('¿Cerrar «{{ cultivo.nombre|escapejs }}»?{% if sin_cortar %} Quedan plantas sin cortar.{% endif %}');">
+      {% csrf_token %}<input type="hidden" name="accion" value="cerrar">
+      <button type="submit" class="btn{% if not hechos.secar %} g{% endif %}">Cerrar el cultivo</button>
+    </form>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

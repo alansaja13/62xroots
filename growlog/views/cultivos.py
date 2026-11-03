@@ -16,6 +16,7 @@ from ..services.etapas import cambiar_etapa, reabrir_cultivo, sincronizar_cultiv
 from ..services.bitacora import bitacora
 from ..services.ciclo import hacer_flip, resumen_ciclo
 from ..services.hoy import DATO_VIEJO, resumen_hoy
+from ..services import cosecha
 from ..services.onboarding import pasos, recordar
 from ..services.vpd import RANGO_DEFAULT, estado_de, mapa_vpd
 from ..utils import (
@@ -302,15 +303,53 @@ def cambio_etapa_cultivo_eliminar(request, pk):
 
 
 @login_required
-def cultivo_finalizar(request, slug):
+def cultivo_cosecha(request, slug):
+    """Cosecha guiada: Cortar → Pesar en húmedo → Secar → Cerrar. Cada paso se puede repetir para corregir."""
     cultivo = objeto_del_cultivo(request, Cultivo, editar=True, slug=slug)
+    hoy = timezone.localdate()
+    errores = []
     if request.method == "POST":
-        cultivo.estado = "finalizado"
-        if not cultivo.fecha_fin:
-            cultivo.fecha_fin = timezone.localdate()
-        cultivo.save()
-        messages.success(request, f"Cultivo «{cultivo.nombre}» finalizado.")
-    return redirect("growlog:cultivo_detail", cultivo.slug)
+        accion = request.POST.get("accion")
+        datos = cosecha.resumen(cultivo)
+        fecha = parse_date(request.POST.get("fecha") or "") or hoy
+        if fecha > hoy or fecha < cultivo.fecha_inicio:
+            errores.append("La fecha tiene que estar entre el inicio del cultivo y hoy.")
+        if accion == "cortar" and not errores:
+            elegidas = {int(pk) for pk in request.POST.getlist("plantas") if pk.isdigit()}
+            plantas = [p for p in datos["plantas"] if p.pk in elegidas]
+            if not plantas:
+                errores.append("Elegí al menos una planta.")
+            else:
+                cosecha.cortar(cultivo, plantas, fecha, pasar_a_secado=bool(request.POST.get("etapa")))
+                messages.success(request, f"{len(plantas)} planta{'s' if len(plantas) != 1 else ''} cortada{'s' if len(plantas) != 1 else ''}.")
+        elif accion in ("pesar", "secar") and not errores:
+            maximo = 32767 if accion == "secar" else 1_000_000
+            pesos = {}
+            for p in datos["cortadas"]:
+                valor = (request.POST.get(f"peso-{p.pk}") or "").strip().replace(",", ".")
+                try:
+                    gramos = round(float(valor)) if valor else None
+                except ValueError:
+                    gramos = -1
+                if gramos is not None and not 0 < gramos <= maximo:
+                    errores.append(f"El peso de {p.apodo} no es válido.")
+                pesos[p] = gramos
+            if not errores:
+                if accion == "pesar":
+                    cosecha.pesar(pesos)
+                    messages.success(request, "Pesos en húmedo guardados.")
+                else:
+                    cosecha.secar(cultivo, pesos, fecha, pasar_a_curado=bool(request.POST.get("etapa")))
+                    messages.success(request, "Pesos en seco guardados.")
+        elif accion == "cerrar":
+            cosecha.cerrar(cultivo)
+            messages.success(request, f"Cultivo «{cultivo.nombre}» cerrado. Este es su reporte.")
+            return redirect("growlog:reporte", cultivo.slug)
+        if not errores:
+            return redirect("growlog:cultivo_cosecha", cultivo.slug)
+    return render(request, "growlog/cosecha.html", {
+        "cultivo": cultivo, "hoy": hoy, "errores": errores, **cosecha.resumen(cultivo),
+    })
 
 
 @login_required

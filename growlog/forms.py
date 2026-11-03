@@ -101,7 +101,7 @@ class PlantaForm(forms.ModelForm):
         model = Planta
         fields = ["apodo", "strain", "tipo", "posicion_tent", "dias_flora_estimados",
                   "indica_sativa_ratio", "thc_estimado", "yield_estimado_g",
-                  "yield_real_g", "estado", "notas_genetica", "archivado"]
+                  "yield_real_g", "fecha_corte", "peso_humedo_g", "fecha_seco", "estado", "notas_genetica", "archivado"]
         widgets = {
             "apodo": forms.TextInput(attrs={"class": "form-control", "autofocus": True}),
             "strain": forms.TextInput(attrs={"class": "form-control"}),
@@ -112,6 +112,9 @@ class PlantaForm(forms.ModelForm):
             "thc_estimado": forms.NumberInput(attrs={"class": "form-control field-narrow", "step": "0.01"}),
             "yield_estimado_g": forms.NumberInput(attrs={"class": "form-control field-narrow"}),
             "yield_real_g": forms.NumberInput(attrs={"class": "form-control field-narrow"}),
+            "fecha_corte": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),
+            "peso_humedo_g": forms.NumberInput(attrs={"class": "form-control field-narrow"}),
+            "fecha_seco": forms.DateInput(format=DATE_FMT, attrs={"class": "form-control field-narrow", "type": "date"}),
             "estado": forms.Select(attrs={"class": "form-select"}),
             "notas_genetica": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "archivado": forms.CheckboxInput(attrs={"class": "form-check-input"}),
