@@ -144,7 +144,7 @@
 ## Fase 3 · Ciclo de vida completo
 
 **Estado (02/11/2026):** hecha en siete bloques (3a a 3g). Quedan afuera dos cosas:
-- Recuperar la contraseña por email: no hay email configurado en el servidor, así que no se armó. Hoy, si alguien se olvida la contraseña, el dueño lo saca y le manda un link nuevo.
+- Recuperar la contraseña por email: no hay email configurado en el servidor, así que no se armó. Hoy la cambia un administrador desde el admin; un link de invitación nuevo sirve para entrar, pero con otra cuenta.
 - `crud_form` y `crud_delete` siguen en la edición de datos del cultivo, planta, etapas, fotoperíodo y nutrientes. Ya no están en el alta ni en la cosecha.
 
 - **Onboarding:** al crear un cultivo aparece un checklist (nombre y fecha · plantas · fotoperíodo · equipos de luz · primera medición), con progreso y "Hacer" en cada paso.
