@@ -91,6 +91,8 @@ urlpatterns = [
     # Invitados
     path("invitados/", views.invitados_panel, name="invitados_panel"),
     path("invitados/crear/", views.invitado_crear, name="invitado_crear"),
+    path("invitados/link/<int:pk>/anular/", views.invitacion_revocar, name="invitacion_revocar"),
+    path("invitacion/<str:token>/", views.invitacion_aceptar, name="invitacion_aceptar"),
     path("invitados/<int:pk>/eliminar/", views.invitado_eliminar, name="invitado_eliminar"),
 
     path("invitados/<int:pk>/rol/", views.invitado_rol, name="invitado_rol"),

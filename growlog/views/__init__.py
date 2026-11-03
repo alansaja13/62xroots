@@ -55,6 +55,8 @@ from .mediciones import (  # noqa: F401
     fotoperiodo_list,
 )
 from .invitados import (  # noqa: F401
+    invitacion_aceptar,
+    invitacion_revocar,
     invitado_crear,
     invitado_eliminar,
     invitado_rol,

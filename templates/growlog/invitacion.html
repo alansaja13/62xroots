@@ -1,0 +1,61 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>Invitación · 62×ROOTS</title>
+  {% include "growlog/partials/tema.html" %}
+  {% include "growlog/partials/pwa_head.html" %}
+  {% include "growlog/partials/fonts.html" %}
+  <link rel="stylesheet" href="{% static 'growlog/suelo.css' %}">
+  <style>
+    body {
+      min-height: 100vh; display: grid; place-items: center;
+      padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+    }
+    .inv { width: 100%; max-width: 400px; }
+    .inv__marca { font: 700 var(--t-xl) var(--font-display); letter-spacing: -.03em; margin-bottom: var(--sp-7); }
+    .inv .h1 { font-size: 40px; margin: 10px 0 8px; overflow-wrap: anywhere; }
+    .inv__sub { color: var(--mu); margin: 0 0 var(--sp-6); }
+    .inv__campos { display: grid; gap: var(--sp-4); }
+    .inv__campos label { margin: 0; }
+    .inv__campos label > input { margin-top: 6px; }
+    .inv .btn { width: 100%; margin-top: var(--sp-2); }
+    .inv__otra { margin-top: var(--sp-5); color: var(--mu); font-size: var(--t-sm); }
+  </style>
+</head>
+<body>
+  <main class="inv">
+    <div class="inv__marca">62×ROOTS</div>
+    {% if invalida %}
+    <div class="mo">Invitación</div>
+    <h1 class="h1">Este link ya no sirve</h1>
+    <p class="inv__sub">{% if invitacion and invitacion.usada_en %}Ya se usó para entrar.{% elif invitacion %}Venció.{% else %}No existe o lo anularon.{% endif %} Pedile uno nuevo a quien te invitó.</p>
+    <a href="{% url 'growlog:login' %}" class="btn g">Entrar</a>
+    {% else %}
+    <div class="mo">{{ invitacion.creada_por.username }} te invita</div>
+    <h1 class="h1">{{ invitacion.cultivo.nombre }}</h1>
+    <p class="inv__sub">{% if invitacion.rol == 'editor' %}Vas a poder ver todo y registrar riegos, mediciones y tareas.{% else %}Vas a poder ver todo, sin cargar nada.{% endif %}</p>
+
+    {% if user.is_authenticated %}
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn">Sumarme como {{ user.username }}</button>
+    </form>
+    {% else %}
+    <form method="post" class="inv__campos">
+      {% csrf_token %}
+      {% for e in form.non_field_errors %}<div class="aviso aviso--bad" role="alert">{{ e }}</div>{% endfor %}
+      {% for campo in form %}
+      <label>{{ campo.label }}{{ campo }}
+        {% for e in campo.errors %}<span class="field-error">{{ e }}</span>{% endfor %}</label>
+      {% endfor %}
+      <button type="submit" class="btn">Crear mi cuenta y entrar</button>
+    </form>
+    <p class="inv__otra">¿Ya tenés cuenta? <a href="{% url 'growlog:login' %}?next={{ request.path|urlencode }}">Entrá con ella</a> y te sumás desde acá.</p>
+    {% endif %}
+    {% endif %}
+  </main>
+</body>
+</html>

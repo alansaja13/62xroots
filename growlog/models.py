@@ -1,4 +1,6 @@
 import math
+import secrets
+from datetime import timedelta
 import uuid
 from django.db import models
 from django.contrib.auth.models import User
@@ -106,6 +108,40 @@ class CultivoMiembro(models.Model):
 
     def __str__(self):
         return f"{self.usuario} · {self.cultivo} · {self.get_rol_display()}"
+
+
+def _token_invitacion():
+    return secrets.token_urlsafe(24)
+
+
+def _vencimiento_invitacion():
+    return timezone.now() + timedelta(days=Invitacion.DIAS_VIGENCIA)
+
+
+class Invitacion(models.Model):
+    """Link para sumarse a un cultivo: sirve una vez y vence. El invitado crea su propia cuenta."""
+    DIAS_VIGENCIA = 7
+
+    token = models.CharField(max_length=64, unique=True, default=_token_invitacion, editable=False)
+    cultivo = models.ForeignKey(Cultivo, on_delete=models.CASCADE, related_name="invitaciones")
+    rol = models.CharField(max_length=10, choices=CultivoMiembro.ROLES, default="editor")
+    creada_por = models.ForeignKey(User, on_delete=models.CASCADE, related_name="invitaciones_creadas")
+    creada = models.DateTimeField(auto_now_add=True)
+    vence = models.DateTimeField(default=_vencimiento_invitacion)
+    usada_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="invitaciones_usadas")
+    usada_en = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-creada"]
+        verbose_name = "Invitación"
+        verbose_name_plural = "Invitaciones"
+
+    def __str__(self):
+        return f"{self.cultivo} · {self.get_rol_display()}"
+
+    @property
+    def vigente(self):
+        return self.usada_en is None and self.vence > timezone.now()
 
 
 class PlantaQuerySet(models.QuerySet):

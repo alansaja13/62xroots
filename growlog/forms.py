@@ -1,5 +1,6 @@
 """Formularios de la bitácora web. Los registros diarios usan los de registration_forms.py."""
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
 from django.core.files.uploadedfile import UploadedFile
 
 from .models import (
@@ -228,13 +229,30 @@ class CambioEtapaPlantaForm(forms.ModelForm):
 
 
 class CompartirCultivoForm(forms.Form):
+    """Link de invitación (sin usuario) o acceso directo a una cuenta que ya existe."""
     cultivo = forms.ModelChoiceField(queryset=Cultivo.objects.none(), label="Cultivo")
-    usuario = forms.CharField(required=False, max_length=150, label="Usuario existente",
-                              help_text="Dejalo vacío para crear una cuenta nueva.")
     rol = forms.ChoiceField(choices=CultivoMiembro.ROLES, initial="editor", label="Permiso")
+    usuario = forms.CharField(required=False, max_length=150, label="Usuario")
 
     def __init__(self, *args, usuario, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["cultivo"].queryset = Cultivo.objects.filter(propietario=usuario)
+        self.fields["cultivo"].empty_label = None
         for field in self.fields.values():
             field.widget.attrs["class"] = "form-select" if isinstance(field.widget, forms.Select) else "form-control"
+
+
+class CuentaInvitadoForm(UserCreationForm):
+    """La cuenta que crea quien abre un link de invitación."""
+
+    class Meta(UserCreationForm.Meta):
+        fields = ["username"]
+        labels = {"username": "Usuario"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].help_text = "Letras, números y @ . + - _"
+        self.fields["password1"].help_text = ""
+        self.fields["password1"].label = "Contraseña"
+        self.fields["password2"].label = "La contraseña, otra vez"
+        self.fields["username"].widget.attrs.update({"autocomplete": "username", "autocapitalize": "none", "autofocus": True})

@@ -197,17 +197,16 @@ class CultivoAccessTests(TestCase):
         self.assertEqual(self.stranger.password, old_password)
         self.assertEqual(self.c.miembros.get(usuario=self.stranger).rol, "editor")
 
-    def test_cuenta_nueva_solo_tiene_acceso_al_cultivo_elegido(self):
+    def test_sin_usuario_crea_un_link_y_no_una_cuenta(self):
         self.client.force_login(self.owner)
+        usuarios = User.objects.count()
         response = self.client.post(reverse("growlog:invitado_crear"), {"cultivo": self.c.pk, "rol": "editor"})
-        self.assertEqual(response.status_code, 200)
-        nuevo = response.context["nuevo"]
-        user = User.objects.get(username=nuevo["username"])
-        self.assertTrue(user.check_password(nuevo["password"]))
-        self.assertFalse(user.is_staff)
-        self.assertEqual(list(user.membresias_cultivo.values_list("cultivo_id", flat=True)), [self.c.pk])
-        self.assertIn("no-store", response["Cache-Control"])
-        self.assertNotContains(self.client.get(reverse("growlog:invitados_panel")), nuevo["password"])
+        invitacion = m.Invitacion.objects.get()
+        self.assertRedirects(response, f"{reverse('growlog:invitados_panel')}?nueva={invitacion.pk}#link", fetch_redirect_response=False)
+        self.assertEqual(User.objects.count(), usuarios)
+        panel = self.client.get(f"{reverse('growlog:invitados_panel')}?nueva={invitacion.pk}")
+        self.assertContains(panel, reverse("growlog:invitacion_aceptar", args=[invitacion.token]))
+        self.assertIn("no-store", panel["Cache-Control"])
 
     def test_revocacion_bloquea_sesion_y_token_y_conserva_cuenta_y_autoria(self):
         self.client.force_login(self.editor)
