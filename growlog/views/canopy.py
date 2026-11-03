@@ -13,7 +13,7 @@ from ..permissions import objeto_del_cultivo
 from ..utils import area_carpa_m2
 
 
-_PLANT_COLORS = ["#b1d160", "#d4923a", "#d96a3d", "#b384d8", "#79a4d4", "#f3e9d1"]
+_PLANT_COLORS = ["var(--ac)", "var(--warn)", "var(--e)", "var(--flo)", "var(--w)", "var(--ink)"]
 
 
 def _default_colas(cx, cy, n=2, radius=50):
@@ -25,6 +25,27 @@ def _default_colas(cx, cy, n=2, radius=50):
         }
         for i in range(n)
     ]
+
+
+def _centros(plantas):
+    """Centro de cada planta en la carpa (0..400). Las que no tienen posición se reparten
+    en una grilla, y las que comparten posición se separan un poco para que no se pisen."""
+    sin_lugar = [p for p in plantas if p.posicion_tent not in POSICION_TENT_COORDS or p.posicion_tent == "otro"]
+    lado = math.ceil(math.sqrt(len(sin_lugar))) if sin_lugar else 1
+    centros, usados = {}, {}
+    for i, p in enumerate(sin_lugar):
+        fila, col = divmod(i, lado)
+        filas = math.ceil(len(sin_lugar) / lado)
+        centros[p.pk] = (round((col + 0.5) / lado * 400, 1), round((fila + 0.5) / filas * 400, 1))
+    for p in plantas:
+        if p.pk in centros:
+            continue
+        x, y = POSICION_TENT_COORDS[p.posicion_tent]
+        n = usados.get(p.posicion_tent, 0)
+        usados[p.posicion_tent] = n + 1
+        desvio = 45 * n
+        centros[p.pk] = (round(min(380, max(20, x * 400 + desvio)), 1), round(min(380, max(20, y * 400 + desvio / 2)), 1))
+    return centros
 
 
 @login_required
@@ -44,10 +65,9 @@ def canopy_view(request, slug):
             })
 
     plantas_data = []
+    centros = _centros(plantas)
     for i, p in enumerate(plantas):
-        cx_n, cy_n = POSICION_TENT_COORDS.get(p.posicion_tent, (0.50, 0.50))
-        cx = round(cx_n * 400, 1)
-        cy = round(cy_n * 400, 1)
+        cx, cy = centros[p.pk]
         colas = colas_by_planta.get(p.id) or _default_colas(cx, cy, 2)
         plantas_data.append({
             "uuid": str(p.uuid),
