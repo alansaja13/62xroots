@@ -1,253 +1,178 @@
 {% extends "base.html" %}
-{% load ec %}
+{% load l10n %}
 {% block title %}Reporte · {{ cultivo.nombre }}{% endblock %}
-
 {% block extra_head %}
 <style>
-  .rp-header {
-    display: flex; justify-content: space-between; align-items: flex-end;
-    flex-wrap: wrap; gap: 16px;
-    margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--rule);
-  }
-  .rp-title {
-    font-size: 42px; font-weight: 800; letter-spacing: -.03em; line-height: 1;
-    color: var(--cream); margin: 0;
-  }
-  .rp-stats-row {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-    margin-bottom: 22px;
-  }
-  @media (max-width: 900px) { .rp-stats-row { grid-template-columns: repeat(2, 1fr); } }
-  .rp-stat {
-    background: var(--card); border: 1px solid var(--rule);
-    border-radius: 14px; padding: 16px 20px;
-  }
-  .rp-stat__val {
-    font-size: 38px; font-weight: 800; letter-spacing: -.03em; line-height: 1;
-    color: var(--cream); margin-top: 8px;
-    font-variant-numeric: tabular-nums;
-  }
-  .rp-stat__val--green { color: var(--green); }
-  .rp-stat__val--honey { color: var(--honey); }
-  .rp-stat__unit { font-size: 15px; color: var(--cream-soft); font-weight: 600; margin-left: 3px; }
-  .rp-stat__sub {
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    color: var(--fine); margin-top: 6px; letter-spacing: .05em;
-  }
-  .rp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
-  /* minmax(0,…): una tabla ancha se desplaza dentro de su panel en vez de ensanchar la página */
-  @media (max-width: 900px) {
-    .rp-grid { grid-template-columns: minmax(0, 1fr); }
-    .rp-grid .panel { overflow-x: auto; }
-  }
-  .rp-empty { padding: 26px 16px; text-align: center; color: var(--fine); font-size: 12px; }
-  @media (max-width: 640px) {
-    .rp-title { font-size: 32px; }
-    .rp-stat { padding: 13px 14px; }
-    .rp-stat__val { font-size: 30px; }
-    .table thead th { padding: 9px 8px; }
-    .table tbody td { padding: 10px 8px; font-size: 12px; }
-  }
+  .rp { max-width: 960px; }
+  .rp-head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--sp-3); flex-wrap: wrap; }
+  .rp-cifras { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); margin-top: var(--sp-5); }
+  @media (min-width: 768px) { .rp-cifras { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .rp-cifra b { display: block; font: 600 var(--t-2xl)/1.1 var(--font-display); letter-spacing: -.02em; margin: 4px 0 2px; }
+  .rp-cifra b small { font: 400 var(--t-sm) var(--font-body); color: var(--mu); }
+  .rp-cifra span:last-child { color: var(--mu); font-size: var(--t-sm); }
+  .rp-cols { display: grid; gap: var(--sp-6); margin-top: var(--sp-6); }
+  @media (min-width: 992px) { .rp-cols { grid-template-columns: 1fr 1fr; align-items: start; } }
+  .rp-cols > * { min-width: 0; }
+  .rp-sec > .mo { display: block; margin-bottom: var(--sp-2); }
+  .rp-sec + .rp-sec { margin-top: var(--sp-6); }
+  .rp-graf { display: block; width: 100%; height: auto; overflow: visible; }
+  .rp-rango { display: flex; gap: var(--sp-5); margin-bottom: var(--sp-3); }
+  .rp-rango b { display: block; font: 600 var(--t-xl) var(--font-display); }
+  .rp-eje { display: flex; justify-content: space-between; font: 400 var(--t-xs) var(--font-mono); color: var(--mu); margin-top: 4px; }
+  .rp-leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: var(--sp-2); font: 400 var(--t-xs) var(--font-mono); color: var(--mu); }
+  .rp-leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  .rp-planta { display: grid; grid-template-columns: 96px 1fr; gap: 4px var(--sp-3); align-items: center; padding: 8px 0; border-top: 1px solid var(--ln); }
+  .rp-planta a { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rp-barras { display: grid; gap: 4px; }
+  .rp-barra { display: grid; grid-template-columns: 1fr 88px; align-items: center; gap: 8px; font: 400 var(--t-xs) var(--font-mono); color: var(--mu); }
+  .rp-pista { display: block; }
+  .rp-barra i { display: block; height: 10px; border-radius: 3px; min-width: 2px; }
+  .rp-barra--est i { background: var(--s2); box-shadow: inset 0 0 0 1px var(--ln); }
+  .rp-barra--real i { background: var(--ac); }
+  .rp-tabla { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+  .rp-tabla th { text-align: left; font: 500 var(--t-xs) var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--mu); padding: 0 8px 6px 0; }
+  .rp-tabla td { padding: 10px 8px 10px 0; border-top: 1px solid var(--ln); font-variant-numeric: tabular-nums; }
+  .rp-tabla .num { text-align: right; }
+  .rp-tabla tr.este td { color: var(--ac); font-weight: 600; }
+  .rp-scroll { overflow-x: auto; }
+  .rp-nada { color: var(--mu); margin: 0; }
+  .rp-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 </style>
 {% endblock %}
 
 {% block content %}
-
-<a href="{% url 'growlog:cultivo_detail' cultivo.slug %}" class="c-soft mono" style="font-size: 12px; letter-spacing:.1em; text-decoration:none; display:inline-flex; align-items:center; gap:6px; margin-bottom:14px;">
-  <i class="bi bi-chevron-left"></i> volver al cultivo
-</a>
-
-<div class="rp-header">
-  <div>
-    <div class="label-eyebrow">reporte de cultivo</div>
-    <h1 class="rp-title">{{ cultivo.nombre }}</h1>
-    <div class="mono c-soft" style="font-size: 12px; margin-top:10px;">
-      {{ cultivo.fecha_inicio|date:"d/m/Y" }} → {% if cultivo.fecha_fin %}{{ cultivo.fecha_fin|date:"d/m/Y" }}{% else %}en curso{% endif %}
-      · <span class="estado-{{ cultivo.estado }}">{{ cultivo.get_estado_display|lower }}</span>
+<div class="rp">
+  <div class="rp-head">
+    <div>
+      <div class="mo">{{ cultivo.fecha_inicio|date:"d/m/Y" }} → {% if cultivo.fecha_fin %}{{ cultivo.fecha_fin|date:"d/m/Y" }}{% else %}en curso{% endif %} · {{ cultivo.get_estado_display|lower }}</div>
+      <h1 class="h1" style="margin-top: 8px;">Reporte</h1>
     </div>
+    <a href="?export=csv" class="btn g sm">Exportar registros</a>
   </div>
-  <a href="?export=csv" class="btn-ghost">
-    <i class="bi bi-filetype-csv"></i> exportar registros
-  </a>
-</div>
 
-<!-- STATS PRINCIPALES -->
-<div class="rp-stats-row">
-  <div class="rp-stat">
-    <div class="label-eyebrow">Duración</div>
-    <div class="rp-stat__val">{{ dias_totales }}<span class="rp-stat__unit">días</span></div>
-    <div class="rp-stat__sub">
-      {% if dias_veg is not None %}veg {{ dias_veg }}d · flora {{ dias_flora }}d{% else %}sin flip registrado{% endif %}
-    </div>
+  <div class="rp-cifras">
+    <div class="card rp-cifra"><span class="mo">Duración</span><b>{{ dias }} <small>días</small></b>
+      <span>{% if dias_veg is not None %}{{ dias_veg }} de vege · {{ dias_flora }} de flora{% else %}sin flip registrado{% endif %}</span></div>
+    <div class="card rp-cifra"><span class="mo">Seco</span><b>{% if seco %}{{ seco }} <small>g</small>{% else %}-{% endif %}</b>
+      <span>{% if estimado %}estimado {{ estimado }} g{% else %}sin estimado{% endif %}{% if g_por_planta %} · {{ g_por_planta }} g por planta{% endif %}</span></div>
+    <div class="card rp-cifra"><span class="mo">g por watt</span><b>{{ g_por_watt|default:"-" }}</b>
+      <span>{% if cultivo.lampara_watts_reales %}{{ cultivo.lampara_watts_reales }} W reales{% else %}sin watts cargados{% endif %}</span></div>
+    <div class="card rp-cifra"><span class="mo">Costo por gramo</span><b>{% if energia.costo_por_gramo %}${{ energia.costo_por_gramo }}{% else %}-{% endif %}</b>
+      <span>{% if energia.costo %}${{ energia.costo }} de luz{% if energia.fuente == 'medidor' %}, según el medidor{% else %}, estimado por equipos{% endif %}{% elif energia.kwh %}{{ energia.kwh }} kWh, falta la tarifa{% else %}sin datos de energía{% endif %}</span></div>
+    <div class="card rp-cifra"><span class="mo">Aire en rango</span><b>{% if en_rango is not None %}{{ en_rango }} <small>%</small>{% else %}-{% endif %}</b>
+      <span>{% if ambiente %}{{ ambiente.count }} lecturas de VPD{% else %}sin mediciones{% endif %}</span></div>
+    <div class="card rp-cifra"><span class="mo">Agua</span><b>{{ litros|floatformat:1 }} <small>L</small></b>
+      <span>{{ riegos.count }} riego{{ riegos.count|pluralize }}{% if riegos.ph_avg %} · pH {{ riegos.ph_avg|floatformat:1 }}{% endif %}{% if merma is not None %} · merma {{ merma }} %{% endif %}</span></div>
   </div>
-  <div class="rp-stat">
-    <div class="label-eyebrow">Yield total</div>
-    <div class="rp-stat__val {% if yield_real_total %}rp-stat__val--green{% endif %}">
-      {% if yield_real_total %}{{ yield_real_total }}<span class="rp-stat__unit">g</span>{% else %}-{% endif %}
-    </div>
-    <div class="rp-stat__sub">estimado: {% if yield_est_total %}{{ yield_est_total }} g{% else %}-{% endif %}</div>
-  </div>
-  <div class="rp-stat">
-    <div class="label-eyebrow">Eficiencia</div>
-    <div class="rp-stat__val {% if g_por_watt %}rp-stat__val--honey{% endif %}">
-      {% if g_por_watt %}{{ g_por_watt }}<span class="rp-stat__unit">g/W</span>{% else %}-{% endif %}
-    </div>
-    <div class="rp-stat__sub">{% if cultivo.lampara_watts_reales %}{{ cultivo.lampara_watts_reales }}W reales{% else %}sin watts configurados{% endif %}</div>
-  </div>
-  <div class="rp-stat">
-    <div class="label-eyebrow">Agua total</div>
-    <div class="rp-stat__val">{% if riego_stats.count %}{{ litros_totales|floatformat:1 }}<span class="rp-stat__unit">L</span>{% else %}-{% endif %}</div>
-    <div class="rp-stat__sub">{{ riego_stats.count }} riegos{% if riego_stats.ph_avg %} · pH prom. {{ riego_stats.ph_avg|floatformat:2 }}{% endif %}{% if riego_stats.ec_avg %} · EC prom. {% ec riego_stats.ec_avg %}{% endif %}</div>
-  </div>
-</div>
 
-<div class="rp-grid">
-  <div>
-    <!-- YIELD POR PLANTA -->
-    <div class="panel">
-      <div class="panel__head">
-        <div class="panel__head-left">
-          <span class="label-eyebrow panel__title">yield por planta</span>
+  <div class="rp-cols">
+    <div>
+      <section class="rp-sec" aria-labelledby="rango-t">
+        <h2 class="mo" id="rango-t">Aire en rango por semana</h2>
+        {% if barras_semanas %}
+        <div class="rp-rango">
+          <div><span class="mo">Total</span><b>{{ en_rango_detalle.total }} %</b></div>
+          {% if en_rango_detalle.dia is not None %}<div><span class="mo">Día</span><b>{{ en_rango_detalle.dia }} %</b></div>{% endif %}
+          {% if en_rango_detalle.noche is not None %}<div><span class="mo">Noche</span><b>{{ en_rango_detalle.noche }} %</b></div>{% endif %}
         </div>
-      </div>
-      {% if plantas %}
-      <table class="table">
-        <thead>
-          <tr><th>Planta</th><th>Strain</th><th style="text-align:right;">Estimado</th><th style="text-align:right;">Real</th></tr>
-        </thead>
-        <tbody>
-          {% for p in plantas %}
-          <tr>
-            <td><a href="{% url 'growlog:planta_detail' p.pk %}" class="c-cream" style="font-weight:600;">{{ p.apodo }}</a>
-              {% if p.estado != 'activa' %}<span class="c-fine" style="font-size: 12px;"> · {{ p.get_estado_display|lower }}</span>{% endif %}
-            </td>
-            <td class="c-soft">{{ p.strain|default:"-" }}</td>
-            <td style="text-align:right;" class="c-soft">{% if p.yield_estimado_g %}{{ p.yield_estimado_g }} g{% else %}-{% endif %}</td>
-            <td style="text-align:right; font-weight:700;" class="{% if p.yield_real_g %}c-green{% else %}c-fine{% endif %}">
-              {% if p.yield_real_g %}{{ p.yield_real_g }} g{% else %}-{% endif %}
-            </td>
-          </tr>
+        <svg class="rp-graf" viewBox="0 0 {{ ancho }} {{ alto }}" role="img" aria-label="Porcentaje de lecturas con el VPD en rango, semana por semana">
+          {% localize off %}
+          <line x1="0" x2="{{ ancho }}" y1="{{ alto }}" y2="{{ alto }}" stroke="var(--ln)"/>
+          {% for b in barras_semanas %}<rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.ancho }}" height="{{ b.alto }}" rx="2"
+            fill="var({% if b.pct >= 70 %}--ac{% elif b.pct >= 40 %}--warn{% else %}--bad{% endif %})"><title>Semana {{ b.semana }}: {{ b.pct }} % en rango, {{ b.lecturas }} lecturas</title></rect>{% endfor %}
+          {% endlocalize %}
+        </svg>
+        <div class="rp-eje"><span>semana 1</span><span>semana {% with ultima=barras_semanas|last %}{{ ultima.semana }}{% endwith %}</span></div>
+        {% else %}<p class="rp-nada">Sin lecturas de ambiente con ideal de VPD.</p>{% endif %}
+      </section>
+
+      <section class="rp-sec" aria-labelledby="crec-t">
+        <h2 class="mo" id="crec-t">Crecimiento</h2>
+        {% if crecimiento %}
+        <svg class="rp-graf" viewBox="0 0 {{ ancho }} {{ alto }}" role="img" aria-label="Altura de cada planta a lo largo del cultivo">
+          {% localize off %}
+          <line x1="0" x2="{{ ancho }}" y1="{{ alto }}" y2="{{ alto }}" stroke="var(--ln)"/>
+          {% for l in crecimiento.lineas %}
+          <polyline points="{{ l.puntos }}" fill="none" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"
+            stroke="var({% cycle '--ac' '--w' '--m' '--e' '--flo' '--n' as color %})"/>
           {% endfor %}
-        </tbody>
-      </table>
-      {% if not yield_real_total %}
-      <div class="rp-empty" style="border-top:1px solid var(--rule-soft);">
-        El yield real se carga editando cada planta al cosechar.
-      </div>
-      {% endif %}
-      {% else %}
-      <div class="rp-empty">Sin plantas registradas.</div>
-      {% endif %}
+          {% endlocalize %}
+        </svg>
+        <div class="rp-eje"><span>día {{ crecimiento.dia_desde }}</span><span>hasta {{ crecimiento.max }} cm</span><span>día {{ crecimiento.dia_hasta }}</span></div>
+        <div class="rp-leyenda">{% for l in crecimiento.lineas %}<span><i style="background: var({% cycle '--ac' '--w' '--m' '--e' '--flo' '--n' %})"></i>{{ l.planta.apodo }} · {{ l.ultima|floatformat:0 }} cm</span>{% endfor %}</div>
+        {% else %}<p class="rp-nada">Hacen falta al menos dos mediciones de altura de una planta.</p>{% endif %}
+      </section>
+
+      <section class="rp-sec" aria-labelledby="yield-t">
+        <h2 class="mo" id="yield-t">Yield por planta</h2>
+        {% for y in yield_plantas %}
+        <div class="rp-planta">
+          <a href="{% url 'growlog:planta_detail' y.planta.pk %}">{{ y.planta.apodo }}</a>
+          <div class="rp-barras">
+            <div class="rp-barra rp-barra--est"><span class="rp-pista"><i style="width: {{ y.estimado_pct }}%"></i></span><span>{% if y.planta.yield_estimado_g %}{{ y.planta.yield_estimado_g }} g est.{% else %}sin estimado{% endif %}</span></div>
+            <div class="rp-barra rp-barra--real"><span class="rp-pista"><i style="width: {{ y.real_pct }}%"></i></span><span>{% if y.planta.yield_real_g %}{{ y.planta.yield_real_g }} g{% else %}sin pesar{% endif %}</span></div>
+          </div>
+        </div>
+        {% empty %}<p class="rp-nada">Sin plantas en este cultivo.</p>{% endfor %}
+        {% if yield_plantas and not seco and can_edit_cultivo %}<p class="rp-nada" style="margin-top: var(--sp-2);">Los pesos se cargan en <a href="{% url 'growlog:cultivo_cosecha' cultivo.slug %}">Cosecha</a>.</p>{% endif %}
+      </section>
     </div>
 
-    <!-- NUTRIENTES -->
-    <div class="panel">
-      <div class="panel__head">
-        <div class="panel__head-left">
-          <span class="label-eyebrow panel__title">nutrientes consumidos</span>
+    <div>
+      <section class="rp-sec" aria-labelledby="comp-t">
+        <h2 class="mo" id="comp-t">Contra tus cultivos anteriores</h2>
+        {% if anteriores %}
+        <div class="rp-scroll">
+          <table class="rp-tabla">
+            <thead><tr><th>Cultivo</th><th class="num">Días</th><th class="num">Seco</th><th class="num">g/W</th><th class="num">En rango</th><th class="num">$/g</th></tr></thead>
+            <tbody>
+              <tr class="este"><td>Este</td><td class="num">{{ dias }}</td><td class="num">{% if seco %}{{ seco }} g{% else %}-{% endif %}</td><td class="num">{{ g_por_watt|default:"-" }}</td><td class="num">{% if en_rango is not None %}{{ en_rango }} %{% else %}-{% endif %}</td><td class="num">{{ energia.costo_por_gramo|default:"-" }}</td></tr>
+              {% for a in anteriores %}
+              <tr><td><a href="{% url 'growlog:reporte' a.cultivo.slug %}">{{ a.cultivo.nombre }}</a></td><td class="num">{{ a.dias }}</td><td class="num">{% if a.seco %}{{ a.seco }} g{% else %}-{% endif %}</td><td class="num">{{ a.g_por_watt|default:"-" }}</td><td class="num">{% if a.en_rango is not None %}{{ a.en_rango }} %{% else %}-{% endif %}</td><td class="num">{{ a.energia.costo_por_gramo|default:"-" }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-      </div>
-      {% if nutrientes %}
-      <table class="table">
-        <thead>
-          <tr><th>Nutriente</th><th style="text-align:right;">Aplicaciones</th><th style="text-align:right;">Dosis prom.</th><th style="text-align:right;">Total</th></tr>
-        </thead>
-        <tbody>
-          {% for n in nutrientes %}
-          <tr>
-            <td class="c-cream" style="font-weight:600;">{% if n.nutriente__marca %}{{ n.nutriente__marca }} {% endif %}{{ n.nutriente__nombre }}</td>
-            <td style="text-align:right;" class="c-soft">{{ n.aplicaciones }}</td>
-            <td style="text-align:right;" class="c-soft">{{ n.dosis_avg|floatformat:2 }} {% if n.nutriente__unidad == 'ml' %}ml/L{% else %}g/L{% endif %}</td>
-            <td style="text-align:right; font-weight:700;" class="c-green">{{ n.gramos_totales|floatformat:1 }} {% if n.nutriente__unidad == 'ml' %}ml{% else %}g{% endif %}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <div class="rp-empty">Sin nutrientes aplicados registrados.</div>
-      {% endif %}
-    </div>
-  </div>
+        {% else %}<p class="rp-nada">Cuando cierres otro cultivo vas a poder compararlos acá.</p>{% endif %}
+      </section>
 
-  <div>
-    <!-- AMBIENTE -->
-    <div class="panel">
-      <div class="panel__head">
-        <div class="panel__head-left">
-          <span class="label-eyebrow panel__title">ambiente · {{ ambiente.count|default:0 }} mediciones</span>
-        </div>
-      </div>
-      {% if ambiente %}
-      <table class="table">
-        <thead>
-          <tr><th></th><th style="text-align:right;">Mín</th><th style="text-align:right;">Promedio</th><th style="text-align:right;">Máx</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="c-soft">Temperatura</td>
-            <td style="text-align:right;" class="c-soft">{{ ambiente.temp_min|floatformat:1 }}°</td>
-            <td style="text-align:right; font-weight:700;" class="c-cream">{{ ambiente.temp_avg|floatformat:1 }}°C</td>
-            <td style="text-align:right;" class="c-soft">{{ ambiente.temp_max|floatformat:1 }}°</td>
-          </tr>
-          <tr>
-            <td class="c-soft">Humedad</td>
-            <td style="text-align:right;" class="c-soft">{{ ambiente.hr_min|floatformat:0 }}%</td>
-            <td style="text-align:right; font-weight:700;" class="c-cream">{{ ambiente.hr_avg|floatformat:0 }}%</td>
-            <td style="text-align:right;" class="c-soft">{{ ambiente.hr_max|floatformat:0 }}%</td>
-          </tr>
-          <tr>
-            <td class="c-soft">VPD</td>
-            <td style="text-align:right;" class="c-soft">{{ ambiente.vpd_min|floatformat:2 }}</td>
-            <td style="text-align:right; font-weight:700;" class="c-cream">{{ ambiente.vpd_avg|floatformat:2 }} kPa</td>
-            <td style="text-align:right;" class="c-soft">{{ ambiente.vpd_max|floatformat:2 }}</td>
-          </tr>
-        </tbody>
-      </table>
-      {% else %}
-      <div class="rp-empty">Sin mediciones de ambiente.</div>
-      {% endif %}
-    </div>
+      <section class="rp-sec" aria-labelledby="nut-t">
+        <h2 class="mo" id="nut-t">Nutrientes</h2>
+        {% if nutrientes %}
+        <table class="rp-tabla">
+          <thead><tr><th>Nutriente</th><th class="num">Veces</th><th class="num">Dosis prom.</th><th class="num">Total</th></tr></thead>
+          <tbody>
+            {% for n in nutrientes %}
+            <tr><td>{% if n.nutriente__marca %}{{ n.nutriente__marca }} {% endif %}{{ n.nutriente__nombre }}</td><td class="num">{{ n.aplicaciones }}</td>
+              <td class="num">{{ n.dosis_avg|floatformat:2 }} {% if n.nutriente__unidad == 'ml' %}ml/L{% else %}g/L{% endif %}</td>
+              <td class="num">{{ n.total|floatformat:1 }} {% if n.nutriente__unidad == 'ml' %}ml{% else %}g{% endif %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}<p class="rp-nada">Sin nutrientes registrados.</p>{% endif %}
+      </section>
 
-    <!-- EVENTOS -->
-    <div class="panel">
-      <div class="panel__head">
-        <div class="panel__head-left">
-          <span class="label-eyebrow panel__title">eventos · {{ eventos_total }}</span>
-        </div>
-      </div>
+      <section class="rp-sec" aria-labelledby="amb-t">
+        <h2 class="mo" id="amb-t">Ambiente</h2>
+        {% if ambiente %}
+        <table class="rp-tabla">
+          <thead><tr><th></th><th class="num">Mín</th><th class="num">Prom.</th><th class="num">Máx</th></tr></thead>
+          <tbody>
+            <tr><td>Temperatura</td><td class="num">{{ ambiente.temp_min|floatformat:1 }}°</td><td class="num">{{ ambiente.temp_avg|floatformat:1 }}°</td><td class="num">{{ ambiente.temp_max|floatformat:1 }}°</td></tr>
+            <tr><td>Humedad</td><td class="num">{{ ambiente.hr_min|floatformat:0 }} %</td><td class="num">{{ ambiente.hr_avg|floatformat:0 }} %</td><td class="num">{{ ambiente.hr_max|floatformat:0 }} %</td></tr>
+            <tr><td>VPD</td><td class="num">{{ ambiente.vpd_min|floatformat:2 }}</td><td class="num">{{ ambiente.vpd_avg|floatformat:2 }}</td><td class="num">{{ ambiente.vpd_max|floatformat:2 }} kPa</td></tr>
+          </tbody>
+        </table>
+        {% else %}<p class="rp-nada">Sin mediciones de ambiente.</p>{% endif %}
+      </section>
+
       {% if eventos_por_tipo %}
-      <table class="table">
-        <tbody>
-          {% for e in eventos_por_tipo %}
-          <tr>
-            <td class="c-cream">{{ e.label }}</td>
-            <td style="text-align:right;" class="c-soft">×{{ e.count }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <div class="rp-empty">Sin eventos registrados.</div>
+      <section class="rp-sec" aria-labelledby="ev-t">
+        <h2 class="mo" id="ev-t">Eventos</h2>
+        <div class="rp-chips">{% for e in eventos_por_tipo %}<span class="pill">{{ e.label }} · {{ e.count }}</span>{% endfor %}</div>
+      </section>
       {% endif %}
-    </div>
-
-    <!-- SETUP -->
-    <div class="panel">
-      <div class="panel__head">
-        <div class="panel__head-left">
-          <span class="label-eyebrow panel__title">setup</span>
-        </div>
-      </div>
-      <table class="table">
-        <tbody>
-          {% if cultivo.lampara_modelo %}<tr><td class="c-soft">Lámpara</td><td style="text-align:right;" class="c-cream">{{ cultivo.lampara_modelo }}{% if cultivo.lampara_watts_reales %} · {{ cultivo.lampara_watts_reales }}W{% endif %}</td></tr>{% endif %}
-          {% if cultivo.sustrato %}<tr><td class="c-soft">Sustrato</td><td style="text-align:right;" class="c-cream">{{ cultivo.sustrato }}</td></tr>{% endif %}
-          {% if cultivo.carpa_dimensiones %}<tr><td class="c-soft">Carpa</td><td style="text-align:right;" class="c-cream">{{ cultivo.carpa_dimensiones }}</td></tr>{% endif %}
-          <tr><td class="c-soft">Plantas</td><td style="text-align:right;" class="c-cream">{{ plantas|length }}</td></tr>
-        </tbody>
-      </table>
     </div>
   </div>
 </div>
-
 {% endblock %}
