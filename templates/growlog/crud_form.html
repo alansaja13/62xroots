@@ -102,7 +102,7 @@
         </div>
       </div>
       <div class="panel__body">
-        <form method="post"{% if multipart %} enctype="multipart/form-data"{% endif %}>
+        <form method="post">
           {% csrf_token %}
 
           {% if form.non_field_errors %}

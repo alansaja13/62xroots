@@ -132,7 +132,7 @@
 
   {% if can_edit_cultivo %}
   <div class="pf-acciones">
-    <a href="{% url 'growlog:medicion_planta_crear' planta.pk %}" class="btn"
+    <a href="{% url 'growlog:registrar' %}?cultivo={{ cultivo.pk }}&kind=planta&planta={{ planta.pk }}" class="btn"
        hx-get="{% url 'growlog:registrar' %}?hoja=1&cultivo={{ cultivo.pk }}&kind=planta&planta={{ planta.pk }}" hx-target="#hoja">Medir a {{ planta.apodo }}</a>
   </div>
   {% endif %}

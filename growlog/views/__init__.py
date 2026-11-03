@@ -31,7 +31,6 @@ from .cultivos import (  # noqa: F401
 from .plantas import (  # noqa: F401
     cambio_etapa_planta_editar,
     cambio_etapa_planta_eliminar,
-    medicion_planta_crear,
     planta_crear,
     planta_detail,
     planta_editar,

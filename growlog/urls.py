@@ -143,7 +143,6 @@ urlpatterns = [
     # NutrienteAplicado
 
     # MedicionPlanta
-    path("planta/<int:planta_pk>/medicion/nueva/", views.medicion_planta_crear, name="medicion_planta_crear"),
     path("medicion-planta/<int:pk>/editar/", views.medicion_planta_editar, name="medicion_planta_editar"),
 
     # MedicionAmbiente (el alta pasa por Registrar; acá solo corrección)

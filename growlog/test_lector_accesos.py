@@ -37,7 +37,6 @@ class LectorSinAccesosDeEdicionTests(TestCase):
             reverse("growlog:riego_editar", args=[riego.pk]),
             reverse("growlog:evento_editar", args=[evento.pk]),
             reverse("growlog:medicion_planta_editar", args=[medicion.pk]),
-            reverse("growlog:medicion_planta_crear", args=[cls.planta.pk]),
             reverse("growlog:planta_crear", args=[cls.vacio.slug]),
             reverse("growlog:registrar") + f"?cultivo={cls.cultivo.pk}",
         ]

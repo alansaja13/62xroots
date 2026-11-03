@@ -7,9 +7,9 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from ..forms import CambioEtapaPlantaForm, MedicionPlantaForm, PlantaForm, PlantasNuevasForm
+from ..forms import CambioEtapaPlantaForm, PlantaForm, PlantasNuevasForm
 from ..models import CambioEtapaPlanta, Cultivo, MedicionPlanta, Planta
-from ..permissions import objeto_del_cultivo, puede_subir_fotos
+from ..permissions import objeto_del_cultivo
 from ..services.plantas import curva, resumen_planta
 from ..utils import etapa_efectiva_planta, get_etapa_activa_cultivo, get_etapa_activa_planta
 
@@ -146,35 +146,6 @@ def planta_fotos(request, pk):
     for f in fotos:
         f.dia = (f.fecha - planta.cultivo.fecha_inicio).days
     return render(request, "growlog/planta_fotos.html", {"planta": planta, "cultivo": planta.cultivo, "fotos": fotos})
-
-
-# ---------------------------------------------------------------------------
-# MedicionPlanta CRUD
-# ---------------------------------------------------------------------------
-
-def _subtitulo_medicion(planta, fotos):
-    return str(planta) if fotos else f"{planta} · Por ahora la subida de fotos está deshabilitada."
-
-
-@login_required
-def medicion_planta_crear(request, planta_pk):
-    planta = objeto_del_cultivo(request, Planta, editar=True, pk=planta_pk)
-    fotos = puede_subir_fotos(request.user)
-    form = MedicionPlantaForm(request.POST or None, request.FILES or None,
-                              initial={"fecha": timezone.localdate()}, permitir_foto=fotos)
-    if request.method == "POST" and form.is_valid():
-        m = form.save(commit=False)
-        m.planta = planta
-        m.creado_por = request.user
-        m.save()
-        messages.success(request, "Medición registrada.")
-        return redirect("growlog:planta_detail", pk=planta_pk)
-    return render(request, "growlog/crud_form.html", {
-        "form": form, "title": "Nueva medición de planta",
-        "subtitle": _subtitulo_medicion(planta, fotos),
-        "back_url": reverse("growlog:planta_detail", args=[planta_pk]),
-        "multipart": fotos,
-    })
 
 
 # ---------------------------------------------------------------------------

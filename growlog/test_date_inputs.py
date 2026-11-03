@@ -144,7 +144,6 @@ class DateInputIsoTests(TestCase):
         hoy = timezone.localdate()
         casos = [
             (reverse("growlog:nuevo_cultivo"), "fecha_inicio"),
-            (reverse("growlog:medicion_planta_crear", args=[self.planta.pk]), "fecha"),
             (reverse("growlog:fotoperiodo_list", args=[self.cultivo.slug]), "fecha_inicio"),
             (reverse("growlog:cultivo_etapa", args=[self.cultivo.slug]), "fecha_inicio"),
             (reverse("growlog:planta_etapa_list", args=[self.planta.pk]), "fecha_inicio"),

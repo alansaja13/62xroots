@@ -97,7 +97,7 @@ class CultivoAccessTests(TestCase):
             routes.append(("registro_borrar", None, tipo, obj.pk))
         routes.extend([
             ("tarea_completar", self.task.pk), ("tarea_descompletar", self.task.pk), ("evento_resolver_followup", self.event.pk),
-            ("medicion_planta_crear", self.plant.pk), ("planta_etapa_list", self.plant.pk),
+            ("planta_etapa_list", self.plant.pk),
         ])
         return [reverse(f"growlog:{r[0]}", args=list(r[2:]) if r[1] is None else [r[1]]) for r in routes]
 

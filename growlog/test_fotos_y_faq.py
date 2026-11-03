@@ -19,20 +19,21 @@ class FotosTests(TestCase):
         cls.duenio = User.objects.create_user("fotos-duenio")
         cultivo = Cultivo.objects.create(nombre="Carpa", fecha_inicio=timezone.localdate(), propietario=cls.duenio)
         cls.planta = Planta.objects.create(cultivo=cultivo, apodo="P1")
-        cls.url = reverse("growlog:medicion_planta_crear", args=[cls.planta.pk])
+        cls.cultivo = cultivo
+        cls.url = reverse("growlog:registrar") + f"?cultivo={cultivo.pk}&kind=planta&planta={cls.planta.pk}"
 
     def setUp(self):
         self.client.force_login(self.duenio)
 
     def enviar(self):
         foto = SimpleUploadedFile("p.gif", GIF, content_type="image/gif")
-        return self.client.post(self.url, {"fecha": timezone.localdate().isoformat(),
-                                           "aspecto_general": "bueno", "foto": foto})
+        return self.client.post(reverse("growlog:registrar"), {
+            "cultivo": self.cultivo.pk, "kind": "planta", "observado_modo": "ahora",
+            "planta-planta_id": self.planta.pk, "planta-aspecto_general": "bueno", "planta-foto": foto})
 
     def test_sin_permiso_no_ve_el_campo_y_la_foto_se_ignora(self):
         page = self.client.get(self.url)
-        self.assertNotContains(page, 'name="foto"')
-        self.assertContains(page, "subida de fotos está deshabilitada")
+        self.assertNotContains(page, 'name="planta-foto"')
         self.enviar()
         medicion = MedicionPlanta.objects.get(planta=self.planta)
         self.assertFalse(medicion.foto)
@@ -47,13 +48,13 @@ class FotosTests(TestCase):
 
     def test_con_permiso_puede_subir(self):
         self.duenio.user_permissions.add(Permission.objects.get(codename="subir_fotos"))
-        self.assertContains(self.client.get(self.url), 'name="foto"')
+        self.assertContains(self.client.get(self.url), 'name="planta-foto"')
         self.enviar()
         self.assertTrue(MedicionPlanta.objects.get(planta=self.planta).foto)
 
     @override_settings(PERMITIR_FOTOS_A_TODOS=True)
     def test_interruptor_global_habilita_a_todos(self):
-        self.assertContains(self.client.get(self.url), 'name="foto"')
+        self.assertContains(self.client.get(self.url), 'name="planta-foto"')
 
 
 class FaqTests(TestCase):
