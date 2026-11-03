@@ -1,327 +1,171 @@
 {% extends "base.html" %}
 {% block title %}Energía · {{ cultivo.nombre }}{% endblock %}
-
 {% block extra_head %}
 <style>
-  .en-header {
-    display: flex; justify-content: space-between; align-items: flex-end;
-    flex-wrap: wrap; gap: 16px;
-    margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--rule);
-  }
-  .en-title {
-    font-size: 42px; font-weight: 800; letter-spacing: -.03em; line-height: 1;
-    color: var(--cream); margin: 0;
-  }
-  .en-stats-row {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-    margin-bottom: 22px;
-  }
-  @media (max-width: 900px) { .en-stats-row { grid-template-columns: repeat(2, 1fr); } }
-  .en-stat {
-    background: var(--card); border: 1px solid var(--rule);
-    border-radius: 14px; padding: 16px 20px;
-  }
-  .en-stat__val {
-    font-size: 34px; font-weight: 800; letter-spacing: -.03em; line-height: 1;
-    color: var(--honey); margin-top: 8px;
-    font-variant-numeric: tabular-nums;
-  }
-  .en-stat__val--green { color: var(--green); }
-  .en-stat__unit { font-size: 13px; color: var(--cream-soft); font-weight: 600; margin-left: 2px; }
-  .en-stat__sub {
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    color: var(--fine); margin-top: 6px; letter-spacing: .05em;
-  }
-  .en-alerta {
-    background: rgba(196,106,62,.1); border: 1px solid var(--rust);
-    padding: 12px 18px; margin-bottom: 18px;
-    display: flex; align-items: center; gap: 10px;
-    font-family: var(--font-mono), monospace; font-size: 12px; color: var(--rust);
-  }
-  .en-cmp-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
-    border-bottom: 1px solid var(--rule-soft);
-  }
-  .en-cmp-item {
-    padding: 16px 20px;
-    border-right: 1px solid var(--rule-soft);
-  }
-  .en-cmp-item:last-child { border-right: none; }
-  .en-cmp-val {
-    font-size: 28px; font-weight: 800; line-height: 1;
-    margin-top: 6px; font-variant-numeric: tabular-nums;
-  }
-  .en-form {
-    padding: 16px 20px; background: var(--bg-alt);
-    border-top: 1px solid var(--rule);
-  }
-  .en-form__row {
-    display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px;
-  }
-  .en-form__field { display: flex; flex-direction: column; gap: 4px; }
-  .en-form__label {
-    font-family: var(--font-mono), monospace; font-size: 12px;
-    color: var(--fine); letter-spacing: .05em; text-transform: uppercase;
-  }
-  .en-form input {
-    background: var(--card); border: 1px solid var(--rule);
-    color: var(--cream); padding: 8px 12px; font-size: 13px;
-  }
-  .en-form input:focus {
-    outline: none; border-color: var(--honey);
-    box-shadow: 0 0 0 3px rgba(212,154,62,.14);
-  }
-  .c-honey { color: var(--honey); }
-  @media (max-width: 640px) {
-    .en-title { font-size: 28px; }
-    .en-stat { padding: 13px 14px; }
-    .en-stat__val { font-size: 26px; }
-    .en-cmp-grid { grid-template-columns: 1fr; }
-    .en-cmp-item { border-right: none; border-bottom: 1px solid var(--rule-soft); }
-  }
+  .en { max-width: 760px; }
+  .en-cifras { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); margin-top: var(--sp-5); }
+  .en-cifra b { display: block; font: 600 var(--t-2xl)/1.1 var(--font-display); letter-spacing: -.02em; margin: 4px 0 2px; }
+  .en-cifra b small { font: 400 var(--t-sm) var(--font-body); color: var(--mu); }
+  .en-cifra > span:last-child { color: var(--mu); font-size: var(--t-sm); }
+  .en-sec { margin-top: var(--sp-6); }
+  .en-sec > .mo { display: block; margin-bottom: var(--sp-2); }
+  .en-item { padding: var(--sp-3) 0; border-top: 1px solid var(--ln); }
+  .en-item__fila { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+  .en-item__texto { flex: 1 1 180px; min-width: 0; }
+  .en-item__texto b { display: block; overflow-wrap: anywhere; }
+  .en-item__texto span { color: var(--mu); font-size: var(--t-sm); }
+  .en-item__num { font-variant-numeric: tabular-nums; text-align: right; }
+  .en-item__num small { display: block; color: var(--mu); font-size: var(--t-xs); }
+  .en-editar summary { min-height: var(--toque); display: inline-flex; align-items: center; color: var(--mu); font-size: var(--t-sm); list-style: none; }
+  .en-editar summary::-webkit-details-marker { display: none; }
+  .en-form { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: flex-end; margin-top: var(--sp-2); }
+  .en-form label { margin: 0; flex: 1 1 120px; }
+  .en-form label.ancho { flex-basis: 100%; }
+  .en-form label > * { margin-top: 6px; }
+  .en-form .btn { flex: none; }
+  .en-nada { color: var(--mu); margin: 0; }
+  .en-alerta { border-left: 4px solid var(--bad); margin-top: var(--sp-4); }
+  .en-tabla { width: 100%; border-collapse: collapse; font-size: var(--t-sm); font-variant-numeric: tabular-nums; }
+  .en-tabla th { text-align: right; font: 500 var(--t-xs) var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--mu); padding: 0 0 6px; }
+  .en-tabla th:first-child, .en-tabla td:first-child { text-align: left; }
+  .en-tabla td { text-align: right; padding: 8px 0; border-top: 1px solid var(--ln); }
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="en">
+  <div class="mo">{{ cultivo.nombre }} · ciclo {{ ciclo }}</div>
+  <h1 class="h1" style="margin-top: 8px;">Energía</h1>
 
+  {% if alerta %}<div class="card en-alerta">El medidor marca {{ variacion_pct }} % más que lo estimado. Revisá los watts y las horas de cada equipo.</div>{% endif %}
 
-<!-- HEADER -->
-<div class="en-header">
-  <div>
-    <div class="label-eyebrow">energía · costos eléctricos</div>
-    <h1 class="en-title">{{ cultivo.nombre }}</h1>
-    <div class="mono c-soft" style="font-size: 12px; margin-top:10px;">
-      {% if tarifa %}tarifa ${{ tarifa.precio_kwh|floatformat:2 }}/kWh · {{ tarifa.distribuidora }}<span class="c-fine"> · </span>{% endif %}
-      ciclo <strong class="c-cream">{{ ciclo }}</strong>
-      {% if equipos_rows %}<span class="c-fine"> · </span>{{ equipos_rows|length }} equipos activos{% endif %}
-    </div>
-  </div>
-</div>
-
-{% if alerta %}
-<div class="en-alerta">
-  <i class="bi bi-exclamation-triangle-fill"></i>
-  Consumo real supera el estimado en {{ variacion_pct }}%. Revisá los equipos activos.
-</div>
-{% endif %}
-
-<!-- STATS -->
-<div class="en-stats-row">
-  <div class="en-stat">
-    <div class="label-eyebrow"><i class="bi bi-lightning"></i> kWh/mes</div>
-    <div class="en-stat__val en-stat__val--green">{{ total_kwh_mes }}<span class="en-stat__unit">kWh</span></div>
-    <div class="en-stat__sub">consumo mensual estimado</div>
-  </div>
-  <div class="en-stat">
-    <div class="label-eyebrow"><i class="bi bi-cash"></i> costo/mes</div>
-    <div class="en-stat__val">${{ total_costo_mes }}</div>
-    <div class="en-stat__sub">{% if tarifa %}@ ${{ tarifa.precio_kwh|floatformat:2 }}/kWh{% else %}sin tarifa cargada{% endif %}</div>
-  </div>
-  <div class="en-stat">
-    <div class="label-eyebrow"><i class="bi bi-bar-chart-fill"></i> kWh acumulado</div>
-    <div class="en-stat__val en-stat__val--green">{{ kwh_acumulado }}<span class="en-stat__unit">kWh</span></div>
-    <div class="en-stat__sub">desde {{ cultivo.fecha_inicio|date:"d/m/Y" }}</div>
-  </div>
-  <div class="en-stat">
-    <div class="label-eyebrow"><i class="bi bi-cash-stack"></i> costo acumulado</div>
-    <div class="en-stat__val">${{ costo_acumulado }}</div>
-    <div class="en-stat__sub">{% if costo_por_gramo %}${{ costo_por_gramo }}/g estimado{% else %}sin yield configurado{% endif %}</div>
-  </div>
-</div>
-
-<!-- EQUIPOS ACTIVOS -->
-<div class="panel" style="margin-bottom:16px;">
-  <div class="panel__head">
-    <div class="panel__head-left">
-      <span class="label-eyebrow panel__title">equipos activos · {{ equipos_rows|length }}</span>
-    </div>
-    {% if can_edit_cultivo %}
-    <a href="/admin/growlog/costoenergetico/add/" class="btn-ghost" style="font-size: 12px;padding:5px 10px;">
-      <i class="bi bi-plug"></i> vincular equipo
-    </a>
+  <div class="en-cifras">
+    <div class="card en-cifra"><span class="mo">Por mes</span><b>{{ total_kwh_mes }} <small>kWh</small></b><span>{% if tarifa %}${{ total_costo_mes }} al mes{% else %}sin tarifa{% endif %}</span></div>
+    <div class="card en-cifra"><span class="mo">Desde que arrancó</span><b>{{ kwh_acumulado }} <small>kWh</small></b><span>{% if tarifa %}${{ costo_acumulado }} estimado{% else %}desde el {{ cultivo.fecha_inicio|date:"j/m" }}{% endif %}</span></div>
+    {% if kwh_real is not None %}
+    <div class="card en-cifra"><span class="mo">Según el medidor</span><b>{{ kwh_real }} <small>kWh</small></b><span>{% if costo_real is not None %}${{ costo_real }}{% endif %}{% if variacion_pct is not None %} · {% if variacion_pct > 0 %}+{% endif %}{{ variacion_pct }} % contra lo estimado{% endif %}</span></div>
     {% endif %}
+    <div class="card en-cifra"><span class="mo">Tarifa</span><b>{% if tarifa %}${{ tarifa.precio_kwh|floatformat:2 }} <small>/ kWh</small>{% else %}-{% endif %}</b><span>{% if tarifa %}{{ tarifa.distribuidora }} · desde el {{ tarifa.fecha_desde|date:"j/m/Y" }}{% else %}cargala para ver costos{% endif %}</span></div>
   </div>
 
-  {% if equipos_rows %}
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Equipo</th>
-        <th class="d-none d-md-table-cell">Categoría</th>
-        <th style="text-align:right;" class="d-none d-md-table-cell">h/día</th>
-        <th style="text-align:right;">kWh/mes</th>
-        <th style="text-align:right;">$/mes</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in equipos_rows %}
-      <tr>
-        <td>
-          <span class="c-cream" style="font-weight:600;">{{ row.equipo.nombre }}</span>
-          <span class="d-inline d-md-none c-fine" style="font-size: 12px; font-family:monospace;"> · {{ row.equipo.horas_dia }}h/día</span>
-        </td>
-        <td class="d-none d-md-table-cell">
-          <span class="pill pill--{% if row.equipo.categoria == 'lampara' %}plum{% elif row.equipo.categoria == 'extractor' %}slate{% elif row.equipo.categoria == 'ventilador' %}green{% elif row.equipo.categoria == 'humidificador' %}honey{% else %}cream{% endif %}">
-            {{ row.equipo.get_categoria_display }}
-          </span>
-        </td>
-        <td style="text-align:right;" class="c-soft d-none d-md-table-cell">{{ row.equipo.horas_dia }}h</td>
-        <td style="text-align:right;" class="c-green">{{ row.kwh_mes }}</td>
-        <td style="text-align:right;" class="c-honey">${{ row.costo_mes }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot style="border-top:2px solid var(--rule);">
-      <tr>
-        <td class="c-fine mono" style="font-size: 12px;letter-spacing:.1em;">TOTAL</td>
-        <td class="d-none d-md-table-cell"></td>
-        <td class="d-none d-md-table-cell"></td>
-        <td style="text-align:right;font-weight:800;" class="c-green">{{ total_kwh_mes }}</td>
-        <td style="text-align:right;font-weight:800;" class="c-honey">${{ total_costo_mes }}</td>
-      </tr>
-    </tfoot>
-  </table>
-  {% else %}
-  <div style="padding:28px 20px;text-align:center;color:var(--fine);font-size:12px;">
-    No hay equipos vinculados a este cultivo.
+  <section class="en-sec" aria-labelledby="eq-t">
+    <h2 class="mo" id="eq-t">Equipos · {{ equipos_rows|length }}</h2>
+    {% for r in equipos_rows %}
+    <div class="en-item">
+      <div class="en-item__fila">
+        <div class="en-item__texto"><b>{{ r.equipo.nombre }}</b><span>{{ r.equipo.get_categoria_display }} · {{ r.equipo.watts|floatformat:"-2" }} W · {{ r.equipo.horas_dia|floatformat:"-1" }} h por día · desde el {{ r.costo.fecha_desde|date:"j/m" }}</span></div>
+        <div class="en-item__num">{{ r.kwh_mes }} kWh<small>{% if tarifa %}${{ r.costo_mes }} al mes{% else %}por mes{% endif %}</small></div>
+      </div>
+      {% if can_edit_cultivo %}
+      <details class="en-editar">
+        <summary>Cambiar o sacar</summary>
+        <form method="post" class="en-form">
+          {% csrf_token %}<input type="hidden" name="accion" value="equipo_editar"><input type="hidden" name="pk" value="{{ r.costo.pk }}">
+          <label>Watts<input type="text" inputmode="decimal" name="watts" value="{{ r.equipo.watts|floatformat:'-2' }}" class="form-control" required></label>
+          <label>Horas por día<input type="text" inputmode="decimal" name="horas_dia" value="{{ r.equipo.horas_dia|floatformat:'-1' }}" class="form-control" required></label>
+          <button type="submit" class="btn sm">Guardar</button>
+        </form>
+        <form method="post" class="en-form" onsubmit="return confirm('¿Sacar {{ r.equipo.nombre|escapejs }} del cultivo desde hoy?');">
+          {% csrf_token %}<input type="hidden" name="accion" value="equipo_quitar"><input type="hidden" name="pk" value="{{ r.costo.pk }}">
+          <button type="submit" class="btn g sm">Sacar del cultivo</button>
+        </form>
+      </details>
+      {% endif %}
+    </div>
+    {% empty %}<p class="en-nada">Todavía no hay equipos en este cultivo.{% if cultivo.lampara_watts_reales %} Mientras tanto, el reporte estima la luz con la lámpara de {{ cultivo.lampara_watts_reales }} W.{% endif %}</p>{% endfor %}
+
     {% if can_edit_cultivo %}
-    <br><a href="/admin/growlog/costoenergetico/add/" class="c-honey" style="margin-top:8px;display:inline-block;">
-      Vincular desde el admin →
-    </a>
-    {% endif %}
-  </div>
-  {% endif %}
-</div>
-
-<!-- HISTÓRICO MENSUAL -->
-{% if meses %}
-<div class="panel" style="margin-bottom:16px;">
-  <div class="panel__head">
-    <div class="panel__head-left">
-      <span class="label-eyebrow panel__title">histórico mensual · {{ meses|length }} meses</span>
-    </div>
-  </div>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Mes</th>
-        <th style="text-align:right;" class="d-none d-md-table-cell">Días</th>
-        <th style="text-align:right;">kWh estimado</th>
-        <th style="text-align:right;">Costo estimado</th>
-        <th style="text-align:right;" class="d-none d-md-table-cell">Tarifa</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for m in meses %}
-      <tr>
-        <td class="c-cream" style="font-weight:600;">{{ m.mes }}</td>
-        <td style="text-align:right;" class="c-soft d-none d-md-table-cell">{{ m.dias }}</td>
-        <td style="text-align:right;" class="c-green">{{ m.kwh_estimado }}</td>
-        <td style="text-align:right;" class="c-honey">
-          {% if m.costo_estimado %}${{ m.costo_estimado|floatformat:0 }}{% else %}<span class="c-fine">-</span>{% endif %}
-        </td>
-        <td style="text-align:right;" class="c-fine d-none d-md-table-cell">
-          {% if m.tarifa %}<span class="mono">${{ m.tarifa }}</span>{% else %}-{% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot style="border-top:2px solid var(--rule);">
-      <tr>
-        <td class="c-fine mono" style="font-size: 12px;letter-spacing:.1em;">TOTAL</td>
-        <td class="d-none d-md-table-cell"></td>
-        <td style="text-align:right;font-weight:800;" class="c-green">{{ kwh_acumulado }}</td>
-        <td style="text-align:right;font-weight:800;" class="c-honey">${{ costo_acumulado }}</td>
-        <td class="d-none d-md-table-cell"></td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-{% endif %}
-
-<!-- MEDIDOR / COMPARACIÓN -->
-<div class="panel">
-  <div class="panel__head">
-    <div class="panel__head-left">
-      <span class="label-eyebrow panel__title">lecturas del medidor{% if lecturas %} · {{ lecturas|length }}{% endif %}</span>
-    </div>
-  </div>
-
-  {% if lecturas %}
-  <!-- Comparación estimado vs real -->
-  <div class="en-cmp-grid">
-    <div class="en-cmp-item">
-      <div class="label-eyebrow">kWh estimado</div>
-      <div class="en-cmp-val" style="color:var(--green);">{{ kwh_acumulado }}</div>
-      <div class="mono c-fine" style="font-size: 12px;margin-top:4px;">calculado por equipos</div>
-    </div>
-    <div class="en-cmp-item">
-      <div class="label-eyebrow">kWh real (medidor)</div>
-      <div class="en-cmp-val" style="color:{% if alerta %}var(--rust){% else %}var(--cream){% endif %};">{{ kwh_real }}</div>
-      <div class="mono c-fine" style="font-size: 12px;margin-top:4px;">suma de lecturas</div>
-    </div>
-    <div class="en-cmp-item">
-      <div class="label-eyebrow">variación</div>
-      <div class="en-cmp-val" style="color:{% if alerta %}var(--rust){% elif variacion_pct and variacion_pct > 5 %}var(--honey){% else %}var(--green){% endif %};">
-        {% if variacion_pct %}{% if variacion_pct > 0 %}+{% endif %}{{ variacion_pct }}%{% else %}-{% endif %}
-      </div>
-      <div class="mono c-fine" style="font-size: 12px;margin-top:4px;">{% if alerta %}alerta >15%{% elif variacion_pct %}dentro de rango{% else %}sin datos{% endif %}</div>
-    </div>
-  </div>
-  <!-- Lista lecturas -->
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Fecha</th>
-        <th style="text-align:right;">kWh real</th>
-        <th class="d-none d-md-table-cell">Notas</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for l in lecturas %}
-      <tr>
-        <td class="c-cream">{{ l.fecha|date:"d/m/Y" }}</td>
-        <td style="text-align:right;" class="c-honey">{{ l.kwh_real }}</td>
-        <td class="c-soft d-none d-md-table-cell">{{ l.notas|default:"-" }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div style="padding:24px 20px;text-align:center;color:var(--fine);font-size:12px;">
-    Sin lecturas cargadas. Ingresá la lectura del medidor para comparar con el estimado.
-  </div>
-  {% endif %}
-
-  <!-- Formulario nueva lectura -->
-  {% if can_edit_cultivo %}
-  <div class="en-form">
-    <div class="label-eyebrow">+ nueva lectura</div>
-    <form method="post">
-      {% csrf_token %}
-      <div class="en-form__row">
-        <div class="en-form__field">
-          <label class="en-form__label">Fecha</label>
-          <input type="date" name="fecha" value="{{ hoy|date:'Y-m-d' }}" required style="width:150px;">
-        </div>
-        <div class="en-form__field">
-          <label class="en-form__label">kWh acumulado</label>
-          <input type="number" name="kwh_real" step="0.01" min="0" placeholder="ej: 557.5" required style="width:180px;">
-        </div>
-        <div class="en-form__field" style="flex:1;min-width:140px;">
-          <label class="en-form__label">Notas (opcional)</label>
-          <input type="text" name="notas" placeholder="ej: mes completo" maxlength="200" style="width:100%;">
-        </div>
-        <div class="en-form__field">
-          <label class="en-form__label">&nbsp;</label>
-          <button type="submit" class="btn-brand" style="padding:8px 18px;border-color:var(--honey);background:var(--honey);">
-            <i class="bi bi-plus-lg"></i> cargar
-          </button>
-        </div>
-      </div>
+    {% if tarifa %}
+    <form method="post" class="card en-form" style="margin-top: var(--sp-3);">
+      {% csrf_token %}<input type="hidden" name="accion" value="equipo">
+      {% if equipos_disponibles %}
+      <label class="ancho">Equipo<select name="equipo" class="form-select" data-equipo>
+        <option value="">Uno nuevo</option>
+        {% for e in equipos_disponibles %}<option value="{{ e.pk }}">{{ e.nombre }} · {{ e.watts|floatformat:"-2" }} W</option>{% endfor %}
+      </select></label>
+      {% endif %}
+      <label class="ancho" data-nuevo>Nombre<input type="text" name="nombre" maxlength="120" class="form-control" placeholder="Ej: Extractor 4&quot;"></label>
+      <label data-nuevo>Tipo<select name="categoria" class="form-select">{% for v, l in categorias %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></label>
+      <label data-nuevo>Watts<input type="text" inputmode="decimal" name="watts" class="form-control" placeholder="100"></label>
+      <label data-nuevo>Horas por día<input type="text" inputmode="decimal" name="horas_dia" class="form-control" placeholder="18"></label>
+      <label>Desde<input type="date" name="fecha_desde" value="{{ cultivo.fecha_inicio|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}" class="form-control"></label>
+      <button type="submit" class="btn sm">Sumar equipo</button>
     </form>
-  </div>
+    {% else %}
+    <p class="en-nada" style="margin-top: var(--sp-2);">Para sumar equipos primero hace falta la tarifa{% if not es_duenio %}, y la carga quien creó el cultivo{% endif %}.</p>
+    {% endif %}
+    {% endif %}
+  </section>
+
+  {% if es_duenio %}
+  <section class="en-sec" aria-labelledby="ta-t">
+    <h2 class="mo" id="ta-t">{% if tarifa %}Tarifa nueva{% else %}Tarifa de la luz{% endif %}</h2>
+    <form method="post" class="card en-form">
+      {% csrf_token %}<input type="hidden" name="accion" value="tarifa">
+      <label>Precio por kWh<input type="text" inputmode="decimal" name="precio_kwh" class="form-control" placeholder="Ej: 120,50" required></label>
+      <label>Desde<input type="date" name="fecha_desde" value="{{ hoy|date:'Y-m-d' }}" class="form-control" required></label>
+      <label class="ancho">Distribuidora<input type="text" name="distribuidora" maxlength="100" class="form-control" placeholder="Ej: Edesur" value="{{ tarifa.distribuidora|default:'' }}"></label>
+      <button type="submit" class="btn {% if tarifa %}g {% endif %}sm">Guardar tarifa</button>
+    </form>
+    <p class="en-nada" style="margin-top: var(--sp-2); font-size: var(--t-sm);">Cuando aumente, cargá la nueva con su fecha: los meses anteriores siguen con el precio que tenían.</p>
+  </section>
+  {% endif %}
+
+  <section class="en-sec" aria-labelledby="me-t">
+    <h2 class="mo" id="me-t">Lecturas del medidor{% if lecturas %} · {{ lecturas|length }}{% endif %}</h2>
+    {% for l in lecturas %}
+    <div class="en-item">
+      <div class="en-item__fila">
+        <div class="en-item__texto"><b>{{ l.fecha|date:"j/m/Y" }}</b>{% if l.notas %}<span>{{ l.notas }}</span>{% endif %}</div>
+        <div class="en-item__num">{{ l.kwh_real }} kWh</div>
+      </div>
+      {% if can_edit_cultivo %}
+      <details class="en-editar">
+        <summary>Corregir</summary>
+        <form method="post" class="en-form">
+          {% csrf_token %}<input type="hidden" name="accion" value="lectura_editar"><input type="hidden" name="pk" value="{{ l.pk }}">
+          <label>Fecha<input type="date" name="fecha" value="{{ l.fecha|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}" class="form-control" required></label>
+          <label>kWh<input type="text" inputmode="decimal" name="kwh_real" value="{{ l.kwh_real }}" class="form-control" required></label>
+          <label class="ancho">Notas<input type="text" name="notas" maxlength="200" value="{{ l.notas }}" class="form-control"></label>
+          <button type="submit" class="btn sm">Guardar</button>
+        </form>
+        <form method="post" class="en-form" onsubmit="return confirm('¿Borrar esta lectura?');">
+          {% csrf_token %}<input type="hidden" name="accion" value="lectura_borrar"><input type="hidden" name="pk" value="{{ l.pk }}">
+          <button type="submit" class="btn g sm">Borrar</button>
+        </form>
+      </details>
+      {% endif %}
+    </div>
+    {% empty %}<p class="en-nada">Cargá lo que marca el medidor para comparar con lo estimado.</p>{% endfor %}
+    {% if can_edit_cultivo %}
+    <form method="post" class="card en-form" style="margin-top: var(--sp-3);">
+      {% csrf_token %}<input type="hidden" name="accion" value="lectura">
+      <label>Fecha<input type="date" name="fecha" value="{{ hoy|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}" class="form-control" required></label>
+      <label>kWh del período<input type="text" inputmode="decimal" name="kwh_real" class="form-control" placeholder="Ej: 557,5" required></label>
+      <label class="ancho">Notas <span style="text-transform: none; letter-spacing: 0;">· opcional</span><input type="text" name="notas" maxlength="200" class="form-control" placeholder="Ej: mes completo"></label>
+      <button type="submit" class="btn sm">Cargar lectura</button>
+    </form>
+    {% endif %}
+  </section>
+
+  {% if meses %}
+  <section class="en-sec" aria-labelledby="mes-t">
+    <h2 class="mo" id="mes-t">Mes por mes</h2>
+    <table class="en-tabla">
+      <thead><tr><th>Mes</th><th>Días</th><th>kWh</th><th>Costo</th></tr></thead>
+      <tbody>
+        {% for m in meses %}<tr><td>{{ m.mes }}</td><td>{{ m.dias }}</td><td>{{ m.kwh_estimado }}</td><td>{% if m.costo_estimado %}${{ m.costo_estimado|floatformat:0 }}{% else %}-{% endif %}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
   {% endif %}
 </div>
-
+<script>
+  (function () {
+    var sel = document.querySelector('[data-equipo]');
+    if (!sel) return;
+    function mostrar() { document.querySelectorAll('[data-nuevo]').forEach(function (l) { l.hidden = !!sel.value; }); }
+    sel.addEventListener('change', mostrar); mostrar();
+  })();
+</script>
 {% endblock %}

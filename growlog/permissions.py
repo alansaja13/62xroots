@@ -90,7 +90,11 @@ def recursos_visibles(model, usuario, *, editar=False):
 
 
 def tarifas_del_cultivo(cultivo):
-    return TarifaElectrica.objects.filter(costos__cultivo=cultivo).distinct()
+    """Las tarifas del dueño del cultivo y las que ya usan sus equipos."""
+    filtro = Q(costos__cultivo=cultivo)
+    if cultivo.propietario_id:
+        filtro |= Q(propietario_id=cultivo.propietario_id)
+    return TarifaElectrica.objects.filter(filtro).distinct()
 
 
 def equipos_asignables(usuario, cultivo):
