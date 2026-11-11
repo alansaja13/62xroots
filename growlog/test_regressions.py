@@ -160,3 +160,25 @@ class BitacoraRegressionTests(TestCase):
             with self.subTest(name=name):
                 with self.assertRaises(NoReverseMatch):
                     reverse(f"growlog:{name}", args=[self.cultivo.slug])
+
+
+class AdminLoginTests(TestCase):
+    """El admin no tiene formulario de ingreso propio: usa el de la app, con su límite de intentos."""
+
+    def test_el_login_del_admin_lleva_al_de_la_app(self):
+        r = self.client.get("/admin/login/?next=/admin/auth/user/")
+        self.assertRedirects(r, "/login/?next=/admin/auth/user/", fetch_redirect_response=False)
+
+    def test_no_acepta_credenciales_por_post(self):
+        User.objects.create_superuser("jefe", password="clave-larga-123")
+        r = self.client.post("/admin/login/", {"username": "jefe", "password": "clave-larga-123"})
+        self.assertRedirects(r, "/login/?next=/admin/", fetch_redirect_response=False)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_superusuario_entra_por_el_login_de_la_app(self):
+        cache.clear()
+        User.objects.create_superuser("jefe", password="clave-larga-123")
+        r = self.client.post("/login/?next=/admin/", {"username": "jefe", "password": "clave-larga-123"})
+        self.assertRedirects(r, "/admin/", fetch_redirect_response=False)
+        self.assertEqual(self.client.get("/admin/").status_code, 200)
+        self.assertRedirects(self.client.get("/admin/login/"), "/admin/", fetch_redirect_response=False)
