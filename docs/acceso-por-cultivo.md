@@ -30,10 +30,12 @@ separación por cultivo y no una vía de uso cotidiano para colaboradores.
 
 ## Compartir sin destruir información
 
-La pantalla permite seleccionar un cultivo propio y una cuenta existente, o
-crear una cuenta con credenciales aleatorias que se muestran una sola vez.
-No se envían credenciales ni mensajes automáticamente. El permiso inicial del
-formulario es editor, conforme al uso colaborativo acordado; puede elegirse lector.
+La pantalla permite seleccionar un cultivo propio y sumar una cuenta existente
+por su nombre de usuario, o generar un link de invitación de un solo uso que
+vence a los 7 días. Quien recibe el link crea su propia cuenta y queda como
+miembro del cultivo con el permiso elegido. No se envían mensajes
+automáticamente. El permiso inicial del formulario es editor, conforme al uso
+colaborativo acordado; puede elegirse lector.
 
 Revocar elimina la membresía, no la cuenta ni sus registros. Cada solicitud nueva
 consulta los permisos actuales: sesiones y tokens existentes también pierden el
